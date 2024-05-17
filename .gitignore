@@ -41,3 +41,5 @@ bin/
 ### Mac OS ###
 .DS_Store
 /.idea/
+/src/main/resources/database.properties
+/src/main/resources/bot.properties
