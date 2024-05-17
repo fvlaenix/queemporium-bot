@@ -13,6 +13,7 @@ repositories {
 }
 
 dependencies {
+    // grpc
     implementation("io.grpc:grpc-kotlin-stub:1.4.0")
     implementation("com.google.protobuf:protobuf-java:3.16.3")
     implementation("com.google.protobuf:protobuf-kotlin:3.24.4")
@@ -21,7 +22,16 @@ dependencies {
     implementation("io.grpc:grpc-stub:1.59.0")
     compileOnly("org.apache.tomcat:annotations-api:6.0.53")
     protobuf(files("discord-bots-rpc/duplicate-image-request.proto", "discord-bots-rpc/is-alive.proto", "discord-bots-rpc/image.proto"))
+
+    // discord
+    implementation("net.dv8tion:JDA:5.0.0-beta.24")
+
+    // database
+    implementation("org.jetbrains.exposed:exposed:0.17.14")
     
+    // coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+
     testImplementation(kotlin("test"))
 }
 
