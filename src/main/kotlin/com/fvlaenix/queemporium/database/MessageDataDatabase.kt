@@ -21,7 +21,7 @@ object MessageDataTable : Table() {
   val epoch = long("epoch")
 }
 
-class MessageDataConnector(val database: Database) {
+class MessageDataConnector(private val database: Database) {
   init {
     transaction(database) {
       SchemaUtils.create(MessageDataTable)
