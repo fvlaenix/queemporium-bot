@@ -35,6 +35,31 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     
+    implementation("com.twelvemonkeys.imageio:imageio:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-bmp:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-hdr:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-icns:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-iff:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-jpeg:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-jpeg-jep262-interop:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-jpeg-jai-interop:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-pcx:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-pcx:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-pict:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-pnm:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-psd:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-sgi:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-tga:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-thumbsdb:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-tiff:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-tiff-jdk-interop:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-webp:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-xwd:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-core:3.10.1")
+    implementation("com.twelvemonkeys.imageio:imageio-metadata:3.10.1")
+
+    implementation("net.coobird:thumbnailator:0.4.20")
+
     testImplementation(kotlin("test"))
 }
 
