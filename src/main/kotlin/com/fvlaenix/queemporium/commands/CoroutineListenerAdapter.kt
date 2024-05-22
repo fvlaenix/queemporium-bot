@@ -4,6 +4,7 @@ import com.fvlaenix.queemporium.DiscordBot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent
@@ -17,7 +18,7 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
   open suspend fun onReadySuspend(event: ReadyEvent) {}
   
   override fun onReady(event: ReadyEvent) {
-    getCoroutineScope().launch(getCoroutinePool()) {
+    runBlocking {
       onReadySuspend(event)
     }
   }
