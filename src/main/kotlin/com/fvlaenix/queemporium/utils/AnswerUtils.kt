@@ -12,7 +12,7 @@ import kotlin.io.path.extension
 
 private val LOG = LogManager.getLogManager().getLogger(AnswerUtils::class.java.name)
 
-class AnswerUtils {
+object AnswerUtils {
   data class ImageUploadInfo(
     val image: BufferedImage,
     val fileName: String,
