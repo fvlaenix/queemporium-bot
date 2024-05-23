@@ -5,7 +5,6 @@ import java.util.*
 
 data class BotConfiguration(
   val token: String,
-  val mainServerId: String,
   val features: List<String>,
   val commandConfigs: Map<String, Map<String, String>>
 ) {
@@ -15,7 +14,6 @@ data class BotConfiguration(
   
   constructor(properties: Properties) : this(
     token = properties.getSafeProperty("token"),
-    mainServerId = properties.getSafeProperty("mainServerId"),
     features = properties.getSafeProperty("features").split(",").map { it.trim() },
     commandConfigs = properties.keys().toList()
       .filterIsInstance<String>()
