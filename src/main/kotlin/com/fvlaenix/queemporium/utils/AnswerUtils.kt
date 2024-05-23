@@ -1,5 +1,6 @@
 package com.fvlaenix.queemporium.utils
 
+import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion
 import net.dv8tion.jda.api.utils.FileUpload
 import java.awt.image.BufferedImage
@@ -37,13 +38,26 @@ object AnswerUtils {
       }
   }
   
-  fun MessageChannelUnion.sendMessage(
+  fun MessageChannelUnion.sendMessageNow(
     text: String,
-    imageWithFileNames: List<ImageUploadInfo>,
+    imageWithFileNames: List<ImageUploadInfo> = emptyList(),
   ) {
     assert(text.length <= 2000)
     val fileUploads = imageWithFileNames.map(::toFileUpload)
     sendFiles(fileUploads)
+      .addContent(text)
+      .queue({}, {
+        LOG.log(Level.SEVERE, "Can't send message with ${text.take(200)}, length: ${text.length}, fileUploadsCount: ${fileUploads.size}", it)
+      })
+  }
+  
+  fun Message.sendReplyNow(
+    text: String,
+    imageWithFileNames: List<ImageUploadInfo> = emptyList(),
+  ) {
+    assert(text.length <= 2000)
+    val fileUploads = imageWithFileNames.map(::toFileUpload)
+    replyFiles(fileUploads)
       .addContent(text)
       .queue({}, {
         LOG.log(Level.SEVERE, "Can't send message with ${text.take(200)}, length: ${text.length}, fileUploadsCount: ${fileUploads.size}", it)

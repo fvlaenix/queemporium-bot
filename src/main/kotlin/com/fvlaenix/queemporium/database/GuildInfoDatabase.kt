@@ -53,14 +53,14 @@ class GuildInfoConnector(private val database: Database) {
     setGuildInfo(guild.guildId, duplicateId, guild.excludedChannelsIds)
   }
 
-  fun addExcludedChannel(guildId: String, id: String) {
+  fun addExcludedChannel(guildId: String, channelId: String) {
     val guild = getGuildInfo(guildId) ?: getEmptyChannel(guildId)
-    setGuildInfo(guild.guildId, guild.duplicateChannelInfo, guild.excludedChannelsIds + id)
+    setGuildInfo(guild.guildId, guild.duplicateChannelInfo, guild.excludedChannelsIds + channelId)
   }
 
-  fun excludeExcludedChannel(guildId: String, id: String) {
+  fun excludeExcludedChannel(guildId: String, channelId: String) {
     val guild = getGuildInfo(guildId) ?: getEmptyChannel(guildId)
-    setGuildInfo(guild.guildId, guild.duplicateChannelInfo, guild.excludedChannelsIds - id)
+    setGuildInfo(guild.guildId, guild.duplicateChannelInfo, guild.excludedChannelsIds - channelId)
   }
 
   fun getDuplicateInfoChannel(guildId: String): String? {
@@ -68,9 +68,9 @@ class GuildInfoConnector(private val database: Database) {
     return guild.duplicateChannelInfo
   }
 
-  fun isChannelExclude(guildId: String, id: String): Boolean {
+  fun isChannelExclude(guildId: String, channelId: String): Boolean {
     val guild = getGuildInfo(guildId) ?: getEmptyChannel(guildId)
-    return guild.excludedChannelsIds.contains(id)
+    return guild.excludedChannelsIds.contains(channelId)
   }
 
   fun getAllGuilds(): List<GuildInfo> = transaction(database) {
