@@ -7,7 +7,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Message
-import net.dv8tion.jda.api.entities.channel.unions.ChannelUnion
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent
@@ -16,13 +15,13 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter
 import java.util.logging.Level
 import java.util.logging.LogManager
 
-val LOG = LogManager.getLogManager().getLogger(CoroutineListenerAdapter::class.java.name)
+private val LOG = LogManager.getLogManager().getLogger(CoroutineListenerAdapter::class.java.name)
 
 open class CoroutineListenerAdapter : ListenerAdapter() {
   private fun getCoroutinePool(): ExecutorCoroutineDispatcher = DiscordBot.MAIN_BOT_POOL
   private fun getCoroutineScope(): CoroutineScope = DiscordBot.MAIN_SCOPE
   
-  private fun messageInfo(message: Message): String =
+  protected fun messageInfo(message: Message): String =
     "message from ${message.author.name} with url: ${message.jumpUrl}"
   
   protected fun Message.isFromAdmin(): Boolean = member?.hasPermission(Permission.ADMINISTRATOR) == true
