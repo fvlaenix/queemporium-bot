@@ -6,7 +6,7 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 data class MessageData(
-  val imageId: ImageId,
+  val messageId: MessageId,
   val additionalImageInfo: AdditionalImageInfo,
   val text: String,
   val author: String,
@@ -14,7 +14,7 @@ data class MessageData(
 )
 
 object MessageDataTable : Table() {
-  val imageId = varchar("imageId", 1000).primaryKey()
+  val messageId = varchar("messageId", 1000).primaryKey()
   val additionalImageInfo = varchar("additionalImageInfo", 1000)
   val text = varchar("text", 10000)
   val author = varchar("author", 100)
@@ -30,7 +30,7 @@ class MessageDataConnector(private val database: Database) {
   
   fun add(messageData: MessageData) = transaction(database) {
     MessageDataTable.insert {
-      it[imageId] = Json.encodeToString(messageData.imageId)
+      it[messageId] = Json.encodeToString(messageData.messageId)
       it[additionalImageInfo] = Json.encodeToString(messageData.additionalImageInfo)
       it[text] = messageData.text
       it[author] = messageData.author
@@ -40,7 +40,7 @@ class MessageDataConnector(private val database: Database) {
   
   companion object {
     fun get(resultRow: ResultRow): MessageData = MessageData(
-      Json.decodeFromString(resultRow[MessageDataTable.imageId]),
+      Json.decodeFromString(resultRow[MessageDataTable.messageId]),
       Json.decodeFromString(resultRow[MessageDataTable.additionalImageInfo]),
       resultRow[MessageDataTable.text],
       resultRow[MessageDataTable.author],
