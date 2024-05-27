@@ -29,6 +29,7 @@ dependencies {
 
     // database
     implementation("org.jetbrains.exposed:exposed:0.17.14")
+    implementation("mysql:mysql-connector-java:8.0.30")
     
     // coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
@@ -68,6 +69,11 @@ tasks.test {
 }
 kotlin {
     jvmToolchain(11)
+}
+
+task<JavaExec>("runServer") {
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("LaunchBotKt")
 }
 
 protobuf {
