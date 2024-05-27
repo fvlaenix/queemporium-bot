@@ -5,10 +5,8 @@ import com.fvlaenix.queemporium.database.CompressSize
 import com.fvlaenix.queemporium.database.ImageId
 import com.fvlaenix.queemporium.utils.DownloadUtils.readImageFromAttachment
 import com.fvlaenix.queemporium.utils.DownloadUtils.readImageFromUrl
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.entities.Message
 import java.awt.image.BufferedImage
 import java.net.URL
@@ -31,10 +29,11 @@ object MessageUtils {
       val serverId = message.guildId!!
       val channelId = message.channelId
       val messageId = message.id
+      val jobs = mutableListOf<Job>()
       for (attachment in message.attachments) {
         if (attachment.isImage) {
           val id = currentId++
-          launch attachment@ { 
+          val job = launch attachment@ { 
             val (image, additionalInfo) = readImageFromAttachment(attachment, compressSize) ?: return@attachment
             channel.send(
               MessageImageInfo(
@@ -44,6 +43,7 @@ object MessageUtils {
               )
             )
           }
+          jobs.add(job)
         }
       }
       if (withHistoryReload) { delay(10000) }
@@ -56,7 +56,7 @@ object MessageUtils {
           if (url != null) {
             val id = currentId
             currentId++
-            launch embed@ {
+            val job = launch embed@ {
               val (image, size) = readImageFromUrl(url, compressSize) ?: return@embed
               channel.send(
                 MessageImageInfo(
@@ -71,9 +71,12 @@ object MessageUtils {
                 )
               )
             }
+            jobs.add(job)
           }
         }
       }
+      jobs.joinAll()
+      channel.close()
     }
     return channel
   }
