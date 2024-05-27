@@ -6,12 +6,12 @@ import net.dv8tion.jda.api.utils.FileUpload
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.util.logging.Level
-import java.util.logging.LogManager
+import java.util.logging.Logger
 import javax.imageio.ImageIO
 import kotlin.io.path.Path
 import kotlin.io.path.extension
 
-private val LOG = LogManager.getLogManager().getLogger(AnswerUtils::class.java.name)
+private val LOG = Logger.getLogger(AnswerUtils::class.java.name)
 
 object AnswerUtils {
   data class ImageUploadInfo(

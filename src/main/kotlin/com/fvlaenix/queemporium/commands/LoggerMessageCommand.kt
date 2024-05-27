@@ -5,9 +5,9 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent
 import net.dv8tion.jda.api.events.session.ReadyEvent
 import java.util.logging.Level
-import java.util.logging.LogManager
+import java.util.logging.Logger
 
-private val LOG = LogManager.getLogManager().getLogger(LoggerMessageCommand::class.java.name)
+private val LOG = Logger.getLogger(LoggerMessageCommand::class.java.name)
 
 class LoggerMessageCommand : CoroutineListenerAdapter() {
   override suspend fun onReadySuspend(event: ReadyEvent) {

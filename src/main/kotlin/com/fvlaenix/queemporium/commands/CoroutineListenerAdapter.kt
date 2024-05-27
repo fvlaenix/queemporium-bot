@@ -13,9 +13,9 @@ import net.dv8tion.jda.api.events.message.MessageUpdateEvent
 import net.dv8tion.jda.api.events.session.ReadyEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import java.util.logging.Level
-import java.util.logging.LogManager
+import java.util.logging.Logger
 
-private val LOG = LogManager.getLogManager().getLogger(CoroutineListenerAdapter::class.java.name)
+private val LOG: Logger = Logger.getLogger(CoroutineListenerAdapter::class.java.name)
 
 open class CoroutineListenerAdapter : ListenerAdapter() {
   private fun getCoroutinePool(): ExecutorCoroutineDispatcher = DiscordBot.MAIN_BOT_POOL

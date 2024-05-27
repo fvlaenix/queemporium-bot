@@ -16,11 +16,11 @@ import java.net.URL
 import java.time.Duration
 import java.util.concurrent.ExecutionException
 import java.util.logging.Level
-import java.util.logging.LogManager
+import java.util.logging.Logger
 import javax.imageio.ImageIO
 import kotlin.jvm.Throws
 
-private val LOG = LogManager.getLogManager().getLogger(DownloadUtils::class.java.name)
+private val LOG = Logger.getLogger(DownloadUtils::class.java.name)
 private const val STANDARD_ATTEMPTS = 6
 
 object DownloadUtils {

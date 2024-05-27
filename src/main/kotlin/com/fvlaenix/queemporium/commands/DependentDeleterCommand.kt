@@ -9,10 +9,9 @@ import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent
 import java.util.logging.Level
-import java.util.logging.LogManager
 import java.util.logging.Logger
 
-private val LOG: Logger = LogManager.getLogManager().getLogger(DependentDeleterCommand::class.java.name)
+private val LOG: Logger = Logger.getLogger(DependentDeleterCommand::class.java.name)
 
 class DependentDeleterCommand(databaseConfiguration: DatabaseConfiguration) : CoroutineListenerAdapter() {
   private val messageDependencyConnector = MessageDependencyConnector(databaseConfiguration.toDatabase())

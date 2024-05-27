@@ -10,9 +10,9 @@ import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.utils.cache.CacheFlag
 import java.util.logging.Level
-import java.util.logging.LogManager
+import java.util.logging.Logger
 
-private val LOG = LogManager.getLogManager().getLogger(DiscordBot::class.java.name)
+private val LOG = Logger.getLogger(DiscordBot::class.java.name)
 
 class DiscordBot(
   botConfiguration: BotConfiguration,

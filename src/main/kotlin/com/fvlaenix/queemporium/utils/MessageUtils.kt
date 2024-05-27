@@ -10,10 +10,6 @@ import kotlinx.coroutines.channels.Channel
 import net.dv8tion.jda.api.entities.Message
 import java.awt.image.BufferedImage
 import java.net.URL
-import java.util.logging.LogManager
-import kotlin.coroutines.coroutineContext
-
-private val LOG = LogManager.getLogManager().getLogger(MessageUtils::class.java.name)
 
 object MessageUtils {
   data class MessageImageInfo(
