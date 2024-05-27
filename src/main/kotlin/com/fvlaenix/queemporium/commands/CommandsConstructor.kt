@@ -5,7 +5,18 @@ import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 
 object CommandsConstructor {
-  private val STANDARD_FEATURES: List<String> = listOf()
+  private val PACKAGES_CANDIDATES: List<String> = listOf(
+    "com.fvlaenix.queemporium.commands.duplicate.",
+    "com.fvlaenix.queemporium.commands.",
+  )
+  
+  private val STANDARD_FEATURES: List<String> = listOf(
+    "OnlinePictureCompare",
+    "DependentDeleterCommand",
+    "ExcludeChannelCommand",
+    "LoggerMessageCommand",
+    "SetDuplicateChannelCommand"
+  )
   
   fun convert(botConfiguration: BotConfiguration, databaseConfiguration: DatabaseConfiguration): List<ListenerAdapter> {
     val commands = mutableListOf<ListenerAdapter>()
@@ -16,12 +27,12 @@ object CommandsConstructor {
       } else {
         featureCommand to true
       }
-      val clazz = try {
-        Class.forName(feature).kotlin
-      } catch (e: ClassNotFoundException) {
-        throw Exception("Can't find class $feature. Please make sure you wrote it correctly", e)
-      }
-      check(clazz.java.interfaces.contains(ListenerAdapter::class.java)) { "Class should inherit interface ${ListenerAdapter::class.qualifiedName}" }
+      val clazz = PACKAGES_CANDIDATES.firstNotNullOfOrNull { packageCandidate ->
+        try {
+          Class.forName(packageCandidate + feature).kotlin
+        } catch (e: ClassNotFoundException) { null }
+      } ?: throw Exception("Can't find class $feature. Please make sure you wrote it correctly")
+      check(clazz.java.interfaces.contains(ListenerAdapter::class.java)) { "Class ${clazz.java.name} should inherit interface ${ListenerAdapter::class.qualifiedName}" }
       if (!isAdd) {
         commands.removeAll { clazz.isInstance(it) }
         return@forEach
