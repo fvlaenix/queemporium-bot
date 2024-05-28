@@ -15,9 +15,8 @@ import com.fvlaenix.queemporium.utils.MessageUtils
 import com.fvlaenix.queemporium.utils.MessageUtils.addImagesFromMessage
 import com.google.protobuf.kotlin.toByteString
 import io.grpc.ManagedChannelBuilder
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.dv8tion.jda.api.entities.Message
@@ -87,47 +86,51 @@ object DuplicateImageService {
     ) }
   }
   
-  private suspend fun sendPictures(
+  private suspend fun CoroutineScope.sendPictures(
     epoch: Long,
     channelInput: Channel<MessageUtils.MessageImageInfo>,
     channelOutput: Channel<Pair<MessageUtils.MessageImageInfo, List<DuplicateImageData>>>
   ) {
-    try {
-      coroutineScope {
-        for (picture in channelInput) {
-          launch(EXCEPTION_HANDLER) {
-            val result = sendPicture(
-              imageId = picture.imageId,
-              additionalImageInfo = picture.additionalImageInfo,
-              image = picture.bufferedImage,
-              fileName = picture.additionalImageInfo.fileName,
-              epoch = epoch
-            )
-            if (result == null) {
-              LOG.log(Level.SEVERE, "Failed to find duplicate: ${picture.imageId}")
-              return@launch
-            }
-            if (result.isEmpty()) {
-              return@launch
-            }
-            channelOutput.send(picture to result)
+    launch(EXCEPTION_HANDLER) {
+      val jobs = mutableListOf<Job>()
+      for (picture in channelInput) {
+        val job = launch(EXCEPTION_HANDLER) picture@{
+          val result = sendPicture(
+            imageId = picture.imageId,
+            additionalImageInfo = picture.additionalImageInfo,
+            image = picture.bufferedImage,
+            fileName = picture.additionalImageInfo.fileName,
+            epoch = epoch
+          )
+          if (result == null) {
+            LOG.log(Level.SEVERE, "Failed to find duplicate: ${picture.imageId}")
+            return@picture
           }
+          if (result.isEmpty()) {
+            return@picture
+          }
+          channelOutput.send(picture to result)
         }
+        jobs.add(job)
       }
-    } finally {
-      channelOutput.close()
+      launch(EXCEPTION_HANDLER) {
+        jobs.joinAll()
+        channelOutput.close()
+      }
     }
   }
 
   suspend fun sendPictures(message: Message, compressSize: CompressSize, withHistoryReload: Boolean, callback: (Pair<MessageUtils.MessageImageInfo, List<DuplicateImageData>>) -> Unit) {
-    val imagesChannel = coroutineScope { addImagesFromMessage(message, withHistoryReload, compressSize) }
-    val duplicateChannel = Channel<Pair<MessageUtils.MessageImageInfo, List<DuplicateImageData>>>(100)
-    sendPictures(message.timeCreated.toEpochSecond(), imagesChannel, duplicateChannel)
-    for (duplicate in duplicateChannel) {
-      try {
-        callback(duplicate)
-      } catch (e: Exception) {
-        LOG.log(Level.SEVERE, "Error in callback function: ${duplicate.first}", e)
+    coroutineScope {
+      val imagesChannel = addImagesFromMessage(message, withHistoryReload, compressSize)
+      val duplicateChannel = Channel<Pair<MessageUtils.MessageImageInfo, List<DuplicateImageData>>>(Channel.UNLIMITED)
+      sendPictures(message.timeCreated.toEpochSecond(), imagesChannel, duplicateChannel)
+      for (duplicate in duplicateChannel) {
+        try {
+          callback(duplicate)
+        } catch (e: Exception) {
+          LOG.log(Level.SEVERE, "Error in callback function: ${duplicate.first}", e)
+        }
       }
     }
   }
