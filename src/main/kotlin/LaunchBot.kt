@@ -23,6 +23,8 @@ val DATABASE_PROPERTIES_INPUT_STREAM: InputStream =
   LaunchBot::class.java.getResourceAsStream("database.properties") ?:
   throw IllegalStateException("Cannot find database properties in standard files")
 
+val DUPLICATE_IMAGE_HOSTNAME = System.getenv("DUPLICATE_IMAGE_HOSTNAME") ?: "localhost"
+
 class LaunchBot
 
 fun main() {

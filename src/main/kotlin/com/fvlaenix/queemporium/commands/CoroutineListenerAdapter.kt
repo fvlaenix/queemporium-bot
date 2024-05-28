@@ -1,6 +1,7 @@
 package com.fvlaenix.queemporium.commands
 
 import com.fvlaenix.queemporium.DiscordBot
+import com.fvlaenix.queemporium.exception.EXCEPTION_HANDLER
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.launch
@@ -44,7 +45,7 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
   
   override fun onMessageReceived(event: MessageReceivedEvent) {
     if (!receiveMessageFilter(event)) return
-    getCoroutineScope().launch(getCoroutinePool()) {
+    getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER) {
       try {
         onMessageReceivedSuspend(event)
       } catch (e: Exception) {
@@ -56,7 +57,7 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
   open suspend fun onMessageUpdateSuspend(event: MessageUpdateEvent) {}
   
   override fun onMessageUpdate(event: MessageUpdateEvent) {
-    getCoroutineScope().launch(getCoroutinePool()) {
+    getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER) {
       try {
         onMessageUpdateSuspend(event)
       } catch (e: Exception) {
@@ -68,7 +69,7 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
   open suspend fun onMessageDeleteSuspend(event: MessageDeleteEvent) {}
 
   override fun onMessageDelete(event: MessageDeleteEvent) {
-    getCoroutineScope().launch(getCoroutinePool()) {
+    getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER) {
       try {
         onMessageDeleteSuspend(event)
       } catch (e: Exception) {

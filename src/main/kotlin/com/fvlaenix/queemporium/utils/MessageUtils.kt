@@ -3,6 +3,7 @@ package com.fvlaenix.queemporium.utils
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.database.CompressSize
 import com.fvlaenix.queemporium.database.ImageId
+import com.fvlaenix.queemporium.exception.EXCEPTION_HANDLER
 import com.fvlaenix.queemporium.utils.DownloadUtils.readImageFromAttachment
 import com.fvlaenix.queemporium.utils.DownloadUtils.readImageFromUrl
 import kotlinx.coroutines.*
@@ -19,8 +20,8 @@ object MessageUtils {
   )
   
   fun CoroutineScope.addImagesFromMessage(message: Message, withHistoryReload: Boolean = true, compressSize: CompressSize): Channel<MessageImageInfo> {
-    val channel = Channel<MessageImageInfo>()
-    launch {
+    val channel = Channel<MessageImageInfo>(100)
+    launch(EXCEPTION_HANDLER) {
       var currentId = 0
       val serverId = message.guildId!!
       val channelId = message.channelId

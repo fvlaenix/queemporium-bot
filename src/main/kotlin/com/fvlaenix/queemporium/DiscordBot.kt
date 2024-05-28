@@ -8,7 +8,6 @@ import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.requests.GatewayIntent
-import net.dv8tion.jda.api.utils.cache.CacheFlag
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -28,7 +27,7 @@ class DiscordBot(
       botConfiguration.token,
       GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.MESSAGE_CONTENT
     )
-    .addEventListeners(CommandsConstructor.convert(botConfiguration, databaseConfiguration))
+    .addEventListeners(*CommandsConstructor.convert(botConfiguration, databaseConfiguration).toTypedArray())
     .setActivity(Activity.customStatus("Dominates Emporium"))
     .build()
 
