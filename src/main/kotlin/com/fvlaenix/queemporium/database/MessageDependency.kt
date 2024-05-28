@@ -11,8 +11,8 @@ data class MessageDependency(
 )
 
 object MessageDependencyTable : Table() {
-  val targetMessage = varchar("targetMessage", 1000)
-  val dependentMessage = varchar("dependentMessage", 1000)
+  val targetMessage = varchar("targetMessage", 300)
+  val dependentMessage = varchar("dependentMessage", 300)
   
   init {
     index(false, targetMessage)
