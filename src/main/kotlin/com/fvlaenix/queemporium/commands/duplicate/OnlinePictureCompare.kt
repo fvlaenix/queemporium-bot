@@ -21,7 +21,7 @@ class OnlinePictureCompare(databaseConfiguration: DatabaseConfiguration) : Repor
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
   
   @OptIn(DelicateCoroutinesApi::class)
-  private val comparingContext = newFixedThreadPoolContext(4, "Online Compare Image")
+  private val comparingContext = newFixedThreadPoolContext(10, "Online Compare Image")
   private var compressSize: CompressSize? = null
   
   override suspend fun onReadySuspend(event: ReadyEvent) {
