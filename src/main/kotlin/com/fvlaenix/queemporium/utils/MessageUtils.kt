@@ -21,12 +21,12 @@ object MessageUtils {
   
   fun CoroutineScope.addImagesFromMessage(message: Message, withHistoryReload: Boolean = true, compressSize: CompressSize): Channel<MessageImageInfo> {
     val channel = Channel<MessageImageInfo>(100)
+    var currentId = 0
+    val serverId = message.guildId!!
+    val channelId = message.channelId
+    val messageId = message.id
+    val jobs = mutableListOf<Job>()
     launch(EXCEPTION_HANDLER) {
-      var currentId = 0
-      val serverId = message.guildId!!
-      val channelId = message.channelId
-      val messageId = message.id
-      val jobs = mutableListOf<Job>()
       for (attachment in message.attachments) {
         if (attachment.isImage) {
           val id = currentId++
@@ -72,9 +72,12 @@ object MessageUtils {
           }
         }
       }
-      jobs.joinAll()
-      channel.close()
+      launch(EXCEPTION_HANDLER) {
+        jobs.joinAll()
+        channel.close()
+      }
     }
+    
     return channel
   }
 }
