@@ -7,7 +7,8 @@ data class AdditionalImageInfo(
   val fileName: String,
   val isSpoiler: Boolean, 
   val originalSizeHeight: Int, 
-  val originalSizeWidth: Int)
+  val originalSizeWidth: Int
+)
 
 data class Size(val width: Int, val height: Int)
 
