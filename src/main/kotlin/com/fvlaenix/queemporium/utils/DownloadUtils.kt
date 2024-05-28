@@ -3,8 +3,6 @@ package com.fvlaenix.queemporium.utils
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.database.CompressSize
 import com.fvlaenix.queemporium.database.Size
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ensureActive
 import net.coobird.thumbnailator.Thumbnails
 import net.dv8tion.jda.api.entities.Message.Attachment
 import net.dv8tion.jda.api.utils.AttachmentProxy
@@ -33,10 +31,9 @@ object DownloadUtils {
   }
   
   @Throws(IOException::class)
-  private fun CoroutineScope.readImageRepeatedly(inputStringGetter: () -> InputStream, attempts: Int = STANDARD_ATTEMPTS): BufferedImage {
+  private fun readImageRepeatedly(inputStringGetter: () -> InputStream, attempts: Int = STANDARD_ATTEMPTS): BufferedImage {
     var attemptsLeft = attempts
     while (attemptsLeft > 0) {
-      ensureActive()
       val image: BufferedImage? = try {
         readImage(inputStringGetter)
       } catch (e: IOException) {
@@ -51,7 +48,7 @@ object DownloadUtils {
     throw IllegalStateException()
   }
   
-  private fun CoroutineScope.readImageFromUrl(url: String): Pair<BufferedImage, Size>? {
+  private fun readImageFromUrl(url: String): Pair<BufferedImage, Size>? {
     return try {
       val image = readImageRepeatedly({ URL(url).openStream() })
       image to Size(image.width, image.height)
@@ -61,14 +58,14 @@ object DownloadUtils {
     }
   }
   
-  fun CoroutineScope.readImageFromUrl(url: String, compressSize: CompressSize): Pair<BufferedImage, Size>? {
+  fun readImageFromUrl(url: String, compressSize: CompressSize): Pair<BufferedImage, Size>? {
     return readImageFromUrl(url)?.let { (image, size) ->
       val scaledSize = compressSize.getScaledSize(size)
       Thumbnails.of(image).size(scaledSize.width, scaledSize.height).asBufferedImage() to size
     }
   }
   
-  fun CoroutineScope.readImageFromAttachment(attachment: Attachment, compressSize: CompressSize): Pair<BufferedImage, AdditionalImageInfo>? {
+  fun readImageFromAttachment(attachment: Attachment, compressSize: CompressSize): Pair<BufferedImage, AdditionalImageInfo>? {
     var attemptsLeft = STANDARD_ATTEMPTS
     val okHttpClient = OkHttpClient()
     while (attemptsLeft > 0) {
