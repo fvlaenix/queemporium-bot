@@ -20,7 +20,7 @@ object MessageUtils {
   )
   
   fun CoroutineScope.addImagesFromMessage(message: Message, withHistoryReload: Boolean = true, compressSize: CompressSize): Channel<MessageImageInfo> {
-    val channel = Channel<MessageImageInfo>(100)
+    val channel = Channel<MessageImageInfo>(Channel.UNLIMITED)
     var currentId = 0
     val serverId = message.guildId!!
     val channelId = message.channelId
