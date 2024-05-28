@@ -33,7 +33,7 @@ class DependentDeleterCommand(databaseConfiguration: DatabaseConfiguration) : Co
         } else {
           jda.getPrivateChannelById(dependencyMessage.channelId) ?: return
         }
-        val message: Message = channel.retrieveMessageById(dependencyMessage.messageId).complete() ?: return
+        val message: Message = kotlin.runCatching { channel.retrieveMessageById(dependencyMessage.messageId).complete() }.getOrNull() ?: return
         message.delete().queue {
           messageDependencyConnector.removeMessage(dependencyMessage)
         }
