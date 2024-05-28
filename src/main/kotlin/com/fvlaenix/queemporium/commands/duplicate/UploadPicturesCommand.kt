@@ -14,9 +14,7 @@ class UploadPicturesCommand(databaseConfiguration: DatabaseConfiguration) : Repo
   
   override suspend fun onReadySuspend(event: ReadyEvent) {
     val compressSize = DuplicateImageService.checkServerAliveness(event) ?: return
-    runOverOld(event.jda, { message ->
-      message.timeCreated.toEpochSecond() + Duration.ofDays(5).toSeconds() > System.currentTimeMillis() / 1000
-    }) { message ->
+    runOverOld(event.jda, { true }) { message ->
       val messageData = MessageData(
         messageId = MessageId(
           guildId = message.guildId!!,
