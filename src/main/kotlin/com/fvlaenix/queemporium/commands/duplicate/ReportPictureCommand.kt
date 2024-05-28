@@ -47,10 +47,10 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
       message = message,
       compressSize = compressSize,
       withHistoryReload = true
-    ) { (duplicateMessageInfo, originalImageData) ->
+    ) { (duplicateMessageInfo, originalImageDatas) ->
       val isSpoiler =
-        duplicateMessageInfo.additionalImageInfo.isSpoiler || originalImageData.any { it.additionalImageInfo.isSpoiler }
-      val originalData = originalImageData.map {
+        duplicateMessageInfo.additionalImageInfo.isSpoiler || originalImageDatas.any { it.additionalImageInfo.isSpoiler }
+      val originalData = originalImageDatas.map {
         messageDataConnector.get(it.imageId.toMessageId())!! to it
       }
       val duplicateMessageDatas = AnswerUtils.sendDuplicateMessageInfo(
@@ -71,6 +71,14 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
             dependentMessage = dependentMessage
           )
         )
+        originalImageDatas.forEach { originalImageData ->
+          dependencyConnector.addDependency(
+            MessageDependency(
+              targetMessage = originalImageData.imageId.toMessageId(),
+              dependentMessage = dependentMessage
+            )
+          )
+        }
       }
     }
   }
