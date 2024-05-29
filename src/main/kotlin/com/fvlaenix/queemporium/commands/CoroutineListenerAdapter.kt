@@ -30,7 +30,7 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
   open suspend fun onReadySuspend(event: ReadyEvent) {}
   
   override fun onReady(event: ReadyEvent) {
-    runBlocking {
+    getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER) {
       try {
         onReadySuspend(event)
       } catch (e: Exception) {
