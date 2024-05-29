@@ -148,9 +148,9 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
       LOG.log(Level.INFO, "Start revenge on messages")
       for (message in messageChannel) {
         val job = launch(channelsThreadContext + EXCEPTION_HANDLER) {
-          val messageNumber = messageDone.incrementAndGet()
+          val messageNumber = messageDone.getAndIncrement()
           if (messageNumber % 100 == 0) {
-            LOG.log(Level.INFO, "Start revenge on message [$messageNumber/${messageWork.incrementAndGet()}] from channel: ${message.channel.name}")
+            LOG.log(Level.INFO, "Start revenge on message [$messageNumber/${messageWork.get()}] from channel: ${message.channel.name}")
           }
           computeMessage(message)
         }
