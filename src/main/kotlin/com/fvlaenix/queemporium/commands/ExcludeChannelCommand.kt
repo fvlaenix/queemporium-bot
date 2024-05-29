@@ -7,8 +7,8 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 
 class ExcludeChannelCommand(databaseConfiguration: DatabaseConfiguration): CoroutineListenerAdapter() {
   companion object {
-    const val COMMAND_ADD_TO_EXCLUDE = "/shogun-sama beg-make-decree"
-    const val COMMAND_REMOVE_FROM_EXCLUDE = "/shogun-sama beg-remove-decree"
+    const val COMMAND_ADD_TO_EXCLUDE = "/shogun-sama beg-remove-decree"
+    const val COMMAND_REMOVE_FROM_EXCLUDE = "/shogun-sama beg-add-decree"
   }
   
   private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
