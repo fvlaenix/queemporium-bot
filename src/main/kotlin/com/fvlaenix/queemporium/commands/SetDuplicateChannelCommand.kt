@@ -20,6 +20,7 @@ class SetDuplicateChannelCommand(databaseConfiguration: DatabaseConfiguration): 
     val channel = message.channel
     if (!message.isFromAdmin()) {
       message.sendReplyNow("Pathetic, only admins can use this!")
+      return
     }
     guildInfoConnector.setDuplicateInfo(message.guildId!!, channel.id)
     message.sendReplyNow("My verdicts will now appear here!")

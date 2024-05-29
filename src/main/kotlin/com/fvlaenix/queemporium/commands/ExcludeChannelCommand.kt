@@ -26,6 +26,7 @@ class ExcludeChannelCommand(databaseConfiguration: DatabaseConfiguration): Corou
     val channel = message.channel
     if (!message.isFromAdmin()) {
       message.sendReplyNow("Pathetic, only admins can use this!")
+      return
     }
     val isChannelExcluded = guildInfoConnector.isChannelExclude(message.guildId!!, channel.id)
     if (message.contentRaw == COMMAND_ADD_TO_EXCLUDE) {
