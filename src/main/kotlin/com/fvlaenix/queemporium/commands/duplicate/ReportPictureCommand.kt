@@ -117,14 +117,23 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
       for (channel in channelsChannel) {
         val job = launch(channelsThreadContext + EXCEPTION_HANDLER) {
           channelsDone.incrementAndGet()
-          LOG.log(Level.INFO, "Start revenge on channel [${channelsDone.get()}/${channelsWork.get()}]: ${channel.name}")
-          try {
-            val messages = channel.iterableHistory.takeWhile(takeWhile)
-            messages.forEach { message ->
-              messageChannel.send(message)
-              messageWork.incrementAndGet()
+          var isLoaded = false
+          while (!isLoaded) {
+            LOG.log(Level.INFO, "Start revenge on channel [${channelsDone.get()}/${channelsWork.get()}]: ${channel.name}")
+            try {
+              val messages = channel.iterableHistory.takeWhile(takeWhile)
+              messages.forEach { message ->
+                messageChannel.send(message)
+                messageWork.incrementAndGet()
+              }
+              isLoaded = true
+            } catch (_: InsufficientPermissionException) { 
+              LOG.log(Level.INFO, "Insufficient permissions for channel ${channel.name}")
+              isLoaded = true
+            } catch (e: InterruptedException) {
+              LOG.log(Level.WARNING, "Interrupted exception while take messages", e)
             }
-          } catch (_: InsufficientPermissionException) {}
+          }
           LOG.log(Level.INFO, "Finish revenge on messages: ${channel.name}")
         }
         channelsJobs.add(job)
@@ -141,7 +150,7 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
         val job = launch(channelsThreadContext + EXCEPTION_HANDLER) {
           val messageNumber = messageDone.incrementAndGet()
           if (messageNumber % 100 == 0) {
-            LOG.log(Level.INFO, "Start revenge on message [$messageNumber/${messageWork.incrementAndGet()}]")
+            LOG.log(Level.INFO, "Start revenge on message [$messageNumber/${messageWork.incrementAndGet()}] from channel: ${message.channel.name}")
           }
           computeMessage(message)
         }
