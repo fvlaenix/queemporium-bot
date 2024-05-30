@@ -42,6 +42,8 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
       messageProblems = MessageProblems(emptyList())
     )
 
+    if (messageDataConnector.get(messageData.messageId) != null) return
+    
     DuplicateImageService.sendPictures(
       message = message,
       compressSize = compressSize,
@@ -121,7 +123,7 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
           while (!isLoaded) {
             LOG.log(Level.INFO, "Start revenge on channel [${channelsDone.get()}/${channelsWork.get()}]: ${channel.name}")
             try {
-              val messages = channel.iterableHistory.takeWhile(takeWhile)
+              val messages = channel.iterableHistory.takeWhile(takeWhile).reversed()
               messages.forEach { message ->
                 messageChannel.send(message)
                 messageWork.incrementAndGet()
