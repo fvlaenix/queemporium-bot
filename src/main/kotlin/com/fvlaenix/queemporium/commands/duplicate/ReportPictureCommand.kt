@@ -149,7 +149,7 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
 
       val messageJobs = mutableListOf<Job>()
       LOG.log(Level.INFO, "Start revenge on messages")
-      val semaphore = Semaphore(100)
+      val semaphore = Semaphore(16)
       for (message in messageChannel) {
         semaphore.withPermit {
           val job = launch(channelsThreadContext + EXCEPTION_HANDLER) {
