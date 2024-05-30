@@ -27,13 +27,14 @@ class UploadPicturesCommand(databaseConfiguration: DatabaseConfiguration) : Repo
         countImages = message.attachments.size + message.embeds.size,
         messageProblems = MessageProblems(emptyList())
       )
-      messageDataConnector.add(messageData)
 
       DuplicateImageService.sendPictures(
         message = message,
         compressSize = compressSize,
         withHistoryReload = false
       ) {}
+
+      messageDataConnector.add(messageData)
     }
   }
 }
