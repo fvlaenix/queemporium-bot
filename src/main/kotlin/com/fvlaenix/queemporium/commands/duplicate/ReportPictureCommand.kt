@@ -7,6 +7,8 @@ import com.fvlaenix.queemporium.exception.EXCEPTION_HANDLER
 import com.fvlaenix.queemporium.utils.AnswerUtils
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
@@ -102,7 +104,6 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
         LOG.log(Level.INFO, "Start revenge on guild ${guild.name}")
         guild.channels.forEach channel@{ channel ->
           val channelId = channel.id
-          LOG.log(Level.INFO, "Start revenge on ${channel.name}")
           if (channel is MessageChannel) {
             if (guildInfoConnector.isChannelExclude(guildId, channelId)) return@channel
             if (guildInfoConnector.getDuplicateInfoChannel(guildId) == channelId) return@channel
@@ -136,7 +137,7 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
               LOG.log(Level.WARNING, "Interrupted exception while take messages", e)
             }
           }
-          LOG.log(Level.INFO, "Finish revenge on messages: ${channel.name}")
+          LOG.log(Level.INFO, "Finish revenge on channel: ${channel.name}")
         }
         channelsJobs.add(job)
       }
@@ -148,15 +149,18 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
 
       val messageJobs = mutableListOf<Job>()
       LOG.log(Level.INFO, "Start revenge on messages")
+      val semaphore = Semaphore(100)
       for (message in messageChannel) {
-        val job = launch(channelsThreadContext + EXCEPTION_HANDLER) {
-          val messageNumber = messageDone.getAndIncrement()
-          if (messageNumber % 100 == 0) {
-            LOG.log(Level.INFO, "Start revenge on message [$messageNumber/${messageWork.get()}] from channel: ${message.channel.name}")
+        semaphore.withPermit {
+          val job = launch(channelsThreadContext + EXCEPTION_HANDLER) {
+            val messageNumber = messageDone.getAndIncrement()
+            if (messageNumber % 100 == 0) {
+              LOG.log(Level.INFO, "Start revenge on message [$messageNumber/${messageWork.get()}] from channel: ${message.channel.name}")
+            }
+            computeMessage(message)
           }
-          computeMessage(message)
+          messageJobs.add(job)
         }
-        messageJobs.add(job)
       }
       launch(channelsThreadContext + EXCEPTION_HANDLER) {
         messageJobs.joinAll()
