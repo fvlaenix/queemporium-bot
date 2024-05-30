@@ -17,6 +17,8 @@ import com.google.protobuf.kotlin.toByteString
 import io.grpc.ManagedChannelBuilder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.dv8tion.jda.api.entities.Message
@@ -32,6 +34,8 @@ import kotlin.io.path.extension
 private val LOG = Logger.getLogger(DuplicateImageService::class.java.name)
 
 object DuplicateImageService {
+  private val DUPLICATE_SEND_SEMAPHORE = Semaphore(20)
+  
   class DuplicateImageData(
     val imageId: ImageId,
     val additionalImageInfo: AdditionalImageInfo,
@@ -122,14 +126,16 @@ object DuplicateImageService {
 
   suspend fun sendPictures(message: Message, compressSize: CompressSize, withHistoryReload: Boolean, callback: (Pair<MessageUtils.MessageImageInfo, List<DuplicateImageData>>) -> Unit) {
     coroutineScope {
-      val imagesChannel = addImagesFromMessage(message, withHistoryReload, compressSize)
-      val duplicateChannel = Channel<Pair<MessageUtils.MessageImageInfo, List<DuplicateImageData>>>(Channel.UNLIMITED)
-      sendPictures(message.timeCreated.toEpochSecond(), imagesChannel, duplicateChannel)
-      for (duplicate in duplicateChannel) {
-        try {
-          callback(duplicate)
-        } catch (e: Exception) {
-          LOG.log(Level.SEVERE, "Error in callback function: ${duplicate.first}", e)
+      DUPLICATE_SEND_SEMAPHORE.withPermit {
+        val imagesChannel = addImagesFromMessage(message, withHistoryReload, compressSize)
+        val duplicateChannel = Channel<Pair<MessageUtils.MessageImageInfo, List<DuplicateImageData>>>(Channel.UNLIMITED)
+        sendPictures(message.timeCreated.toEpochSecond(), imagesChannel, duplicateChannel)
+        for (duplicate in duplicateChannel) {
+          try {
+            callback(duplicate)
+          } catch (e: Exception) {
+            LOG.log(Level.SEVERE, "Error in callback function: ${duplicate.first}", e)
+          }
         }
       }
     }

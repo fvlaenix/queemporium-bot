@@ -3,6 +3,8 @@ package com.fvlaenix.queemporium.utils
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.database.CompressSize
 import com.fvlaenix.queemporium.database.Size
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import net.coobird.thumbnailator.Thumbnails
 import net.dv8tion.jda.api.entities.Message.Attachment
 import net.dv8tion.jda.api.utils.AttachmentProxy
@@ -22,6 +24,8 @@ private val LOG = Logger.getLogger(DownloadUtils::class.java.name)
 private const val STANDARD_ATTEMPTS = 6
 
 object DownloadUtils {
+  
+  private val DOWNLOAD_SEMAPHORE = Semaphore(16)
   
   @Throws(IOException::class)
   private fun readImage(inputStringGetter: () -> InputStream): BufferedImage {
@@ -58,14 +62,14 @@ object DownloadUtils {
     }
   }
   
-  fun readImageFromUrl(url: String, compressSize: CompressSize): Pair<BufferedImage, Size>? {
-    return readImageFromUrl(url)?.let { (image, size) ->
+  suspend fun readImageFromUrl(url: String, compressSize: CompressSize): Pair<BufferedImage, Size>? {
+    return DOWNLOAD_SEMAPHORE.withPermit { readImageFromUrl(url) }?.let { (image, size) ->
       val scaledSize = compressSize.getScaledSize(size)
       Thumbnails.of(image).size(scaledSize.width, scaledSize.height).asBufferedImage() to size
     }
   }
   
-  fun readImageFromAttachment(attachment: Attachment, compressSize: CompressSize): Pair<BufferedImage, AdditionalImageInfo>? {
+  suspend fun readImageFromAttachment(attachment: Attachment, compressSize: CompressSize): Pair<BufferedImage, AdditionalImageInfo>? {
     var attemptsLeft = STANDARD_ATTEMPTS
     val okHttpClient = OkHttpClient()
     while (attemptsLeft > 0) {
@@ -83,8 +87,10 @@ object DownloadUtils {
         val proxy = attachment.proxy.withClient(client) as AttachmentProxy
         val originalSize = Size(attachment.width, attachment.height)
         val size = compressSize.getScaledSize(originalSize)
-        return readImageRepeatedly({ proxy.download(size.width, size.height).get() }, attempts = 2) to 
-                AdditionalImageInfo(attachment.fileName, attachment.isSpoiler, originalSize.width, originalSize.height)
+        return DOWNLOAD_SEMAPHORE.withPermit {
+          readImageRepeatedly({ proxy.download(size.width, size.height).get() }, attempts = 2) to
+                  AdditionalImageInfo(attachment.fileName, attachment.isSpoiler, originalSize.width, originalSize.height)
+        }
       } catch (e: IOException) {
         LOG.log(Level.SEVERE, "Can't read attachment from file: ${attachment.url}", e)
       } catch (e: ExecutionException) {
