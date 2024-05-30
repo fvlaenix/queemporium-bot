@@ -1,13 +1,11 @@
 package com.fvlaenix.queemporium.commands.duplicate
 
-import com.fvlaenix.queemporium.commands.CoroutineListenerAdapter
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.database.MessageData
 import com.fvlaenix.queemporium.database.MessageDataConnector
 import com.fvlaenix.queemporium.database.MessageId
 import com.fvlaenix.queemporium.database.MessageProblems
 import net.dv8tion.jda.api.events.session.ReadyEvent
-import java.time.Duration
 
 class UploadPicturesCommand(databaseConfiguration: DatabaseConfiguration) : ReportPictureCommand(databaseConfiguration) {
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
@@ -34,7 +32,7 @@ class UploadPicturesCommand(databaseConfiguration: DatabaseConfiguration) : Repo
       DuplicateImageService.sendPictures(
         message = message,
         compressSize = compressSize,
-        withHistoryReload = true
+        withHistoryReload = false
       ) {}
     }
   }
