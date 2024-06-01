@@ -7,7 +7,6 @@ import com.fvlaenix.queemporium.database.MessageId
 import com.fvlaenix.queemporium.utils.CoroutineUtils
 import kotlinx.coroutines.withContext
 import net.dv8tion.jda.api.events.session.ReadyEvent
-import java.time.Duration
 import kotlin.coroutines.coroutineContext
 
 class UploadPicturesCommand(databaseConfiguration: DatabaseConfiguration) : ReportPictureCommand(databaseConfiguration) {
@@ -31,6 +30,8 @@ class UploadPicturesCommand(databaseConfiguration: DatabaseConfiguration) : Repo
         messageProblems = emptyList()
       )
 
+      if (messageDataConnector.get(messageData.messageId) != null) return@runOverOld
+      
       withContext(coroutineContext + CoroutineUtils.CurrentMessageMessageProblemHandler()) {
         assert(coroutineContext[CoroutineUtils.CURRENT_MESSAGE_EXCEPTION_CONTEXT_KEY] != null)
         DuplicateImageService.sendPictures(
