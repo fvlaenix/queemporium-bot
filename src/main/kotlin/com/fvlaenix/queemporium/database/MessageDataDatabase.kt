@@ -13,7 +13,7 @@ data class MessageData(
   val author: String,
   val epoch: Long,
   val countImages: Int,
-  val messageProblems: MessageProblems
+  val messageProblems: List<MessageProblem>
 )
 
 object MessageDataTable : Table() {
@@ -24,7 +24,7 @@ object MessageDataTable : Table() {
   val author = varchar("author", 100)
   val epoch = long("epoch")
   val countImages = integer("countImages")
-  val messageProblems = varchar("messageProblems", 1500)
+  val messageProblems = varchar("messageProblems", 5000)
 }
 
 class MessageDataConnector(private val database: Database) {

@@ -3,19 +3,18 @@ package com.fvlaenix.queemporium.commands.duplicate
 import com.fvlaenix.queemporium.commands.CoroutineListenerAdapter
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.database.*
-import com.fvlaenix.queemporium.exception.EXCEPTION_HANDLER
 import com.fvlaenix.queemporium.utils.AnswerUtils
+import com.fvlaenix.queemporium.utils.CoroutineUtils
+import com.fvlaenix.queemporium.utils.CoroutineUtils.channelTransform
+import com.fvlaenix.queemporium.utils.CoroutineUtils.flatChannelTransform
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.coroutines.coroutineContext
 
 private val LOG = Logger.getLogger(ReportPictureCommand::class.java.name)
 
@@ -41,130 +40,108 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
       author = message.author.id,
       epoch = message.timeCreated.toEpochSecond(),
       countImages = message.attachments.size + message.embeds.size,
-      messageProblems = MessageProblems(emptyList())
+      messageProblems = emptyList()
     )
 
     if (messageDataConnector.get(messageData.messageId) != null) return
     
-    DuplicateImageService.sendPictures(
-      message = message,
-      compressSize = compressSize,
-      withHistoryReload = true
-    ) { (duplicateMessageInfo, originalImageDatas) ->
-      val isSpoiler =
-        duplicateMessageInfo.additionalImageInfo.isSpoiler || originalImageDatas.any { it.additionalImageInfo.isSpoiler }
-      val originalData = originalImageDatas.map {
-        messageDataConnector.get(it.imageId.toMessageId())!! to it
-      }
-      val duplicateMessageDatas = AnswerUtils.sendDuplicateMessageInfo(
-        duplicateChannel = duplicateChannel,
-        messageAuthorId = message.author.id,
-        fileName = duplicateMessageInfo.additionalImageInfo.fileName,
-        image = duplicateMessageInfo.bufferedImage,
-        messageData = messageData,
-        additionalImageInfo = duplicateMessageInfo.additionalImageInfo,
-        isSpoiler = isSpoiler,
-        originalData = originalData
-      )
-      duplicateMessageDatas.forEach { duplicateMessageData ->
-        val dependentMessage = duplicateMessageData.get() ?: return@forEach
-        dependencyConnector.addDependency(
-          MessageDependency(
-            targetMessage = messageData.messageId,
-            dependentMessage = dependentMessage
-          )
+    withContext(coroutineContext + CoroutineUtils.CurrentMessageMessageProblemHandler()) {
+      assert(coroutineContext[CoroutineUtils.CURRENT_MESSAGE_EXCEPTION_CONTEXT_KEY] != null)
+      
+      DuplicateImageService.sendPictures(
+        message = message,
+        compressSize = compressSize,
+        withHistoryReload = true
+      ) { (duplicateMessageInfo, originalImageDatas) ->
+        val isSpoiler =
+          duplicateMessageInfo.additionalImageInfo.isSpoiler || originalImageDatas.any { it.additionalImageInfo.isSpoiler }
+        val originalData = originalImageDatas.map {
+          messageDataConnector.get(it.imageId.toMessageId())!! to it
+        }
+        val duplicateMessageDatas = AnswerUtils.sendDuplicateMessageInfo(
+          duplicateChannel = duplicateChannel,
+          messageAuthorId = message.author.id,
+          fileName = duplicateMessageInfo.additionalImageInfo.fileName,
+          image = duplicateMessageInfo.bufferedImage,
+          messageData = messageData,
+          additionalImageInfo = duplicateMessageInfo.additionalImageInfo,
+          isSpoiler = isSpoiler,
+          originalData = originalData
         )
-        originalImageDatas.forEach { originalImageData ->
+        duplicateMessageDatas.forEach { duplicateMessageData ->
+          val dependentMessage = duplicateMessageData.get() ?: return@forEach
           dependencyConnector.addDependency(
             MessageDependency(
-              targetMessage = originalImageData.imageId.toMessageId(),
+              targetMessage = messageData.messageId,
               dependentMessage = dependentMessage
             )
           )
+          originalImageDatas.forEach { originalImageData ->
+            dependencyConnector.addDependency(
+              MessageDependency(
+                targetMessage = originalImageData.imageId.toMessageId(),
+                dependentMessage = dependentMessage
+              )
+            )
+          }
         }
       }
+
+      val messageProblemsHandler = coroutineContext[CoroutineUtils.CURRENT_MESSAGE_EXCEPTION_CONTEXT_KEY]!!
+      messageDataConnector.add(messageData.copy(messageProblems = messageProblemsHandler.messageProblems))
     }
-    messageDataConnector.add(messageData)
   }
   
-  @OptIn(DelicateCoroutinesApi::class)
   suspend fun runOverOld(jda: JDA, takeWhile: (Message) -> Boolean, computeMessage: suspend (Message) -> Unit) {
-    val channelsThreadContext = newFixedThreadPoolContext(16, "Report Pictures Thread Pool")
-
-    val channelsChannel = Channel<MessageChannel>(Channel.UNLIMITED)
-    val channelsWork = AtomicInteger(0)
-    val channelsDone = AtomicInteger(0)
-    val messageChannel = Channel<Message>(Channel.UNLIMITED)
-    val messageWork = AtomicInteger(0)
-    val messageDone = AtomicInteger(0)
+    val guildCounter = CoroutineUtils.AtomicProgressCounter()
+    val channelCounter = CoroutineUtils.AtomicProgressCounter()
+    val messageCounter = CoroutineUtils.AtomicProgressCounter()
     coroutineScope {
-      LOG.log(Level.INFO, "Start revenge on guilds")
-      jda.guilds.forEach guild@{ guild ->
+      guildCounter.totalIncrease(jda.guilds.size)
+      val channelsChannel = flatChannelTransform(jda.guilds, 2) { guild ->
         val guildId = guild.id
-        LOG.log(Level.INFO, "Start revenge on guild ${guild.name}")
-        guild.channels.forEach channel@{ channel ->
+        LOG.log(Level.INFO, "Guild processing ${guildCounter.status()}: ${guild.name}")
+        val channels = guild.channels.mapNotNull channel@{ channel ->
           val channelId = channel.id
           if (channel is MessageChannel) {
-            if (guildInfoConnector.isChannelExclude(guildId, channelId)) return@channel
-            if (guildInfoConnector.getDuplicateInfoChannel(guildId) == channelId) return@channel
-
-            channelsChannel.send(channel)
-            channelsWork.incrementAndGet()
+            if (guildInfoConnector.isChannelExclude(guildId, channelId)) return@channel null
+            if (guildInfoConnector.getDuplicateInfoChannel(guildId) == channelId) return@channel null
+            channel
+          } else {
+            null
           }
         }
+        channelCounter.totalIncrease(channels.size)
+        guildCounter.doneIncrement()
+        channels
       }
-      channelsChannel.close()
-
-      val channelsJobs = mutableListOf<Job>()
-      LOG.log(Level.INFO, "Start revenge on channels")
-      for (channel in channelsChannel) {
-        val job = launch(channelsThreadContext + EXCEPTION_HANDLER) {
-          channelsDone.incrementAndGet()
-          var isLoaded = false
-          while (!isLoaded) {
-            LOG.log(Level.INFO, "Start revenge on channel [${channelsDone.get()}/${channelsWork.get()}]: ${channel.name}")
-            try {
-              val messages = channel.iterableHistory.takeWhile(takeWhile).reversed()
-              messages.forEach { message ->
-                messageChannel.send(message)
-                messageWork.incrementAndGet()
-              }
-              isLoaded = true
-            } catch (_: InsufficientPermissionException) { 
-              LOG.log(Level.INFO, "Insufficient permissions for channel ${channel.name}")
-              isLoaded = true
-            } catch (e: InterruptedException) {
-              LOG.log(Level.WARNING, "Interrupted exception while take messages", e)
-            }
-          }
-          LOG.log(Level.INFO, "Finish revenge on channel: ${channel.name}")
-        }
-        channelsJobs.add(job)
-      }
-      launch(channelsThreadContext + EXCEPTION_HANDLER) {
-        channelsJobs.joinAll()
-        LOG.log(Level.FINE, "Finish revenges on channels")
-        messageChannel.close()
-      }
-
-      val messageJobs = mutableListOf<Job>()
-      LOG.log(Level.INFO, "Start revenge on messages")
-      val messagesSemaphore = Semaphore(16)
-      for (message in messageChannel) {
-        val job = launch(channelsThreadContext + EXCEPTION_HANDLER) {
-          messagesSemaphore.withPermit {
-            val messageNumber = messageDone.getAndIncrement()
-            if (messageNumber % 100 == 0) {
-              LOG.log(Level.INFO, "Start revenge on message [$messageNumber/${messageWork.get()}] from channel: ${message.channel.name}")
-            }
-            computeMessage(message)
+      val messagesChannel = flatChannelTransform(channelsChannel, 4) { channel ->
+        var attempts = 5
+        LOG.log(Level.INFO, "Channel processing ${channelCounter.status()}: ${channel.getName()}")
+        while (attempts > 0) {
+          attempts--
+          try {
+            val messages = channel.iterableHistory.takeWhile(takeWhile).reversed()
+            messageCounter.totalIncrease(messages.size)
+            channelCounter.doneIncrement()
+            return@flatChannelTransform messages
+          } catch (_: InsufficientPermissionException) {
+            LOG.log(Level.INFO, "Insufficient permissions for channel ${channel.getName()}")
+            channelCounter.doneIncrement()
+            return@flatChannelTransform emptyList()
+          } catch (e: InterruptedException) {
+            LOG.log(Level.WARNING, "Interrupted exception while take messages", e)
           }
         }
-        messageJobs.add(job)
+        LOG.log(Level.SEVERE, "Can't take channel ${channel.getName()} in few attempts")
+        emptyList()
       }
-      launch(channelsThreadContext + EXCEPTION_HANDLER) {
-        messageJobs.joinAll()
-        LOG.log(Level.FINE, "Finish revenges on messages")
+      channelTransform(messagesChannel, 8) { message ->
+        val messageNumber = messageCounter.doneIncrement()
+        if (messageNumber % 100 == 0) {
+          LOG.log(Level.INFO, "Message processing ${messageCounter.status()}")
+        }
+        computeMessage(message)
       }
     }
   }

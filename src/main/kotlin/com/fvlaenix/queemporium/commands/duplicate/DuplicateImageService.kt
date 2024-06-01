@@ -8,9 +8,11 @@ import com.fvlaenix.duplicate.protobuf.getCompressionSizeRequest
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.database.CompressSize
 import com.fvlaenix.queemporium.database.ImageId
+import com.fvlaenix.queemporium.database.MessageProblem
 import com.fvlaenix.queemporium.exception.EXCEPTION_HANDLER
 import com.fvlaenix.queemporium.utils.ChannelUtils
 import com.fvlaenix.queemporium.utils.ChannelUtils.STANDARD_IMAGE_CHANNEL_SIZE
+import com.fvlaenix.queemporium.utils.CoroutineUtils
 import com.fvlaenix.queemporium.utils.MessageUtils
 import com.fvlaenix.queemporium.utils.MessageUtils.addImagesFromMessage
 import com.google.protobuf.kotlin.toByteString
@@ -28,6 +30,7 @@ import java.io.ByteArrayOutputStream
 import java.util.logging.Level
 import java.util.logging.Logger
 import javax.imageio.ImageIO
+import kotlin.coroutines.coroutineContext
 import kotlin.io.path.Path
 import kotlin.io.path.extension
 
@@ -80,7 +83,11 @@ object DuplicateImageService {
       return null
     }
     if (result.hasError()) {
+      coroutineContext[CoroutineUtils.CURRENT_MESSAGE_EXCEPTION_CONTEXT_KEY]?.messageProblems?.add(
+        MessageProblem.ImageProblem.InternalError(imageId.numberInMessage, result.error)
+      )
       LOG.log(Level.SEVERE, "Error in request to server with image: $imageId: ${result.error}")
+      return null
     }
     val responseOK = result.responseOk
     return responseOK.imageInfo.imagesList.map { DuplicateImageData(
