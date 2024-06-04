@@ -49,7 +49,7 @@ object DownloadUtils {
       }
       attemptsLeft--
     }
-    throw IllegalStateException()
+    throw IOException("Count of attempts failed")
   }
   
   private fun readImageFromUrl(url: String): Pair<BufferedImage, Size>? {
