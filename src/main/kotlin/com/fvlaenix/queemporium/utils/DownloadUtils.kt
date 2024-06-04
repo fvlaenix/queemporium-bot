@@ -28,7 +28,7 @@ object DownloadUtils {
   private val DOWNLOAD_SEMAPHORE = Semaphore(16)
   
   @Throws(IOException::class)
-  private fun readImage(inputStringGetter: () -> InputStream): BufferedImage {
+  private fun readImage(inputStringGetter: () -> InputStream): BufferedImage? {
     return inputStringGetter().use { inputStream ->
       ImageIO.read(inputStream)
     }
