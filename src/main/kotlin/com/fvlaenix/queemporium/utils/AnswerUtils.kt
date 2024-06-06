@@ -2,7 +2,7 @@ package com.fvlaenix.queemporium.utils
 
 import com.fvlaenix.queemporium.commands.duplicate.DuplicateImageService
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
-import com.fvlaenix.queemporium.database.MessageData
+import com.fvlaenix.queemporium.database.MessageDuplicateData
 import com.fvlaenix.queemporium.database.MessageId
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
@@ -78,10 +78,10 @@ object AnswerUtils {
     messageAuthorId: String,
     fileName: String,
     image: BufferedImage,
-    messageData: MessageData,
+    messageData: MessageDuplicateData.FullInfo,
     additionalImageInfo: AdditionalImageInfo,
     isSpoiler: Boolean,
-    originalData: List<Pair<MessageData, DuplicateImageService.DuplicateImageData>>
+    originalData: List<Pair<MessageDuplicateData.FullInfo, DuplicateImageService.DuplicateImageData>>
   ): List<Future<MessageId?>> {
     val duplicateMessageDatas = mutableListOf<Future<MessageId?>>()
     

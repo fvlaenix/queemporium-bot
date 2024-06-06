@@ -21,6 +21,7 @@ private val LOG = Logger.getLogger(ReportPictureCommand::class.java.name)
 abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration) : CoroutineListenerAdapter() {
   private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
+  private val messageDuplicateDataConnector = MessageDuplicateDataConnector(databaseConfiguration.toDatabase())
   private val dependencyConnector = MessageDependencyConnector(databaseConfiguration.toDatabase())
   
   suspend fun getMessage(compressSize: CompressSize, message: Message) {
@@ -28,22 +29,28 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
     val duplicateChannelId = guildInfoConnector.getDuplicateInfoChannel(message.guildId!!) ?: return
     val duplicateChannel = message.guild.getTextChannelById(duplicateChannelId) ?: return
 
+    val messageId = MessageId(
+      guildId = message.guildId!!,
+      channelId = message.channel.id,
+      messageId = message.id
+    )
     val messageData = MessageData(
-      messageId = MessageId(
-        guildId = message.guildId!!,
-        channelId = message.channel.id,
-        messageId = message.id
-      ),
+      messageId = messageId,
       text = message.contentRaw,
-      hasSource = message.contentRaw.contains("http"),
       url = message.jumpUrl,
       author = message.author.id,
       epoch = message.timeCreated.toEpochSecond(),
+    )
+    val messageDuplicateData = MessageDuplicateData(
+      messageId = messageId,
+      hasSource = message.contentRaw.contains("http"),
       countImages = message.attachments.size + message.embeds.size,
       messageProblems = emptyList()
     )
+    val fullData = messageDuplicateData.withMessageData(messageData)
 
-    if (messageDataConnector.get(messageData.messageId) != null) return
+    messageDataConnector.add(messageData)
+    if (messageDuplicateDataConnector.get(messageData.messageId) != null) return
     
     withContext(coroutineContext + CoroutineUtils.CurrentMessageMessageProblemHandler()) {
       assert(coroutineContext[CoroutineUtils.CURRENT_MESSAGE_EXCEPTION_CONTEXT_KEY] != null)
@@ -56,14 +63,14 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
         val isSpoiler =
           duplicateMessageInfo.additionalImageInfo.isSpoiler || originalImageDatas.any { it.additionalImageInfo.isSpoiler }
         val originalData = originalImageDatas.map {
-          messageDataConnector.get(it.imageId.toMessageId())!! to it
+          messageDuplicateDataConnector.get(it.imageId.toMessageId())!!.withMessageData(messageDataConnector.get(it.imageId.toMessageId())!!) to it
         }
         val duplicateMessageDatas = AnswerUtils.sendDuplicateMessageInfo(
           duplicateChannel = duplicateChannel,
           messageAuthorId = message.author.id,
           fileName = duplicateMessageInfo.additionalImageInfo.fileName,
           image = duplicateMessageInfo.bufferedImage,
-          messageData = messageData,
+          messageData = fullData,
           additionalImageInfo = duplicateMessageInfo.additionalImageInfo,
           isSpoiler = isSpoiler,
           originalData = originalData
@@ -88,7 +95,7 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
       }
 
       val messageProblemsHandler = coroutineContext[CoroutineUtils.CURRENT_MESSAGE_EXCEPTION_CONTEXT_KEY]!!
-      messageDataConnector.add(messageData.copy(messageProblems = messageProblemsHandler.messageProblems))
+      messageDuplicateDataConnector.add(messageDuplicateData.copy(messageProblems = messageProblemsHandler.messageProblems))
     }
   }
   
