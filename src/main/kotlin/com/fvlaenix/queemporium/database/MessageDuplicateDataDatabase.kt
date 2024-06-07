@@ -29,7 +29,7 @@ data class MessageDuplicateData(
       messageData.text,
       hasSource,
       messageData.url,
-      messageData.author,
+      messageData.authorId,
       messageData.epoch,
       countImages,
       messageProblems

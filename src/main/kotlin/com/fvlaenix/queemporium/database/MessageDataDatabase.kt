@@ -9,7 +9,7 @@ data class MessageData(
   val messageId: MessageId,
   val text: String,
   val url: String,
-  val author: String,
+  val authorId: String,
   val epoch: Long,
 )
 
@@ -17,7 +17,7 @@ object MessageDataTable : Table() {
   val messageId = varchar("messageId", 400).primaryKey()
   val text = varchar("text", 5000)
   val url = varchar("url", 300)
-  val author = varchar("author", 100)
+  val authorId = varchar("authorId", 100)
   val epoch = long("epoch")
 }
 
@@ -35,7 +35,7 @@ class MessageDataConnector(private val database: Database) {
       it[messageId] = Json.encodeToString(messageData.messageId)
       it[text] = messageData.text
       it[url] = messageData.url
-      it[author] = messageData.author
+      it[authorId] = messageData.authorId
       it[epoch] = messageData.epoch
     }
   }
@@ -53,7 +53,7 @@ class MessageDataConnector(private val database: Database) {
       Json.decodeFromString(resultRow[MessageDataTable.messageId]),
       resultRow[MessageDataTable.text],
       resultRow[MessageDataTable.url],
-      resultRow[MessageDataTable.author],
+      resultRow[MessageDataTable.authorId],
       resultRow[MessageDataTable.epoch],
     )
   }

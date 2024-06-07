@@ -38,7 +38,7 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
       messageId = messageId,
       text = message.contentRaw,
       url = message.jumpUrl,
-      author = message.author.id,
+      authorId = message.author.id,
       epoch = message.timeCreated.toEpochSecond(),
     )
     val messageDuplicateData = MessageDuplicateData(

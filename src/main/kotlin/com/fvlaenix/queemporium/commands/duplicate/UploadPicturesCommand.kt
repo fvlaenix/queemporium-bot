@@ -23,7 +23,7 @@ class UploadPicturesCommand(databaseConfiguration: DatabaseConfiguration) : Repo
         messageId = messageId,
         text = message.contentRaw,
         url = message.jumpUrl,
-        author = message.author.id,
+        authorId = message.author.id,
         epoch = message.timeCreated.toEpochSecond(),
       )
       val messageDuplicateData = MessageDuplicateData(
