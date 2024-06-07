@@ -34,7 +34,7 @@ class UploadPicturesCommand(databaseConfiguration: DatabaseConfiguration) : Repo
       )
       
       messageDataConnector.add(messageData)
-      if (messageDuplicateDataConnector.get(messageData.messageId) != null) return@runOverOld
+      if (messageDuplicateDataConnector.exists(messageData.messageId)) return@runOverOld
       
       withContext(coroutineContext + CoroutineUtils.CurrentMessageMessageProblemHandler()) {
         assert(coroutineContext[CoroutineUtils.CURRENT_MESSAGE_EXCEPTION_CONTEXT_KEY] != null)

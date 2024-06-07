@@ -13,7 +13,7 @@ class RevengePicturesCommand(databaseConfiguration: DatabaseConfiguration) : Rep
     
     runOverOld(event.jda, { message ->
       val messageId = MessageId(message.guildId, message.channelId, message.id)
-      messageDuplicateDataConnector.get(messageId) == null
+      !messageDuplicateDataConnector.exists(messageId)
     }) { message ->
       getMessage(compressSize, message)
     }

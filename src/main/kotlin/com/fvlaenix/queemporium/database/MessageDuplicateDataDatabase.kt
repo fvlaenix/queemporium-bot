@@ -62,6 +62,10 @@ class MessageDuplicateDataConnector(val database: Database) {
     }
   }
   
+  fun exists(messageId: MessageId): Boolean = transaction(database) {
+    MessageDuplicateDataTable.select { MessageDuplicateDataTable.messageId eq Json.encodeToString(messageId) }.count() > 0
+  }
+  
   fun get(messageId: MessageId) = transaction(database) {
     val result =
       MessageDuplicateDataTable.select { MessageDuplicateDataTable.messageId eq Json.encodeToString(messageId) }

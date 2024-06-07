@@ -50,7 +50,7 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
     val fullData = messageDuplicateData.withMessageData(messageData)
 
     messageDataConnector.add(messageData)
-    if (messageDuplicateDataConnector.get(messageData.messageId) != null) return
+    if (messageDuplicateDataConnector.exists(messageData.messageId)) return
     
     withContext(coroutineContext + CoroutineUtils.CurrentMessageMessageProblemHandler()) {
       assert(coroutineContext[CoroutineUtils.CURRENT_MESSAGE_EXCEPTION_CONTEXT_KEY] != null)
