@@ -1,11 +1,9 @@
 package com.fvlaenix.queemporium.commands.duplicate
 
 import com.fvlaenix.duplicate.protobuf.deleteImageRequest
-import com.fvlaenix.queemporium.commands.CoroutineListenerAdapter
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.database.*
 import com.fvlaenix.queemporium.exception.EXCEPTION_HANDLER
-import com.fvlaenix.queemporium.utils.AnswerUtils
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -19,6 +17,7 @@ import net.dv8tion.jda.api.events.session.ReadyEvent
 class OnlinePictureCompare(databaseConfiguration: DatabaseConfiguration) : ReportPictureCommand(databaseConfiguration) {
   private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
+  private val messageDuplicateDataConnector = MessageDuplicateDataConnector(databaseConfiguration.toDatabase())
   
   @OptIn(DelicateCoroutinesApi::class)
   private val comparingContext = newFixedThreadPoolContext(10, "Online Compare Image")
@@ -53,12 +52,13 @@ class OnlinePictureCompare(databaseConfiguration: DatabaseConfiguration) : Repor
       guildInfoConnector.isChannelExclude(guildId, channelId) ||
       guildInfoConnector.getDuplicateInfoChannel(guildId) == channelId
     ) return
-    val messageData = messageDataConnector.get(messageDataId) ?: return
+    val messageDuplicateData = messageDuplicateDataConnector.get(messageDataId) ?: return
     DuplicateImageService.withOpenedChannel { service ->
-      (0 until messageData.countImages).forEach { numberImage ->
+      (0 until messageDuplicateData.countImages).forEach { numberImage ->
         service.deleteImage(deleteImageRequest { this.imageId = Json.encodeToString(messageDataId.withImageNumber(numberImage)) })
       }
     }
     messageDataConnector.delete(messageDataId)
+    messageDuplicateDataConnector.delete(messageDataId)
   }
 }

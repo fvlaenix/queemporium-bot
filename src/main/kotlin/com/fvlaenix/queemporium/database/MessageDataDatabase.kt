@@ -8,23 +8,17 @@ import org.jetbrains.exposed.sql.transactions.transaction
 data class MessageData(
   val messageId: MessageId,
   val text: String,
-  val hasSource: Boolean,
   val url: String,
   val author: String,
   val epoch: Long,
-  val countImages: Int,
-  val messageProblems: List<MessageProblem>
 )
 
 object MessageDataTable : Table() {
   val messageId = varchar("messageId", 400).primaryKey()
   val text = varchar("text", 5000)
-  val hasSource = bool("hasSource")
   val url = varchar("url", 300)
   val author = varchar("author", 100)
   val epoch = long("epoch")
-  val countImages = integer("countImages")
-  val messageProblems = varchar("messageProblems", 5000)
 }
 
 class MessageDataConnector(private val database: Database) {
@@ -40,12 +34,9 @@ class MessageDataConnector(private val database: Database) {
     MessageDataTable.insert {
       it[messageId] = Json.encodeToString(messageData.messageId)
       it[text] = messageData.text
-      it[hasSource] = messageData.hasSource
       it[url] = messageData.url
       it[author] = messageData.author
       it[epoch] = messageData.epoch
-      it[countImages] = messageData.countImages
-      it[messageProblems] = Json.encodeToString(messageData.messageProblems)
     }
   }
   
@@ -61,12 +52,9 @@ class MessageDataConnector(private val database: Database) {
     fun get(resultRow: ResultRow): MessageData = MessageData(
       Json.decodeFromString(resultRow[MessageDataTable.messageId]),
       resultRow[MessageDataTable.text],
-      resultRow[MessageDataTable.hasSource],
       resultRow[MessageDataTable.url],
       resultRow[MessageDataTable.author],
       resultRow[MessageDataTable.epoch],
-      resultRow[MessageDataTable.countImages],
-      Json.decodeFromString(resultRow[MessageDataTable.messageProblems])
     )
   }
 }
