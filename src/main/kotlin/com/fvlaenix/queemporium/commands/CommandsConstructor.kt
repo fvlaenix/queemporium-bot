@@ -3,7 +3,11 @@ package com.fvlaenix.queemporium.commands
 import com.fvlaenix.queemporium.configuration.BotConfiguration
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import net.dv8tion.jda.api.hooks.ListenerAdapter
+import java.util.logging.Level
+import java.util.logging.Logger
 import kotlin.reflect.javaType
+
+private val LOG = Logger.getLogger(CommandsConstructor::class.java.name)
 
 object CommandsConstructor {
   private val PACKAGES_CANDIDATES: List<String> = listOf(
@@ -58,6 +62,7 @@ object CommandsConstructor {
       val newCommand = constructor.call(*parameters.toTypedArray()) as ListenerAdapter
       commands.add(newCommand)
     }
+    LOG.log(Level.INFO, "Bot options: ${commands.map { it::class.simpleName }}")
     return commands
   }
 }
