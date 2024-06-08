@@ -5,18 +5,12 @@ import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.database.*
 import com.fvlaenix.queemporium.utils.AnswerUtils
 import com.fvlaenix.queemporium.utils.CoroutineUtils
-import com.fvlaenix.queemporium.utils.CoroutineUtils.channelTransform
-import com.fvlaenix.queemporium.utils.CoroutineUtils.flatChannelTransform
-import kotlinx.coroutines.*
+import kotlinx.coroutines.withContext
 import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
-import net.dv8tion.jda.api.exceptions.InsufficientPermissionException
-import java.util.logging.Level
-import java.util.logging.Logger
 import kotlin.coroutines.coroutineContext
-
-private val LOG = Logger.getLogger(ReportPictureCommand::class.java.name)
 
 abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration) : CoroutineListenerAdapter() {
   private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
@@ -100,56 +94,26 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
   }
   
   suspend fun runOverOld(jda: JDA, takeWhile: (Message) -> Boolean, computeMessage: suspend (Message) -> Unit) {
-    val guildCounter = CoroutineUtils.AtomicProgressCounter()
-    val channelCounter = CoroutineUtils.AtomicProgressCounter()
-    val messageCounter = CoroutineUtils.AtomicProgressCounter()
-    coroutineScope {
-      guildCounter.totalIncrease(jda.guilds.size)
-      val channelsChannel = flatChannelTransform(jda.guilds, 2) { guild ->
-        val guildId = guild.id
-        LOG.log(Level.INFO, "Guild processing ${guildCounter.status()}: ${guild.name}")
-        val channels = guild.channels.mapNotNull channel@{ channel ->
-          val channelId = channel.id
-          if (channel is MessageChannel) {
-            if (guildInfoConnector.isChannelExclude(guildId, channelId)) return@channel null
-            if (guildInfoConnector.getDuplicateInfoChannel(guildId) == channelId) return@channel null
-            channel
-          } else {
-            null
-          }
+    val computeGuild: (Guild) -> List<MessageChannel> = { guild ->
+      val guildId = guild.id
+      guild.channels.mapNotNull channel@{ channel ->
+        val channelId = channel.id
+        if (channel is MessageChannel) {
+          if (guildInfoConnector.isChannelExclude(guildId, channelId)) return@channel null
+          if (guildInfoConnector.getDuplicateInfoChannel(guildId) == channelId) return@channel null
+          channel
+        } else {
+          null
         }
-        channelCounter.totalIncrease(channels.size)
-        guildCounter.doneIncrement()
-        channels
-      }
-      val messagesChannel = flatChannelTransform(channelsChannel, 4) { channel ->
-        var attempts = 5
-        LOG.log(Level.INFO, "Channel processing ${channelCounter.status()}: ${channel.getName()}")
-        while (attempts > 0) {
-          attempts--
-          try {
-            val messages = channel.iterableHistory.takeWhile(takeWhile).reversed()
-            messageCounter.totalIncrease(messages.size)
-            channelCounter.doneIncrement()
-            return@flatChannelTransform messages
-          } catch (_: InsufficientPermissionException) {
-            LOG.log(Level.INFO, "Insufficient permissions for channel ${channel.getName()}")
-            channelCounter.doneIncrement()
-            return@flatChannelTransform emptyList()
-          } catch (e: InterruptedException) {
-            LOG.log(Level.WARNING, "Interrupted exception while take messages", e)
-          }
-        }
-        LOG.log(Level.SEVERE, "Can't take channel ${channel.getName()} in few attempts")
-        emptyList()
-      }
-      channelTransform(messagesChannel, 8) { message ->
-        val messageNumber = messageCounter.doneIncrement()
-        if (messageNumber % 100 == 0) {
-          LOG.log(Level.INFO, "Message processing ${messageCounter.status()}")
-        }
-        computeMessage(message)
       }
     }
+    
+    runOverOld(
+      jda = jda, 
+      jobName = "DuplicatePicture",
+      computeGuild = computeGuild,
+      takeWhile = takeWhile,
+      computeMessage = computeMessage
+    )
   }
 }
