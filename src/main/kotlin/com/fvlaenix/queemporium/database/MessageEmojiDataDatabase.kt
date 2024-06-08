@@ -1,12 +1,10 @@
 package com.fvlaenix.queemporium.database
 
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 data class MessageEmojiData(
-  val messageId: MessageId,
+  val messageId: String,
   val count: Int
 )
 
@@ -23,31 +21,31 @@ class MessageEmojiDataConnector(val database: Database) {
   }
   
   fun insert(message: MessageEmojiData) = transaction(database) {
-    if (MessageEmojiDataTable.select { MessageEmojiDataTable.messageId eq Json.encodeToString(message.messageId) }.count() > 0) {
-      MessageEmojiDataTable.update({ MessageEmojiDataTable.messageId eq Json.encodeToString(message.messageId) }) {
-        it[messageId] = Json.encodeToString(message.messageId)
+    if (MessageEmojiDataTable.select { MessageEmojiDataTable.messageId eq message.messageId }.count() > 0) {
+      MessageEmojiDataTable.update({ MessageEmojiDataTable.messageId eq message.messageId }) {
+        it[messageId] = message.messageId
         it[count] = message.count
       }
     } else {
       MessageEmojiDataTable.insert {
-        it[messageId] = Json.encodeToString(message.messageId)
+        it[messageId] = message.messageId
         it[count] = message.count
       }
     }
   }
   
-  fun get(messageId: MessageId) = transaction(database) {
-    MessageEmojiDataTable.select { MessageEmojiDataTable.messageId eq Json.encodeToString(messageId) }
+  fun get(messageId: String) = transaction(database) {
+    MessageEmojiDataTable.select { MessageEmojiDataTable.messageId eq messageId }
       .singleOrNull()?.let { get(it) }
   }
   
-  fun delete(messageId: MessageId) = transaction(database) {
-    MessageEmojiDataTable.deleteWhere { MessageEmojiDataTable.messageId eq Json.encodeToString(messageId) }
+  fun delete(messageId: String) = transaction(database) {
+    MessageEmojiDataTable.deleteWhere { MessageEmojiDataTable.messageId eq messageId }
   }
   
   companion object {
     fun get(resultRow: ResultRow) = MessageEmojiData(
-      Json.decodeFromString(resultRow[MessageEmojiDataTable.messageId]),
+      resultRow[MessageEmojiDataTable.messageId],
       resultRow[MessageEmojiDataTable.count]
     )
   }

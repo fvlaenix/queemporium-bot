@@ -3,7 +3,6 @@ package com.fvlaenix.queemporium.commands
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.database.MessageData
 import com.fvlaenix.queemporium.database.MessageDataConnector
-import com.fvlaenix.queemporium.database.MessageId
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
@@ -14,13 +13,11 @@ class MessagesStoreCommand(val databaseConfiguration: DatabaseConfiguration) : C
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
   
   private fun computeMessage(message: Message) {
-    val messageId = MessageId(
-      guildId = message.guildId!!,
-      channelId = message.channel.id,
-      messageId = message.id
-    )
+    val messageId = message.id
     val messageData = MessageData(
       messageId = messageId,
+      guildId = message.guildId,
+      channelId = message.channelId,
       text = message.contentRaw,
       url = message.jumpUrl,
       authorId = message.author.id,

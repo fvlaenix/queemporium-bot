@@ -55,6 +55,8 @@ object DuplicateImageService {
   }
   
   private suspend fun sendPicture(
+    guildId: String?,
+    channelId: String,
     imageId: ImageId,
     additionalImageInfo: AdditionalImageInfo,
     image: BufferedImage,
@@ -65,7 +67,7 @@ object DuplicateImageService {
       withOpenedChannel { service ->
         service.addImageWithCheck(
           addImageRequest {
-            this.group = imageId.guildId ?: "private-channel-${imageId.channelId}"
+            this.group = guildId ?: "private-channel-${channelId}"
             this.imageId = Json.encodeToString(imageId)
             this.additionalInfo = Json.encodeToString(additionalImageInfo)
             this.image = com.fvlaenix.image.protobuf.image {
@@ -107,6 +109,8 @@ object DuplicateImageService {
       for (picture in channelInput) {
         val job = launch(EXCEPTION_HANDLER) picture@{
           val result = sendPicture(
+            guildId = picture.guildId,
+            channelId = picture.channelId,
             imageId = picture.imageId,
             additionalImageInfo = picture.additionalImageInfo,
             image = picture.bufferedImage,

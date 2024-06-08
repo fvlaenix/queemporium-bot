@@ -15,6 +15,8 @@ import java.net.URL
 object MessageUtils {
   data class MessageImageInfo(
     val bufferedImage: BufferedImage,
+    val guildId: String?,
+    val channelId: String,
     val imageId: ImageId,
     val additionalImageInfo: AdditionalImageInfo
   )
@@ -35,7 +37,9 @@ object MessageUtils {
             channel.send(
               MessageImageInfo(
                 bufferedImage = image,
-                imageId = ImageId(serverId, channelId, messageId, id), 
+                guildId = serverId,
+                channelId = channelId,
+                imageId = ImageId(messageId, id), 
                 additionalImageInfo = additionalInfo
               )
             )
@@ -58,7 +62,9 @@ object MessageUtils {
               channel.send(
                 MessageImageInfo(
                   bufferedImage = image,
-                  imageId = ImageId(serverId, channelId, messageId, id),
+                  guildId = serverId,
+                  channelId = channelId,
+                  imageId = ImageId(messageId, id),
                   additionalImageInfo = AdditionalImageInfo(
                     fileName = URL(url).file,
                     isSpoiler = false, // Can't take is spoiler from embed

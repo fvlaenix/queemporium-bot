@@ -3,7 +3,6 @@ package com.fvlaenix.queemporium.utils
 import com.fvlaenix.queemporium.commands.duplicate.DuplicateImageService
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.database.MessageDuplicateData
-import com.fvlaenix.queemporium.database.MessageId
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
 import net.dv8tion.jda.api.utils.FileUpload
@@ -47,11 +46,11 @@ object AnswerUtils {
   fun MessageChannel.sendMessageNow(
     text: String,
     imageWithFileNames: List<ImageUploadInfo> = emptyList(),
-  ): Future<MessageId?> {
+  ): Future<String?> {
     assert(text.length <= 2000)
     val fileUploads = imageWithFileNames.map(::toFileUpload)
     
-    val future = CompletableFuture<MessageId?>()
+    val future = CompletableFuture<String?>()
     val callback: (Throwable) -> Unit = {
       future.complete(null)
       LOG.log(Level.SEVERE, "Can't send message with ${text.take(200)}, length: ${text.length}, fileUploadsCount: ${fileUploads.size}", it)
@@ -59,14 +58,14 @@ object AnswerUtils {
     
     if (fileUploads.isNotEmpty()) { sendFiles(fileUploads).addContent(text) } 
     else { sendMessage(text) }
-      .queue({ future.complete(MessageId(it.guildId!!, it.channelId, it.id)) }, callback)
+      .queue({ future.complete(it.id) }, callback)
     return future
   }
   
   fun Message.sendReplyNow(
     text: String,
     imageWithFileNames: List<ImageUploadInfo> = emptyList(),
-  ): Future<MessageId?> {
+  ): Future<String?> {
     return channel.sendMessageNow(
       text = text, 
       imageWithFileNames = imageWithFileNames
@@ -82,8 +81,8 @@ object AnswerUtils {
     additionalImageInfo: AdditionalImageInfo,
     isSpoiler: Boolean,
     originalData: List<Pair<MessageDuplicateData.FullInfo, DuplicateImageService.DuplicateImageData>>
-  ): List<Future<MessageId?>> {
-    val duplicateMessageDatas = mutableListOf<Future<MessageId?>>()
+  ): List<Future<String?>> {
+    val duplicateMessageDatas = mutableListOf<Future<String?>>()
     
     val prefix = """
         $messageAuthorId (no tag while beta testing) made repost!

@@ -23,13 +23,11 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
     val duplicateChannelId = guildInfoConnector.getDuplicateInfoChannel(message.guildId!!) ?: return
     val duplicateChannel = message.guild.getTextChannelById(duplicateChannelId) ?: return
 
-    val messageId = MessageId(
-      guildId = message.guildId!!,
-      channelId = message.channel.id,
-      messageId = message.id
-    )
+    val messageId = message.id
     val messageData = MessageData(
       messageId = messageId,
+      guildId = message.guildId,
+      channelId = message.channelId,
       text = message.contentRaw,
       url = message.jumpUrl,
       authorId = message.author.id,
@@ -57,7 +55,7 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
         val isSpoiler =
           duplicateMessageInfo.additionalImageInfo.isSpoiler || originalImageDatas.any { it.additionalImageInfo.isSpoiler }
         val originalData = originalImageDatas.map {
-          messageDuplicateDataConnector.get(it.imageId.toMessageId())!!.withMessageData(messageDataConnector.get(it.imageId.toMessageId())!!) to it
+          messageDuplicateDataConnector.get(it.imageId.messageId)!!.withMessageData(messageDataConnector.get(it.imageId.messageId)!!) to it
         }
         val duplicateMessageDatas = AnswerUtils.sendDuplicateMessageInfo(
           duplicateChannel = duplicateChannel,
@@ -80,7 +78,7 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
           originalImageDatas.forEach { originalImageData ->
             dependencyConnector.addDependency(
               MessageDependency(
-                targetMessage = originalImageData.imageId.toMessageId(),
+                targetMessage = originalImageData.imageId.messageId,
                 dependentMessage = dependentMessage
               )
             )

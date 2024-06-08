@@ -1,12 +1,12 @@
 package com.fvlaenix.queemporium.database
 
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 data class MessageData(
-  val messageId: MessageId,
+  val messageId: String,
+  val guildId: String?,
+  val channelId: String,
   val text: String,
   val url: String,
   val authorId: String,
@@ -15,6 +15,8 @@ data class MessageData(
 
 object MessageDataTable : Table() {
   val messageId = varchar("messageId", 400).primaryKey()
+  val guildId = varchar("guildId", 100).nullable()
+  val channelId = varchar("channelId", 100)
   val text = varchar("text", 5000)
   val url = varchar("url", 300)
   val authorId = varchar("authorId", 100)
@@ -29,10 +31,12 @@ class MessageDataConnector(private val database: Database) {
   }
   
   fun add(messageData: MessageData) = transaction(database) {
-    val message = MessageDataTable.select { MessageDataTable.messageId eq Json.encodeToString(messageData.messageId) }
+    val message = MessageDataTable.select { MessageDataTable.messageId eq messageData.messageId }
     if (message.count() > 0) return@transaction 
     MessageDataTable.insert {
-      it[messageId] = Json.encodeToString(messageData.messageId)
+      it[messageId] = messageData.messageId
+      it[guildId] = messageData.guildId
+      it[channelId] = messageData.channelId
       it[text] = messageData.text
       it[url] = messageData.url
       it[authorId] = messageData.authorId
@@ -40,17 +44,19 @@ class MessageDataConnector(private val database: Database) {
     }
   }
   
-  fun get(messageId: MessageId): MessageData? = transaction(database) {
-    MessageDataTable.select { MessageDataTable.messageId eq Json.encodeToString(messageId) }.map { get(it) }.singleOrNull()
+  fun get(messageId: String): MessageData? = transaction(database) {
+    MessageDataTable.select { MessageDataTable.messageId eq messageId }.map { get(it) }.singleOrNull()
   }
   
-  fun delete(messageId: MessageId) = transaction(database) { 
-    MessageDataTable.deleteWhere { MessageDataTable.messageId eq Json.encodeToString(messageId) }
+  fun delete(messageId: String) = transaction(database) { 
+    MessageDataTable.deleteWhere { MessageDataTable.messageId eq messageId }
   }
   
   companion object {
     fun get(resultRow: ResultRow): MessageData = MessageData(
-      Json.decodeFromString(resultRow[MessageDataTable.messageId]),
+      resultRow[MessageDataTable.messageId],
+      resultRow[MessageDataTable.guildId],
+      resultRow[MessageDataTable.channelId],
       resultRow[MessageDataTable.text],
       resultRow[MessageDataTable.url],
       resultRow[MessageDataTable.authorId],

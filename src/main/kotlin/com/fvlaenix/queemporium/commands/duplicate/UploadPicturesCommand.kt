@@ -1,7 +1,10 @@
 package com.fvlaenix.queemporium.commands.duplicate
 
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
-import com.fvlaenix.queemporium.database.*
+import com.fvlaenix.queemporium.database.MessageData
+import com.fvlaenix.queemporium.database.MessageDataConnector
+import com.fvlaenix.queemporium.database.MessageDuplicateData
+import com.fvlaenix.queemporium.database.MessageDuplicateDataConnector
 import com.fvlaenix.queemporium.utils.CoroutineUtils
 import kotlinx.coroutines.withContext
 import net.dv8tion.jda.api.events.session.ReadyEvent
@@ -14,13 +17,11 @@ class UploadPicturesCommand(databaseConfiguration: DatabaseConfiguration) : Repo
   override suspend fun onReadySuspend(event: ReadyEvent) {
     val compressSize = DuplicateImageService.checkServerAliveness(event) ?: return
     runOverOld(event.jda, { true }) { message ->
-      val messageId = MessageId(
-        guildId = message.guildId!!,
-        channelId = message.channel.id,
-        messageId = message.id
-      )
+      val messageId = message.id
       val messageData = MessageData(
         messageId = messageId,
+        guildId = message.guildId,
+        channelId = message.channelId,
         text = message.contentRaw,
         url = message.jumpUrl,
         authorId = message.author.id,

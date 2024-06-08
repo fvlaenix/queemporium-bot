@@ -6,13 +6,13 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 data class MessageDuplicateData(
-  val messageId: MessageId,
+  val messageId: String,
   val hasSource: Boolean,
   val countImages: Int,
   val messageProblems: List<MessageProblem>
 ) {
   data class FullInfo(
-    val messageId: MessageId,
+    val messageId: String,
     val text: String,
     val hasSource: Boolean,
     val url: String,
@@ -52,34 +52,34 @@ class MessageDuplicateDataConnector(val database: Database) {
   }
   
   fun add(messageDuplicateData: MessageDuplicateData) = transaction(database) {
-    val existing = MessageDuplicateDataTable.select { MessageDuplicateDataTable.messageId eq Json.encodeToString(messageDuplicateData.messageId) }
+    val existing = MessageDuplicateDataTable.select { MessageDuplicateDataTable.messageId eq messageDuplicateData.messageId }
     if (existing.count() > 0) return@transaction 
     MessageDuplicateDataTable.insert {
-      it[messageId] = Json.encodeToString(messageDuplicateData.messageId)
+      it[messageId] = messageDuplicateData.messageId
       it[hasSource] = messageDuplicateData.hasSource
       it[countImages] = messageDuplicateData.countImages
       it[messageProblems] = Json.encodeToString(messageDuplicateData.messageProblems)
     }
   }
   
-  fun exists(messageId: MessageId): Boolean = transaction(database) {
-    MessageDuplicateDataTable.select { MessageDuplicateDataTable.messageId eq Json.encodeToString(messageId) }.count() > 0
+  fun exists(messageId: String): Boolean = transaction(database) {
+    MessageDuplicateDataTable.select { MessageDuplicateDataTable.messageId eq messageId }.count() > 0
   }
   
-  fun get(messageId: MessageId) = transaction(database) {
+  fun get(messageId: String) = transaction(database) {
     val result =
-      MessageDuplicateDataTable.select { MessageDuplicateDataTable.messageId eq Json.encodeToString(messageId) }
+      MessageDuplicateDataTable.select { MessageDuplicateDataTable.messageId eq messageId }
         .singleOrNull()
     result?.let { get(it) }
   }
   
-  fun delete(messageId: MessageId) = transaction(database) {
-    MessageDuplicateDataTable.deleteWhere { MessageDuplicateDataTable.messageId eq Json.encodeToString(messageId) }
+  fun delete(messageId: String) = transaction(database) {
+    MessageDuplicateDataTable.deleteWhere { MessageDuplicateDataTable.messageId eq messageId }
   }
   
   companion object {
     fun get(resultRow: ResultRow): MessageDuplicateData = MessageDuplicateData(
-      Json.decodeFromString(resultRow[MessageDuplicateDataTable.messageId]),
+      resultRow[MessageDuplicateDataTable.messageId],
       resultRow[MessageDuplicateDataTable.hasSource],
       resultRow[MessageDuplicateDataTable.countImages],
       Json.decodeFromString(resultRow[MessageDuplicateDataTable.messageProblems])

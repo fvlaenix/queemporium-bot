@@ -47,18 +47,17 @@ class OnlinePictureCompare(databaseConfiguration: DatabaseConfiguration) : Repor
     val channelId = event.channel.id
     val messageId = event.messageId
     
-    val messageDataId = MessageId(guildId, channelId, messageId)
     if (
       guildInfoConnector.isChannelExclude(guildId, channelId) ||
       guildInfoConnector.getDuplicateInfoChannel(guildId) == channelId
     ) return
-    val messageDuplicateData = messageDuplicateDataConnector.get(messageDataId) ?: return
+    val messageDuplicateData = messageDuplicateDataConnector.get(messageId) ?: return
     DuplicateImageService.withOpenedChannel { service ->
       (0 until messageDuplicateData.countImages).forEach { numberImage ->
-        service.deleteImage(deleteImageRequest { this.imageId = Json.encodeToString(messageDataId.withImageNumber(numberImage)) })
+        service.deleteImage(deleteImageRequest { this.imageId = Json.encodeToString(ImageId(messageId, numberImage)) })
       }
     }
-    messageDataConnector.delete(messageDataId)
-    messageDuplicateDataConnector.delete(messageDataId)
+    messageDataConnector.delete(messageId)
+    messageDuplicateDataConnector.delete(messageId)
   }
 }

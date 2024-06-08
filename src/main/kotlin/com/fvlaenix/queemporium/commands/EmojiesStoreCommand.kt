@@ -39,13 +39,11 @@ class EmojiesStoreCommand(val databaseConfiguration: DatabaseConfiguration) : Co
     }
     val computeMessage: suspend (Message) -> Unit = computeMessage@{ message ->
       if (message.timeCreated.toEpochSecond() + 3.days.inWholeSeconds > startTime) return@computeMessage
-      val messageId = MessageId(
-        guildId = message.guildId!!,
-        channelId = message.channel.id,
-        messageId = message.id
-      )
+      val messageId = message.id
       val messageData = MessageData(
         messageId = messageId,
+        guildId = message.guildId,
+        channelId = message.channelId,
         text = message.contentRaw,
         url = message.jumpUrl,
         authorId = message.author.id,
