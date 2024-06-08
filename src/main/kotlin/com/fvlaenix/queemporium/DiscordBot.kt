@@ -3,11 +3,16 @@ package com.fvlaenix.queemporium
 import com.fvlaenix.queemporium.commands.CommandsConstructor
 import com.fvlaenix.queemporium.configuration.BotConfiguration
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.newFixedThreadPoolContext
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.requests.GatewayIntent
+import net.dv8tion.jda.api.utils.ChunkingFilter
+import net.dv8tion.jda.api.utils.MemberCachePolicy
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -27,6 +32,9 @@ class DiscordBot(
       botConfiguration.token,
       GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.MESSAGE_CONTENT
     )
+    .enableIntents(GatewayIntent.GUILD_MEMBERS)
+    .setChunkingFilter(ChunkingFilter.ALL)
+    .setMemberCachePolicy(MemberCachePolicy.ALL)
     .addEventListeners(*CommandsConstructor.convert(botConfiguration, databaseConfiguration).toTypedArray())
     .setActivity(Activity.customStatus("Dominates Emporium"))
     .build()
