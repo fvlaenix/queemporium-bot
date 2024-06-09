@@ -88,9 +88,9 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
   protected suspend fun runOverOld(
     jda: JDA,
     jobName: String,
-    guildThreshold: Int = 2,
-    channelThreshold: Int = 4,
-    messageThreshold: Int = Runtime.getRuntime().availableProcessors(),
+    guildThreshold: Int,
+    channelThreshold: Int,
+    messageThreshold: Int,
     computeGuild: suspend (Guild) -> List<MessageChannel>,
     computeChannel: suspend (MessageChannel) -> List<Message>,
     computeMessage: suspend (Message) -> Unit
@@ -129,8 +129,8 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
     jda: JDA,
     jobName: String,
     guildThreshold: Int = 2,
-    channelThreshold: Int = 3,
-    messageThreshold: Int = 4,
+    channelThreshold: Int = 4,
+    messageThreshold: Int = Runtime.getRuntime().availableProcessors(),
     computeGuild: suspend (Guild) -> List<MessageChannel>,
     takeWhile: (Message) -> Boolean,
     computeMessage: suspend (Message) -> Unit
