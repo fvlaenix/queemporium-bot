@@ -90,7 +90,7 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
     jobName: String,
     guildThreshold: Int = 2,
     channelThreshold: Int = 4,
-    messageThreshold: Int = 8,
+    messageThreshold: Int = Runtime.getRuntime().availableProcessors(),
     computeGuild: suspend (Guild) -> List<MessageChannel>,
     computeChannel: suspend (MessageChannel) -> List<Message>,
     computeMessage: suspend (Message) -> Unit
