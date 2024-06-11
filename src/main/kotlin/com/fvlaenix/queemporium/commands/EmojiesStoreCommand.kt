@@ -35,10 +35,9 @@ class EmojiesStoreCommand(val databaseConfiguration: DatabaseConfiguration) : Co
     }
     val startTime = System.currentTimeMillis() / 1000
     val takeWhile: (Message) -> Boolean = { message ->
-      message.timeCreated.toEpochSecond() + 40.days.inWholeSeconds > startTime
+      message.timeCreated.toEpochSecond() + 20.days.inWholeSeconds > startTime
     }
     val computeMessage: suspend (Message) -> Unit = computeMessage@{ message ->
-      if (message.timeCreated.toEpochSecond() + 3.days.inWholeSeconds > startTime) return@computeMessage
       val messageId = message.id
       val messageData = MessageData(
         messageId = messageId,
