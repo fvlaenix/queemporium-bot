@@ -18,9 +18,14 @@ object CommandsConstructor {
   private val STANDARD_FEATURES: List<String> = listOf(
     "OnlinePictureCompare",
     "RevengePicturesCommand",
+    "AuthorCollectCommand",
+    "AuthorMappingCommand",
     "DependentDeleterCommand",
+    "EmojiesStoreCommand",
     "ExcludeChannelCommand",
     "LoggerMessageCommand",
+    "MessagesStoreCommand",
+    "PixivCompressedDetectorCommand",
     "SetDuplicateChannelCommand"
   )
   
