@@ -158,4 +158,20 @@ object AnswerUtils {
     duplicateMessageDatas.add(duplicateMessageData)
     return duplicateMessageDatas
   }
+  
+  fun sendAuthorChangeRequest(
+    duplicateChannel: MessageChannel,
+    authorId: String,
+    messageUrl: String,
+    correct: List<CorrectAuthorMappingData>
+  ) {
+    val message = """
+        $authorId (no tag while beta testing) made mistake in author name!
+
+        Change name from ${correct.map { it.from }} to ${correct.map { it.to }}
+
+        Message: $messageUrl
+      """.trimIndent()
+    duplicateChannel.sendMessageNow(message)
+  }
 }
