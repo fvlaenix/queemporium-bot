@@ -38,7 +38,7 @@ class MessagesStoreCommand(val databaseConfiguration: DatabaseConfiguration) : C
         }
       }
     }
-    val takeWhile: (Message) -> Boolean = { true }
+    val takeWhile: (Message) -> Boolean = { messageDataConnector.get(it.id) == null }
     runOverOld(
       jda = event.jda,
       jobName = "StoreCommand",
