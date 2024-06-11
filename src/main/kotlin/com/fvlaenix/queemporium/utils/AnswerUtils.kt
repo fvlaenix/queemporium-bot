@@ -2,6 +2,7 @@ package com.fvlaenix.queemporium.utils
 
 import com.fvlaenix.queemporium.commands.duplicate.DuplicateImageService
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
+import com.fvlaenix.queemporium.database.CorrectAuthorMappingData
 import com.fvlaenix.queemporium.database.MessageDuplicateData
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
@@ -173,5 +174,19 @@ object AnswerUtils {
         Message: $messageUrl
       """.trimIndent()
     duplicateChannel.sendMessageNow(message)
+  }
+  
+  fun sendPixivCompressDetectRequest(
+    duplicateChannel: MessageChannel,
+    authorId: String,
+    messageUrl: String
+  ) {
+    val message = """
+        $authorId (no tag while beta testing) made mistake in sending picture!
+
+        Your picture was sent with Pixiv compression. Please, open it in another tab and copy properly
+        
+        Message: $messageUrl
+      """.trimIndent()
   }
 }
