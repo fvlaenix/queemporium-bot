@@ -188,5 +188,6 @@ object AnswerUtils {
         
         Message: $messageUrl
       """.trimIndent()
+    duplicateChannel.sendMessageNow(message)
   }
 }
