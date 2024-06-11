@@ -3,6 +3,7 @@ package com.fvlaenix.queemporium.utils
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.database.CompressSize
 import com.fvlaenix.queemporium.database.ImageId
+import com.fvlaenix.queemporium.database.MessageProblem
 import com.fvlaenix.queemporium.exception.EXCEPTION_HANDLER
 import com.fvlaenix.queemporium.utils.DownloadUtils.readImageFromAttachment
 import com.fvlaenix.queemporium.utils.DownloadUtils.readImageFromUrl
@@ -33,7 +34,15 @@ object MessageUtils {
         if (attachment.isImage) {
           val id = currentId++
           val job = launch attachment@ { 
-            val (image, additionalInfo) = readImageFromAttachment(attachment, compressSize) ?: return@attachment
+            val (image, additionalInfo) = readImageFromAttachment(attachment, compressSize).let { 
+              if (it == null) {
+                kotlin.coroutines.coroutineContext[CoroutineUtils.CURRENT_MESSAGE_EXCEPTION_CONTEXT_KEY]?.messageProblems?.add(
+                  MessageProblem.ImageProblem.InternalError(id, "Image can't be loaded")
+                )
+                return@attachment
+              }
+              it
+            }
             channel.send(
               MessageImageInfo(
                 bufferedImage = image,
@@ -58,7 +67,15 @@ object MessageUtils {
             val id = currentId
             currentId++
             val job = launch embed@ {
-              val (image, size) = readImageFromUrl(url, compressSize) ?: return@embed
+              val (image, size) = readImageFromUrl(url, compressSize).let {
+                if (it == null) {
+                  kotlin.coroutines.coroutineContext[CoroutineUtils.CURRENT_MESSAGE_EXCEPTION_CONTEXT_KEY]?.messageProblems?.add(
+                    MessageProblem.ImageProblem.InternalError(id, "Image can't be loaded")
+                  )
+                  return@embed
+                }
+                it
+              }
               channel.send(
                 MessageImageInfo(
                   bufferedImage = image,
