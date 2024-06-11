@@ -29,6 +29,6 @@ class CorrectAuthorMappingConnector(val database: Database) {
   
   fun fromText(text: String): List<CorrectAuthorMappingData> = transaction(database) {
     val all = CorrectAuthorMappingTable.selectAll().map { CorrectAuthorMappingData(it[CorrectAuthorMappingTable.from], it[CorrectAuthorMappingTable.to]) }
-    all.filter { text.contains(it.from) }.map { CorrectAuthorMappingData(it.to, it.from) }
+    all.filter { text.contains(it.from) && !text.contains(it.to) }.map { CorrectAuthorMappingData(it.from, it.to) }
   }
 }
