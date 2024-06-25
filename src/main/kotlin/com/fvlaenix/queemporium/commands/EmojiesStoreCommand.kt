@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.events.session.ReadyEvent
 import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
 
 private val LOG = Logger.getLogger(EmojiesStoreCommand::class.java.name)
 
@@ -35,7 +36,7 @@ class EmojiesStoreCommand(val databaseConfiguration: DatabaseConfiguration) : Co
     }
     val startTime = System.currentTimeMillis() / 1000
     val takeWhile: (Message) -> Boolean = { message ->
-      message.timeCreated.toEpochSecond() + 20.days.inWholeSeconds > startTime
+      message.timeCreated.toEpochSecond() + 7.days.inWholeSeconds > startTime
     }
     val computeMessage: suspend (Message) -> Unit = computeMessage@{ message ->
       val messageId = message.id
@@ -82,7 +83,7 @@ class EmojiesStoreCommand(val databaseConfiguration: DatabaseConfiguration) : Co
   override suspend fun onReadySuspend(event: ReadyEvent) {
     while (true) {
       runOverOld(event.jda)
-      delay(1.days)
+      delay(12.hours)
     }
   }
 }
