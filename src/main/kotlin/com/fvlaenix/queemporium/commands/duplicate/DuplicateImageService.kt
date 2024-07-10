@@ -7,7 +7,6 @@ import com.fvlaenix.duplicate.protobuf.addImageRequest
 import com.fvlaenix.duplicate.protobuf.getCompressionSizeRequest
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.database.CompressSize
-import com.fvlaenix.queemporium.database.ImageId
 import com.fvlaenix.queemporium.database.MessageProblem
 import com.fvlaenix.queemporium.exception.EXCEPTION_HANDLER
 import com.fvlaenix.queemporium.utils.ChannelUtils
@@ -40,7 +39,8 @@ object DuplicateImageService {
   private val DUPLICATE_SEND_SEMAPHORE = Semaphore(20)
   
   class DuplicateImageData(
-    val imageId: ImageId,
+    val messageId: String,
+    val numberInMessage: Int,
     val additionalImageInfo: AdditionalImageInfo,
     val level: Long
   )
@@ -57,7 +57,8 @@ object DuplicateImageService {
   private suspend fun sendPicture(
     guildId: String?,
     channelId: String,
-    imageId: ImageId,
+    messageId: String,
+    numberInMessage: Int,
     additionalImageInfo: AdditionalImageInfo,
     image: BufferedImage,
     fileName: String,
@@ -68,7 +69,8 @@ object DuplicateImageService {
         service.addImageWithCheck(
           addImageRequest {
             this.group = guildId ?: "private-channel-${channelId}"
-            this.imageId = Json.encodeToString(imageId)
+            this.messageId = messageId
+            this.numberInMessage = numberInMessage
             this.additionalInfo = Json.encodeToString(additionalImageInfo)
             this.image = com.fvlaenix.image.protobuf.image {
               val outputStream = ByteArrayOutputStream()
@@ -81,19 +83,20 @@ object DuplicateImageService {
         )
       }
     } catch (e: Exception) {
-      LOG.log(Level.SEVERE, "Can't send request to server with image: $imageId", e)
+      LOG.log(Level.SEVERE, "Can't send request to server with image: $messageId-$numberInMessage", e)
       return null
     }
     if (result.hasError()) {
       coroutineContext[CoroutineUtils.CURRENT_MESSAGE_EXCEPTION_CONTEXT_KEY]?.messageProblems?.add(
-        MessageProblem.ImageProblem.InternalError(imageId.numberInMessage, result.error)
+        MessageProblem.ImageProblem.InternalError(numberInMessage, result.error)
       )
-      LOG.log(Level.SEVERE, "Error in request to server with image: $imageId: ${result.error}")
+      LOG.log(Level.SEVERE, "Error in request to server with image: $messageId-$numberInMessage: ${result.error}")
       return null
     }
     val responseOK = result.responseOk
     return responseOK.imageInfo.imagesList.map { DuplicateImageData(
-      imageId = Json.decodeFromString(it.imageId),
+      messageId = messageId,
+      numberInMessage = numberInMessage,
       additionalImageInfo = Json.decodeFromString(it.additionalInfo),
       level = it.level
     ) }
@@ -111,14 +114,15 @@ object DuplicateImageService {
           val result = sendPicture(
             guildId = picture.guildId,
             channelId = picture.channelId,
-            imageId = picture.imageId,
+            messageId = picture.messageId,
+            numberInMessage = picture.numberInMessage,
             additionalImageInfo = picture.additionalImageInfo,
             image = picture.bufferedImage,
             fileName = picture.additionalImageInfo.fileName,
             epoch = epoch
           )
           if (result == null) {
-            LOG.log(Level.SEVERE, "Failed to find duplicate: ${picture.imageId}")
+            LOG.log(Level.SEVERE, "Failed to find duplicate: ${picture.messageId}-${picture.numberInMessage}")
             return@picture
           }
           if (result.isEmpty()) {

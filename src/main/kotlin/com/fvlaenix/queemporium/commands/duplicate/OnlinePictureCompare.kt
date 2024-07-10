@@ -2,14 +2,15 @@ package com.fvlaenix.queemporium.commands.duplicate
 
 import com.fvlaenix.duplicate.protobuf.deleteImageRequest
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
-import com.fvlaenix.queemporium.database.*
+import com.fvlaenix.queemporium.database.CompressSize
+import com.fvlaenix.queemporium.database.GuildInfoConnector
+import com.fvlaenix.queemporium.database.MessageDataConnector
+import com.fvlaenix.queemporium.database.MessageDuplicateDataConnector
 import com.fvlaenix.queemporium.exception.EXCEPTION_HANDLER
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.session.ReadyEvent
@@ -54,7 +55,7 @@ class OnlinePictureCompare(databaseConfiguration: DatabaseConfiguration) : Repor
     val messageDuplicateData = messageDuplicateDataConnector.get(messageId) ?: return
     DuplicateImageService.withOpenedChannel { service ->
       (0 until messageDuplicateData.countImages).forEach { numberImage ->
-        service.deleteImage(deleteImageRequest { this.imageId = Json.encodeToString(ImageId(messageId, numberImage)) })
+        service.deleteImage(deleteImageRequest { this.messageId = messageId; this.numberInMessage = numberImage })
       }
     }
     messageDataConnector.delete(messageId)

@@ -55,7 +55,7 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
         val isSpoiler =
           duplicateMessageInfo.additionalImageInfo.isSpoiler || originalImageDatas.any { it.additionalImageInfo.isSpoiler }
         val originalData = originalImageDatas.map {
-          messageDuplicateDataConnector.get(it.imageId.messageId)!!.withMessageData(messageDataConnector.get(it.imageId.messageId)!!) to it
+          messageDuplicateDataConnector.get(it.messageId)!!.withMessageData(messageDataConnector.get(it.messageId)!!) to it
         }
         val duplicateMessageDatas = AnswerUtils.sendDuplicateMessageInfo(
           duplicateChannel = duplicateChannel,
@@ -78,7 +78,7 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
           originalImageDatas.forEach { originalImageData ->
             dependencyConnector.addDependency(
               MessageDependency(
-                targetMessage = originalImageData.imageId.messageId,
+                targetMessage = originalImageData.messageId,
                 dependentMessage = dependentMessage
               )
             )

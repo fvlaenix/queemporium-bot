@@ -2,7 +2,6 @@ package com.fvlaenix.queemporium.utils
 
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.database.CompressSize
-import com.fvlaenix.queemporium.database.ImageId
 import com.fvlaenix.queemporium.database.MessageProblem
 import com.fvlaenix.queemporium.exception.EXCEPTION_HANDLER
 import com.fvlaenix.queemporium.utils.DownloadUtils.readImageFromAttachment
@@ -18,7 +17,8 @@ object MessageUtils {
     val bufferedImage: BufferedImage,
     val guildId: String?,
     val channelId: String,
-    val imageId: ImageId,
+    val messageId: String,
+    val numberInMessage: Int,
     val additionalImageInfo: AdditionalImageInfo
   )
   
@@ -48,7 +48,8 @@ object MessageUtils {
                 bufferedImage = image,
                 guildId = serverId,
                 channelId = channelId,
-                imageId = ImageId(messageId, id), 
+                messageId = messageId,
+                numberInMessage = id, 
                 additionalImageInfo = additionalInfo
               )
             )
@@ -81,7 +82,8 @@ object MessageUtils {
                   bufferedImage = image,
                   guildId = serverId,
                   channelId = channelId,
-                  imageId = ImageId(messageId, id),
+                  messageId = messageId,
+                  numberInMessage = id,
                   additionalImageInfo = AdditionalImageInfo(
                     fileName = URL(url).file,
                     isSpoiler = false, // Can't take is spoiler from embed
