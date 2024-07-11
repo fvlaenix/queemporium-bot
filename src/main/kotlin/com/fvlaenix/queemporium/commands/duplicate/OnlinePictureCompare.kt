@@ -44,7 +44,6 @@ class OnlinePictureCompare(databaseConfiguration: DatabaseConfiguration) : Repor
 
   override suspend fun onMessageDeleteSuspend(event: MessageDeleteEvent) {
     if (!event.isFromGuild) return
-    return
     val guildId = event.guild.id
     val channelId = event.channel.id
     val messageId = event.messageId
