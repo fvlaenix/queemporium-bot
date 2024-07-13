@@ -95,8 +95,8 @@ object DuplicateImageService {
     }
     val responseOK = result.responseOk
     return responseOK.imageInfo.imagesList.map { DuplicateImageData(
-      messageId = messageId,
-      numberInMessage = numberInMessage,
+      messageId = it.messageId,
+      numberInMessage = it.numberInMessage,
       additionalImageInfo = Json.decodeFromString(it.additionalInfo),
       level = it.level
     ) }
