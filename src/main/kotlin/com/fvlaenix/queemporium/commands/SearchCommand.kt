@@ -33,7 +33,7 @@ class SearchCommand : CoroutineListenerAdapter() {
   private val configuration: SearchConfiguration = SearchConfiguration(SEARCH_PROPERTIES_INPUT_STREAM)
   
   override fun receiveMessageFilter(event: MessageReceivedEvent): Boolean =
-    event.message.contentRaw.startsWith("/shogun-sama test-search")
+    event.message.contentRaw.startsWith("/shogun-sama search") || event.message.contentRaw.startsWith("/s s")
 
   override suspend fun onMessageReceivedSuspend(event: MessageReceivedEvent) {
     val message = event.message
