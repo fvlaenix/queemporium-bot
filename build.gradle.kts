@@ -1,5 +1,5 @@
-import com.google.protobuf.gradle.id
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.google.protobuf.gradle.id
 
 plugins {
     kotlin("jvm") version "1.9.23"
@@ -63,6 +63,9 @@ dependencies {
 
     implementation("net.coobird:thumbnailator:0.4.20")
 
+    runtimeOnly("io.ktor:ktor-client-okhttp:2.3.12")
+    implementation("dev.inmo:saucenaoapi:0.17.2")
+    
     testImplementation(kotlin("test"))
 }
 

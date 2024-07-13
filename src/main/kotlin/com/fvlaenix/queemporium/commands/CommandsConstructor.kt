@@ -26,7 +26,8 @@ object CommandsConstructor {
     "LoggerMessageCommand",
     "MessagesStoreCommand",
     "PixivCompressedDetectorCommand",
-    "SetDuplicateChannelCommand"
+    "SetDuplicateChannelCommand",
+    "SearchCommand"
   )
   
   @OptIn(ExperimentalStdlibApi::class)
