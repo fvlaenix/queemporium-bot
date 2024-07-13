@@ -42,6 +42,9 @@ class SearchCommand : CoroutineListenerAdapter() {
     try {
       attachmentsUrl.forEach { url ->
         val parts = getMessageResult(sauceNaoAPI.request(url))
+        if (parts.isEmpty()) {
+          message.reply("No sources found").queue()
+        }
         parts.forEach { part ->
           message.reply(part).queue()
         }
