@@ -60,7 +60,7 @@ class SearchCommand : CoroutineListenerAdapter() {
         val titles: List<String>? = listOfNotNull(data.title, data.titleJp, data.titleEng, *data.titleAlt.toTypedArray()).ifEmpty { null }
         val urls = data.extUrls
         var text = if (titles == null) "" else "Title: ${titles.joinToString(", ")}\n"
-        text += "Source: ${urls.joinToString(", ") { "<$it>" }}\n"
+        text += "Source: ${urls.joinToString(", ") { "<$it>" }}\nSimilarity: $result.header.similarity\n"
         text
       }
       val returned = mutableListOf<String>()
