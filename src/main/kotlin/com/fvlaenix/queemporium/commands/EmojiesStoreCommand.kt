@@ -59,9 +59,13 @@ class EmojiesStoreCommand(val databaseConfiguration: DatabaseConfiguration) : Co
       
       coroutineScope {
         val reactions = channelTransform(message.reactions, 16) { messageReaction ->
-          messageReaction.retrieveUsers().complete().map { author ->
-            Pair(author.id, messageReaction.emoji.name)
-          }
+          kotlin.runCatching {
+            messageReaction.retrieveUsers().complete().map { author ->
+              Pair(author.id, messageReaction.emoji.name)
+            }
+          }.onFailure { exception ->
+            LOG.log(Level.SEVERE, "Failed to get emoji", exception)
+          }.getOrNull()
         }
         channelTransform(reactions, 16) { reactionList ->
           reactionList.forEach { reaction ->
@@ -82,7 +86,12 @@ class EmojiesStoreCommand(val databaseConfiguration: DatabaseConfiguration) : Co
   
   override suspend fun onReadySuspend(event: ReadyEvent) {
     while (true) {
-      runOverOld(event.jda)
+      kotlin.runCatching {
+        runOverOld(event.jda)
+      }.onFailure { exception ->
+        LOG.log(Level.SEVERE, "Error while running emojies collect", exception) 
+      }
+      
       delay(12.hours)
     }
   }
