@@ -86,7 +86,7 @@ object AnswerUtils {
     val duplicateMessageDatas = mutableListOf<Future<String?>>()
     
     val prefix = """
-        $messageAuthorId (no tag while beta testing) made repost!
+        <@$messageAuthorId> made repost!
 
         Delete (or ask to delete if you don't have rights) that post which is weaker in any of the points (importance from the very first one):
          1) Contains link to the work and the author and name of character
@@ -167,7 +167,7 @@ object AnswerUtils {
     correct: List<CorrectAuthorMappingData>
   ) {
     val message = """
-        $authorId (no tag while beta testing) made mistake in author name!
+        <@$authorId> made mistake in author name!
 
         Change name from ${correct.map { it.from }} to ${correct.map { it.to }}
 
@@ -182,7 +182,7 @@ object AnswerUtils {
     messageUrl: String
   ) {
     val message = """
-        $authorId (no tag while beta testing) made mistake in sending picture!
+        <@$authorId> (no tag while beta testing) made mistake in sending picture!
 
         Your picture was sent with Pixiv compression. Please, open it in another tab and copy properly
         
