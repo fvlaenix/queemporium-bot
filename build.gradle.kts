@@ -67,11 +67,13 @@ dependencies {
     implementation("dev.inmo:saucenaoapi:0.17.2")
     
     testImplementation(kotlin("test"))
+    testImplementation(kotlin("test-junit5"))
 }
 
 tasks.test {
     useJUnitPlatform()
 }
+
 kotlin {
     jvmToolchain(11)
 }

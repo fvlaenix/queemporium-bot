@@ -18,8 +18,8 @@ class AuthorMappingCommand(val databaseConfiguration: DatabaseConfiguration): Co
     
     if (message.attachments.isEmpty()) return
     
-    val mapping = authorMappingConnector.fromText(content)
-    if (mapping.isEmpty()) return
+    val mapping = authorMappingConnector.findMapping(content)
+    if (mapping == null) return
     
     val duplicateChannel = guildInfoConnector.getDuplicateInfoChannel(message.guildId!!) ?: return
     val channel = message.guild.getTextChannelById(duplicateChannel) ?: return
