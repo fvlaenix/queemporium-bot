@@ -29,9 +29,11 @@ class CorrectAuthorMappingConnector(val database: Database): AuthorMapper() {
   }
 
   override fun authorMapping(): Map<List<String>, List<String>> =
-    CorrectAuthorMappingTable
-      .selectAll()
-      .associate {
-        it[CorrectAuthorMappingTable.from].split("/").map { it.trim() } to it[CorrectAuthorMappingTable.to].split("/").map { it.trim() }
-      }
+    transaction(database) {
+      CorrectAuthorMappingTable
+        .selectAll()
+        .associate {
+          it[CorrectAuthorMappingTable.from].split("/").map { it.trim() } to it[CorrectAuthorMappingTable.to].split("/").map { it.trim() }
+        }
+    }
 }
