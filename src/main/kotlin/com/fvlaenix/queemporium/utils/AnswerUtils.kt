@@ -164,12 +164,12 @@ object AnswerUtils {
     duplicateChannel: MessageChannel,
     authorId: String,
     messageUrl: String,
-    correct: List<CorrectAuthorMappingData>
+    correct: CorrectAuthorMappingData
   ) {
     val message = """
         <@$authorId> made mistake in author name!
 
-        Change name from ${correct.map { it.from }} to ${correct.map { it.to }}
+        Change name from ${correct.from} to ${correct.to}
 
         Message: $messageUrl
       """.trimIndent()

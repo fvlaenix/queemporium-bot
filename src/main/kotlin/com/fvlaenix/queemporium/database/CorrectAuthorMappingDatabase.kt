@@ -1,5 +1,6 @@
 package com.fvlaenix.queemporium.database
 
+import com.fvlaenix.queemporium.author.AuthorMapper
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Table
@@ -20,15 +21,17 @@ object CorrectAuthorMappingTable : Table() {
   }
 }
 
-class CorrectAuthorMappingConnector(val database: Database) {
+class CorrectAuthorMappingConnector(val database: Database): AuthorMapper() {
   init {
     transaction(database) {
       SchemaUtils.create(CorrectAuthorMappingTable)
     }
   }
-  
-  fun fromText(text: String): List<CorrectAuthorMappingData> = transaction(database) {
-    val all = CorrectAuthorMappingTable.selectAll().map { CorrectAuthorMappingData(it[CorrectAuthorMappingTable.from], it[CorrectAuthorMappingTable.to]) }
-    all.filter { text.contains(it.from) && !text.contains(it.to) }.map { CorrectAuthorMappingData(it.from, it.to) }
-  }
+
+  override fun authorMapping(): Map<List<String>, List<String>> =
+    CorrectAuthorMappingTable
+      .selectAll()
+      .associate {
+        it[CorrectAuthorMappingTable.from].split("/").map { it.trim() } to it[CorrectAuthorMappingTable.to].split("/").map { it.trim() }
+      }
 }
