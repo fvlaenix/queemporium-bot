@@ -188,6 +188,7 @@ object AnswerUtils {
         
         Message: $messageUrl
       """.trimIndent()
-    duplicateChannel.sendMessageNow(message)
+    val image = ImageIO.read(AnswerUtils::class.java.getResourceAsStream("/images/what-a-pixel.jpg"))
+    duplicateChannel.sendMessageNow(message, listOf(ImageUploadInfo(image, "what-a-pixel.jpg", false)))
   }
 }
