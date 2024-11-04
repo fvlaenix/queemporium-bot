@@ -1,79 +1,39 @@
-package com.fvlaenix.queemporium.utils
+package com.fvlaenix.queemporium.service
 
 import com.fvlaenix.queemporium.commands.duplicate.DuplicateImageService
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.database.CorrectAuthorMappingData
 import com.fvlaenix.queemporium.database.MessageDuplicateData
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
-import net.dv8tion.jda.api.utils.FileUpload
 import java.awt.image.BufferedImage
-import java.io.ByteArrayOutputStream
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Future
-import java.util.logging.Level
-import java.util.logging.Logger
 import javax.imageio.ImageIO
-import kotlin.io.path.Path
-import kotlin.io.path.extension
 
-private val LOG = Logger.getLogger(AnswerUtils::class.java.name)
-
-object AnswerUtils {
+abstract class AnswerService {
   data class ImageUploadInfo(
     val image: BufferedImage,
     val fileName: String,
     val isSpoiler: Boolean
   )
-  
-  private fun toFileUpload(byteArray: ByteArray, name: String): FileUpload {
-    return FileUpload.fromData(byteArray, name)
-  }
-  
-  private fun toFileUpload(bufferedImage: BufferedImage, name: String): FileUpload {
-    val outputStream = ByteArrayOutputStream()
-    ImageIO.write(bufferedImage, Path(name).extension, outputStream)
-    return toFileUpload(outputStream.toByteArray(), name)
-  }
-  
-  private fun toFileUpload(imageUploadInfo: ImageUploadInfo): FileUpload {
-    return toFileUpload(imageUploadInfo.image, imageUploadInfo.fileName)
-      .let { 
-        if (imageUploadInfo.isSpoiler) it.asSpoiler()
-        else it
-      }
-  }
-  
-  fun MessageChannel.sendMessageNow(
+
+  abstract suspend fun sendMessage(
+    destination: MessageChannel,
     text: String,
-    imageWithFileNames: List<ImageUploadInfo> = emptyList(),
-  ): Future<String?> {
-    assert(text.length <= 2000)
-    val fileUploads = imageWithFileNames.map(::toFileUpload)
-    
-    val future = CompletableFuture<String?>()
-    val callback: (Throwable) -> Unit = {
-      future.complete(null)
-      LOG.log(Level.SEVERE, "Can't send message with ${text.take(200)}, length: ${text.length}, fileUploadsCount: ${fileUploads.size}", it)
-    }
-    
-    if (fileUploads.isNotEmpty()) { sendFiles(fileUploads).addContent(text) } 
-    else { sendMessage(text) }
-      .queue({ future.complete(it.id) }, callback)
-    return future
-  }
-  
-  fun Message.sendReplyNow(
+    imageWithFileNames: List<ImageUploadInfo> = emptyList()
+  ): Deferred<String?>
+
+  suspend fun sendReply(
+    destination: Message,
     text: String,
-    imageWithFileNames: List<ImageUploadInfo> = emptyList(),
-  ): Future<String?> {
-    return channel.sendMessageNow(
-      text = text, 
-      imageWithFileNames = imageWithFileNames
-    )
+    imageWithFileNames: List<ImageUploadInfo> = emptyList()
+  ): Deferred<String?> {
+    return sendMessage(destination.channel, text, imageWithFileNames)
   }
-  
-  fun sendDuplicateMessageInfo(
+
+  suspend fun sendDuplicateMessageInfo(
     duplicateChannel: MessageChannel,
     messageAuthorId: String,
     fileName: String,
@@ -82,9 +42,9 @@ object AnswerUtils {
     additionalImageInfo: AdditionalImageInfo,
     isSpoiler: Boolean,
     originalData: List<Pair<MessageDuplicateData.FullInfo, DuplicateImageService.DuplicateImageData>>
-  ): List<Future<String?>> {
-    val duplicateMessageDatas = mutableListOf<Future<String?>>()
-    
+  ): List<Deferred<String?>> {
+    val duplicateMessageDatas = mutableListOf<Deferred<String?>>()
+
     val prefix = """
         <@$messageAuthorId> made repost!
 
@@ -98,7 +58,7 @@ object AnswerUtils {
          
         Duplicate: ${messageData.url}
       """.trimIndent()
-    
+
     val duplicateMessages = originalData.map { (duplicateInfoMessageData, duplicateInfoDuplicateData) ->
       var duplicateInfoText = "\n\nOriginal: ${duplicateInfoMessageData.url}\n"
 
@@ -125,8 +85,8 @@ object AnswerUtils {
             additionalImageInfo.originalSizeHeight != duplicateInfoDuplicateData.additionalImageInfo.originalSizeHeight
           ) {
             duplicateInfoText += "= **ALERT ALERT ALERT: Images incompatible: " +
-                    "${additionalImageInfo.originalSizeWidth}x${additionalImageInfo.originalSizeHeight} and " +
-                    "${duplicateInfoDuplicateData.additionalImageInfo.originalSizeWidth}x${duplicateInfoDuplicateData.additionalImageInfo.originalSizeHeight}!**\n"
+                "${additionalImageInfo.originalSizeWidth}x${additionalImageInfo.originalSizeHeight} and " +
+                "${duplicateInfoDuplicateData.additionalImageInfo.originalSizeWidth}x${duplicateInfoDuplicateData.additionalImageInfo.originalSizeHeight}!**\n"
           }
         }
       }
@@ -135,7 +95,8 @@ object AnswerUtils {
     var accumulator = prefix
     duplicateMessages.forEach { duplicateMessage ->
       if ((accumulator + duplicateMessage).length > 1900) {
-        val duplicateMessageData = duplicateChannel.sendMessageNow(
+        val duplicateMessageData = sendMessage(
+          destination = duplicateChannel,
           text = accumulator,
           imageWithFileNames = listOf(ImageUploadInfo(
             image = image,
@@ -148,7 +109,8 @@ object AnswerUtils {
       }
       accumulator += duplicateMessage
     }
-    val duplicateMessageData = duplicateChannel.sendMessageNow(
+    val duplicateMessageData = sendMessage(
+      destination = duplicateChannel,
       text = accumulator,
       imageWithFileNames = listOf(ImageUploadInfo(
         image = image,
@@ -159,13 +121,13 @@ object AnswerUtils {
     duplicateMessageDatas.add(duplicateMessageData)
     return duplicateMessageDatas
   }
-  
-  fun sendAuthorChangeRequest(
+
+  suspend fun sendAuthorChangeRequest(
     duplicateChannel: MessageChannel,
     authorId: String,
     messageUrl: String,
     correct: CorrectAuthorMappingData
-  ) {
+  ): Deferred<String?> {
     val message = """
         <@$authorId> made mistake in author name!
 
@@ -173,14 +135,14 @@ object AnswerUtils {
 
         Message: $messageUrl
       """.trimIndent()
-    duplicateChannel.sendMessageNow(message)
+    return sendMessage(duplicateChannel, message)
   }
-  
-  fun sendPixivCompressDetectRequest(
+
+  suspend fun sendPixivCompressDetectRequest(
     duplicateChannel: MessageChannel,
     authorId: String,
     messageUrl: String
-  ) {
+  ): Deferred<String?> {
     val message = """
         <@$authorId> (no tag while beta testing) made mistake in sending picture!
 
@@ -188,7 +150,13 @@ object AnswerUtils {
         
         Message: $messageUrl
       """.trimIndent()
-    val image = ImageIO.read(AnswerUtils::class.java.getResourceAsStream("/images/what-a-pixel.jpg"))
-    duplicateChannel.sendMessageNow(message, listOf(ImageUploadInfo(image, "what-a-pixel.jpg", false)))
+    val image = withContext(Dispatchers.IO) {
+      ImageIO.read(AnswerService::class.java.getResourceAsStream("/images/what-a-pixel.jpg"))
+    }
+    return sendMessage(
+      destination = duplicateChannel,
+      text = message,
+      imageWithFileNames = listOf(ImageUploadInfo(image, "what-a-pixel.jpg", false))
+    )
   }
 }

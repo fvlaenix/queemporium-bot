@@ -3,10 +3,13 @@ package com.fvlaenix.queemporium.commands
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.database.CorrectAuthorMappingConnector
 import com.fvlaenix.queemporium.database.GuildInfoConnector
-import com.fvlaenix.queemporium.utils.AnswerUtils
+import com.fvlaenix.queemporium.service.AnswerService
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 
-class AuthorMappingCommand(val databaseConfiguration: DatabaseConfiguration): CoroutineListenerAdapter() {
+class AuthorMappingCommand(
+  databaseConfiguration: DatabaseConfiguration,
+  private val answerService: AnswerService
+): CoroutineListenerAdapter() {
   private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
   private val authorMappingConnector = CorrectAuthorMappingConnector(databaseConfiguration.toDatabase())
 
@@ -23,6 +26,6 @@ class AuthorMappingCommand(val databaseConfiguration: DatabaseConfiguration): Co
     
     val duplicateChannel = guildInfoConnector.getDuplicateInfoChannel(message.guildId!!) ?: return
     val channel = message.guild.getTextChannelById(duplicateChannel) ?: return
-    AnswerUtils.sendAuthorChangeRequest(channel, message.author.id, message.jumpUrl, mapping)
+    answerService.sendAuthorChangeRequest(channel, message.author.id, message.jumpUrl, mapping)
   }
 }

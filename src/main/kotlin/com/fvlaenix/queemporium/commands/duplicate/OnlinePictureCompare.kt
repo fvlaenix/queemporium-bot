@@ -7,6 +7,7 @@ import com.fvlaenix.queemporium.database.GuildInfoConnector
 import com.fvlaenix.queemporium.database.MessageDataConnector
 import com.fvlaenix.queemporium.database.MessageDuplicateDataConnector
 import com.fvlaenix.queemporium.exception.EXCEPTION_HANDLER
+import com.fvlaenix.queemporium.service.AnswerService
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -15,7 +16,10 @@ import net.dv8tion.jda.api.events.message.MessageDeleteEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.session.ReadyEvent
 
-class OnlinePictureCompare(databaseConfiguration: DatabaseConfiguration) : ReportPictureCommand(databaseConfiguration) {
+class OnlinePictureCompare(
+  databaseConfiguration: DatabaseConfiguration,
+  answerService: AnswerService
+) : ReportPictureCommand(databaseConfiguration, answerService) {
   private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
   private val messageDuplicateDataConnector = MessageDuplicateDataConnector(databaseConfiguration.toDatabase())

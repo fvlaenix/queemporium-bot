@@ -2,6 +2,8 @@ package com.fvlaenix.queemporium.commands
 
 import com.fvlaenix.queemporium.configuration.BotConfiguration
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.service.AnswerService
+import com.fvlaenix.queemporium.service.AnswerServiceImpl
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -31,7 +33,11 @@ object CommandsConstructor {
   )
   
   @OptIn(ExperimentalStdlibApi::class)
-  fun convert(botConfiguration: BotConfiguration, databaseConfiguration: DatabaseConfiguration): List<ListenerAdapter> {
+  fun convert(
+    botConfiguration: BotConfiguration,
+    databaseConfiguration: DatabaseConfiguration,
+    answerService: AnswerServiceImpl
+  ): List<ListenerAdapter> {
     val commands = mutableListOf<ListenerAdapter>()
     val features = (STANDARD_FEATURES + botConfiguration.features).filter { it.isNotBlank() }
     features.forEach { featureCommand ->
@@ -61,6 +67,7 @@ object CommandsConstructor {
       val parameters: List<Any> = constructor.parameters.map { kParameter -> 
         when (kParameter.type.javaType) {
           DatabaseConfiguration::class.java -> databaseConfiguration
+          AnswerService::class.java -> answerService
           else -> throw IllegalArgumentException("Unsupported parameter type: ${kParameter.type}")
         }
       }

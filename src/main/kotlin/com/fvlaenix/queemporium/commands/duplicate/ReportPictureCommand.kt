@@ -3,7 +3,7 @@ package com.fvlaenix.queemporium.commands.duplicate
 import com.fvlaenix.queemporium.commands.CoroutineListenerAdapter
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.database.*
-import com.fvlaenix.queemporium.utils.AnswerUtils
+import com.fvlaenix.queemporium.service.AnswerService
 import com.fvlaenix.queemporium.utils.CoroutineUtils
 import kotlinx.coroutines.withContext
 import net.dv8tion.jda.api.JDA
@@ -12,7 +12,10 @@ import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
 import kotlin.coroutines.coroutineContext
 
-abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration) : CoroutineListenerAdapter() {
+abstract class ReportPictureCommand(
+  databaseConfiguration: DatabaseConfiguration,
+  private val answerService: AnswerService
+) : CoroutineListenerAdapter() {
   private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
   private val messageDuplicateDataConnector = MessageDuplicateDataConnector(databaseConfiguration.toDatabase())
@@ -57,7 +60,7 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
         val originalData = originalImageDatas.map {
           messageDuplicateDataConnector.get(it.messageId)!!.withMessageData(messageDataConnector.get(it.messageId)!!) to it
         }
-        val duplicateMessageDatas = AnswerUtils.sendDuplicateMessageInfo(
+        val duplicateMessageDatas = answerService.sendDuplicateMessageInfo(
           duplicateChannel = duplicateChannel,
           messageAuthorId = message.author.id,
           fileName = duplicateMessageInfo.additionalImageInfo.fileName,
@@ -68,7 +71,7 @@ abstract class ReportPictureCommand(databaseConfiguration: DatabaseConfiguration
           originalData = originalData
         )
         duplicateMessageDatas.forEach { duplicateMessageData ->
-          val dependentMessage = duplicateMessageData.get() ?: return@forEach
+          val dependentMessage = duplicateMessageData.await() ?: return@forEach
           dependencyConnector.addDependency(
             MessageDependency(
               targetMessage = messageData.messageId,

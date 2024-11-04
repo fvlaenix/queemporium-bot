@@ -5,12 +5,16 @@ import com.fvlaenix.queemporium.database.MessageData
 import com.fvlaenix.queemporium.database.MessageDataConnector
 import com.fvlaenix.queemporium.database.MessageDuplicateData
 import com.fvlaenix.queemporium.database.MessageDuplicateDataConnector
+import com.fvlaenix.queemporium.service.AnswerService
 import com.fvlaenix.queemporium.utils.CoroutineUtils
 import kotlinx.coroutines.withContext
 import net.dv8tion.jda.api.events.session.ReadyEvent
 import kotlin.coroutines.coroutineContext
 
-class UploadPicturesCommand(databaseConfiguration: DatabaseConfiguration) : ReportPictureCommand(databaseConfiguration) {
+class UploadPicturesCommand(
+  databaseConfiguration: DatabaseConfiguration,
+  answerService: AnswerService
+) : ReportPictureCommand(databaseConfiguration, answerService) {
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
   private val messageDuplicateDataConnector = MessageDuplicateDataConnector(databaseConfiguration.toDatabase())
   

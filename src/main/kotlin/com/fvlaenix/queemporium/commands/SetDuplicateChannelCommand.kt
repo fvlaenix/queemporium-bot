@@ -2,10 +2,13 @@ package com.fvlaenix.queemporium.commands
 
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.database.GuildInfoConnector
-import com.fvlaenix.queemporium.utils.AnswerUtils.sendReplyNow
+import com.fvlaenix.queemporium.service.AnswerService
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 
-class SetDuplicateChannelCommand(databaseConfiguration: DatabaseConfiguration): CoroutineListenerAdapter() {
+class SetDuplicateChannelCommand(
+  databaseConfiguration: DatabaseConfiguration,
+  private val answerService: AnswerService
+): CoroutineListenerAdapter() {
   private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
   
   override fun receiveMessageFilter(event: MessageReceivedEvent): Boolean =
@@ -13,16 +16,16 @@ class SetDuplicateChannelCommand(databaseConfiguration: DatabaseConfiguration): 
 
   override suspend fun onMessageReceivedSuspend(event: MessageReceivedEvent) {
     if (!event.isFromGuild) {
-      event.message.sendReplyNow("This only applies to servers, stupid!")
+      answerService.sendReply(event.message, "This only applies to servers, stupid!")
       return
     }
     val message = event.message
     val channel = message.channel
     if (!message.isFromAdmin()) {
-      message.sendReplyNow("Pathetic, only admins can use this!")
+      answerService.sendReply(message, "Pathetic, only admins can use this!")
       return
     }
     guildInfoConnector.setDuplicateInfo(message.guildId!!, channel.id)
-    message.sendReplyNow("My verdicts will now appear here!")
+    answerService.sendReply(message, "My verdicts will now appear here!")
   }
 }

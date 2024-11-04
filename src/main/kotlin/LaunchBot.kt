@@ -1,6 +1,7 @@
 import com.fvlaenix.queemporium.DiscordBot
 import com.fvlaenix.queemporium.configuration.BotConfiguration
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.service.AnswerServiceImpl
 import java.io.InputStream
 import java.util.logging.Level
 import java.util.logging.LogManager
@@ -41,6 +42,7 @@ fun main() {
   launchBotLog.log(Level.INFO, "Test database connection")
   databaseConfiguration.toDatabase()
   launchBotLog.log(Level.INFO, "Bot and database configurations loaded successfully")
-  val bot = DiscordBot(botConfiguration, databaseConfiguration)
+  val answerService = AnswerServiceImpl()
+  val bot = DiscordBot(botConfiguration, databaseConfiguration, answerService)
   bot.run()
 }

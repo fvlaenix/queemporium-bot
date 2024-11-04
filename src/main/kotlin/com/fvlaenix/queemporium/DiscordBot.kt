@@ -3,6 +3,7 @@ package com.fvlaenix.queemporium
 import com.fvlaenix.queemporium.commands.CommandsConstructor
 import com.fvlaenix.queemporium.configuration.BotConfiguration
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.service.AnswerServiceImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +21,8 @@ private val LOG = Logger.getLogger(DiscordBot::class.java.name)
 
 class DiscordBot(
   botConfiguration: BotConfiguration,
-  databaseConfiguration: DatabaseConfiguration
+  databaseConfiguration: DatabaseConfiguration,
+  answerService: AnswerServiceImpl
 ) {
   companion object {
     @OptIn(DelicateCoroutinesApi::class)
@@ -35,7 +37,13 @@ class DiscordBot(
     .enableIntents(GatewayIntent.GUILD_MEMBERS)
     .setChunkingFilter(ChunkingFilter.ALL)
     .setMemberCachePolicy(MemberCachePolicy.ALL)
-    .addEventListeners(*CommandsConstructor.convert(botConfiguration, databaseConfiguration).toTypedArray())
+    .addEventListeners(
+      *CommandsConstructor.convert(
+        botConfiguration,
+        databaseConfiguration,
+        answerService
+      ).toTypedArray()
+    )
     .setActivity(Activity.customStatus("Dominates Emporium"))
     .build()
 
