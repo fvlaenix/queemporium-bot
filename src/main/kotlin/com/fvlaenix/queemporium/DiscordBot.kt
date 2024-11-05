@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.utils.ChunkingFilter
 import net.dv8tion.jda.api.utils.MemberCachePolicy
+import net.dv8tion.jda.api.utils.cache.CacheFlag
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -37,6 +38,7 @@ class DiscordBot(
     .enableIntents(GatewayIntent.GUILD_MEMBERS)
     .setChunkingFilter(ChunkingFilter.ALL)
     .setMemberCachePolicy(MemberCachePolicy.ALL)
+    .disableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.SCHEDULED_EVENTS)
     .addEventListeners(
       *commandsService.getCommands(botConfiguration, databaseConfiguration, answerService).toTypedArray()
     )
