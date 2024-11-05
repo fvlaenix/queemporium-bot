@@ -1,14 +1,13 @@
 package com.fvlaenix.queemporium
 
-import com.fvlaenix.queemporium.commands.CommandsConstructor
 import com.fvlaenix.queemporium.configuration.BotConfiguration
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.service.AnswerServiceImpl
+import com.fvlaenix.queemporium.service.CommandsService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.newFixedThreadPoolContext
-import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.requests.GatewayIntent
@@ -22,6 +21,7 @@ private val LOG = Logger.getLogger(DiscordBot::class.java.name)
 class DiscordBot(
   botConfiguration: BotConfiguration,
   databaseConfiguration: DatabaseConfiguration,
+  commandsService: CommandsService,
   answerService: AnswerServiceImpl
 ) {
   companion object {
@@ -29,26 +29,23 @@ class DiscordBot(
     val MAIN_BOT_POOL = newFixedThreadPoolContext(4, "MainBotPool")
     val MAIN_SCOPE = CoroutineScope(Dispatchers.Default)
   }
-  private val jda: JDA = JDABuilder
+  private val jda: JDABuilder = JDABuilder
     .createDefault(
-      botConfiguration.token,
+      botConfiguration.token.raw,
       GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.MESSAGE_CONTENT
     )
     .enableIntents(GatewayIntent.GUILD_MEMBERS)
     .setChunkingFilter(ChunkingFilter.ALL)
     .setMemberCachePolicy(MemberCachePolicy.ALL)
     .addEventListeners(
-      *CommandsConstructor.convert(
-        botConfiguration,
-        databaseConfiguration,
-        answerService
-      ).toTypedArray()
+      *commandsService.getCommands(botConfiguration, databaseConfiguration, answerService).toTypedArray()
     )
     .setActivity(Activity.customStatus("Dominates Emporium"))
-    .build()
 
   fun run() {
+    LOG.log(Level.INFO, "Build bot")
+    val bot = jda.build()
     LOG.log(Level.INFO, "Staring bot")
-    jda.awaitReady()
+    bot.awaitReady()
   }
 }

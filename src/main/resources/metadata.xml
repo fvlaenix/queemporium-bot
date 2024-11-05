@@ -1,0 +1,15 @@
+<bot-metadata>
+  <command className="com.fvlaenix.queemporium.commands.duplicate.OnlinePictureCompare"/>
+  <command className="com.fvlaenix.queemporium.commands.duplicate.RevengePicturesCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.duplicate.UploadPicturesCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.AuthorCollectCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.AuthorMappingCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.DependentDeleterCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.EmojiesStoreCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.ExcludeChannelCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.LoggerMessageCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.MessagesStoreCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.PixivCompressedDetectorCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.SearchCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.SetDuplicateChannelCommand"/>
+</bot-metadata>

@@ -2,9 +2,9 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.google.protobuf.gradle.id
 
 plugins {
-    kotlin("jvm") version "1.9.23"
+    kotlin("jvm") version "2.0.21"
     id("com.google.protobuf") version "0.9.4"
-    kotlin("plugin.serialization") version "1.9.24"
+    kotlin("plugin.serialization") version "2.0.21"
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
@@ -13,6 +13,7 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    maven("https://s01.oss.sonatype.org/content/repositories/releases/")
 }
 
 dependencies {
@@ -36,8 +37,12 @@ dependencies {
     // coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
+    // serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-    
+    implementation("io.github.pdvrieze.xmlutil:serialization:0.90.3")
+
+    // images
     implementation("com.twelvemonkeys.imageio:imageio:3.10.1")
     implementation("com.twelvemonkeys.imageio:imageio-bmp:3.10.1")
     implementation("com.twelvemonkeys.imageio:imageio-hdr:3.10.1")
@@ -64,8 +69,11 @@ dependencies {
     implementation("net.coobird:thumbnailator:0.4.20")
 
     runtimeOnly("io.ktor:ktor-client-okhttp:2.3.12")
+
+    // saucenao
     implementation("dev.inmo:saucenaoapi:0.17.2")
-    
+
+    // tests
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit5"))
 }

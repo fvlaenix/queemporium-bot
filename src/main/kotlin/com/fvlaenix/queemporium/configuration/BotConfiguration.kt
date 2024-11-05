@@ -1,25 +1,32 @@
 package com.fvlaenix.queemporium.configuration
 
-import java.io.InputStream
-import java.util.*
+import kotlinx.serialization.Serializable
+import nl.adaptivity.xmlutil.serialization.XmlSerialName
 
+@Serializable
 data class BotConfiguration(
-  val token: String,
-  val features: List<String>,
-  val commandConfigs: Map<String, Map<String, String>>
+  @XmlSerialName("token")
+  val token: Token,
+  @XmlSerialName("feature")
+  val features: List<Feature> = emptyList(),
 ) {
-  companion object {
-    fun Properties.getSafeProperty(name: String): String = getProperty(name) ?: throw IllegalArgumentException("Property $name not found")
+  @Serializable
+  data class Feature(
+    val className: String,
+    @XmlSerialName("enable")
+    val enable: Boolean = true,
+    @XmlSerialName("parameter")
+    val parameter: List<Parameter> = emptyList()
+  ) {
+    @Serializable
+    data class Parameter(
+      val name: String,
+      val value: String
+    )
   }
-  
-  constructor(properties: Properties) : this(
-    token = properties.getSafeProperty("token"),
-    features = properties.getSafeProperty("features").split(",").map { it.trim() },
-    commandConfigs = properties.keys().toList()
-      .filterIsInstance<String>()
-      .filter { it.startsWith("command.configuration.") }
-      .associate { throw IllegalArgumentException("Can't parse commands configuration now: $it") }
-  )
 
-  constructor(inputStream: InputStream) : this(Properties().apply { load(inputStream) })
+  @Serializable
+  data class Token(
+    val raw: String
+  )
 }

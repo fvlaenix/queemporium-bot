@@ -42,5 +42,5 @@ bin/
 .DS_Store
 /.idea/
 /src/main/resources/database.properties
-/src/main/resources/bot.properties
 /src/main/resources/search.properties
+/src/main/resources/bot-properties.xml
