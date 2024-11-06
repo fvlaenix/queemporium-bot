@@ -28,7 +28,7 @@ dependencies {
     protobuf(files("discord-bots-rpc/duplicate-image-request.proto", "discord-bots-rpc/is-alive.proto", "discord-bots-rpc/image.proto"))
 
     // discord
-    implementation("net.dv8tion:JDA:5.0.0-beta.24")
+    implementation("net.dv8tion:JDA:5.2.0")
 
     // database
     implementation("org.jetbrains.exposed:exposed:0.17.14")
@@ -76,6 +76,9 @@ dependencies {
     // tests
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit5"))
+
+    // logging
+    implementation("ch.qos.logback:logback-classic:1.5.6")
 }
 
 tasks.test {
