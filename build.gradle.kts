@@ -79,6 +79,7 @@ dependencies {
     // tests
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit5"))
+    testImplementation("io.mockk:mockk:1.13.13")
 
     // logging
     implementation("ch.qos.logback:logback-classic:1.5.6")
