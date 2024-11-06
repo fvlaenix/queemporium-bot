@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.events.message.MessageUpdateEvent
 import net.dv8tion.jda.api.events.session.ReadyEvent
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException
 import net.dv8tion.jda.api.hooks.ListenerAdapter
+import org.jetbrains.annotations.TestOnly
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -29,6 +30,8 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
   private fun getCoroutinePool(): ExecutorCoroutineDispatcher = DiscordBot.MAIN_BOT_POOL
   private fun getCoroutineScope(): CoroutineScope = DiscordBot.MAIN_SCOPE
 
+  @TestOnly
+  fun testCoroutineScope(): CoroutineScope = getCoroutineScope()
   protected fun messageInfo(message: Message): String =
     "message from ${message.author.name} with url: ${message.jumpUrl}"
 
