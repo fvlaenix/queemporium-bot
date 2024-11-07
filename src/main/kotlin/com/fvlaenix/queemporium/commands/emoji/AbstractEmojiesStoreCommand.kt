@@ -1,28 +1,28 @@
-package com.fvlaenix.queemporium.commands
+package com.fvlaenix.queemporium.commands.emoji
 
+import com.fvlaenix.queemporium.commands.CoroutineListenerAdapter
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.database.*
 import com.fvlaenix.queemporium.utils.CoroutineUtils.channelTransform
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
-import net.dv8tion.jda.api.events.session.ReadyEvent
 import java.util.logging.Level
 import java.util.logging.Logger
-import kotlin.time.Duration.Companion.days
-import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration
 
-private val LOG = Logger.getLogger(EmojiesStoreCommand::class.java.name)
+private val LOG = Logger.getLogger(AbstractEmojiesStoreCommand::class.java.name)
 
-class EmojiesStoreCommand(val databaseConfiguration: DatabaseConfiguration) : CoroutineListenerAdapter() {
+abstract class AbstractEmojiesStoreCommand(
+  val databaseConfiguration: DatabaseConfiguration
+) : CoroutineListenerAdapter() {
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
   private val messageEmojiDataConnector = MessageEmojiDataConnector(databaseConfiguration.toDatabase())
   private val emojiDataConnector = EmojiDataConnector(databaseConfiguration.toDatabase())
-  
-  private suspend fun runOverOld(jda: JDA) {
+
+  protected suspend fun runOverOld(jda: JDA, takeDistance: Duration) {
     LOG.log(Level.INFO, "Start emojies collect")
     val computeGuild: (Guild) -> List<MessageChannel> = { guild ->
       guild.channels.mapNotNull channel@{ channel ->
@@ -36,7 +36,7 @@ class EmojiesStoreCommand(val databaseConfiguration: DatabaseConfiguration) : Co
     }
     val startTime = System.currentTimeMillis() / 1000
     val takeWhile: (Message) -> Boolean = { message ->
-      message.timeCreated.toEpochSecond() + 7.days.inWholeSeconds > startTime
+      message.timeCreated.toEpochSecond() + takeDistance.inWholeSeconds > startTime
     }
     val computeMessage: suspend (Message) -> Unit = computeMessage@{ message ->
       val messageId = message.id
@@ -53,13 +53,13 @@ class EmojiesStoreCommand(val databaseConfiguration: DatabaseConfiguration) : Co
       messageDataConnector.add(messageData)
       val messageEmojiData = messageEmojiDataConnector.get(messageId)
       if (messageEmojiData?.count == message.reactions.sumOf { it.count }) return@computeMessage
-      
+
       messageEmojiDataConnector.delete(messageId)
       emojiDataConnector.delete(messageId)
-      
+
       coroutineScope {
         val reactions = channelTransform(message.reactions, 16) { messageReaction ->
-          kotlin.runCatching {
+          runCatching {
             messageReaction.retrieveUsers().complete().map { author ->
               Pair(author.id, messageReaction.emoji.name)
             }
@@ -82,17 +82,5 @@ class EmojiesStoreCommand(val databaseConfiguration: DatabaseConfiguration) : Co
       takeWhile = takeWhile,
       computeMessage = computeMessage
     )
-  }
-  
-  override suspend fun onReadySuspend(event: ReadyEvent) {
-    while (true) {
-      kotlin.runCatching {
-        runOverOld(event.jda)
-      }.onFailure { exception ->
-        LOG.log(Level.SEVERE, "Error while running emojies collect", exception) 
-      }
-      
-      delay(12.hours)
-    }
   }
 }

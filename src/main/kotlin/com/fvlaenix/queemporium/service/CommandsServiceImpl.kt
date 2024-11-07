@@ -3,10 +3,12 @@ package com.fvlaenix.queemporium.service
 import com.fvlaenix.queemporium.commands.*
 import com.fvlaenix.queemporium.commands.duplicate.OnlinePictureCompare
 import com.fvlaenix.queemporium.commands.duplicate.RevengePicturesCommand
+import com.fvlaenix.queemporium.commands.emoji.OnlineEmojiesStoreCommand
 import com.fvlaenix.queemporium.configuration.BotConfiguration
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.configuration.MetadataConfiguration
 import net.dv8tion.jda.api.hooks.ListenerAdapter
+import java.lang.reflect.ParameterizedType
 import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.reflect.KClass
@@ -68,10 +70,14 @@ class CommandsServiceImpl(
       check(constructors.size == 1) { "${feature.clazz} should have only one constructor" }
       val constructor = constructors.first()
       val parameters: List<Any> = constructor.parameters.map { kParameter ->
-        when (kParameter.type.javaType) {
+        var javaType = kParameter.type.javaType
+        if (javaType is ParameterizedType) {
+          javaType = javaType.rawType
+        }
+        when (javaType) {
           DatabaseConfiguration::class.java -> databaseConfiguration
           AnswerService::class.java -> answerService
-          Map::class.java -> feature.parameters
+          java.util.Map::class.java -> feature.parameters
           else -> throw IllegalArgumentException("Unsupported parameter type: ${kParameter.type}")
         }
       }
@@ -88,7 +94,7 @@ class CommandsServiceImpl(
       AuthorCollectCommand::class,
       AuthorMappingCommand::class,
       DependentDeleterCommand::class,
-      EmojiesStoreCommand::class,
+      OnlineEmojiesStoreCommand::class,
       ExcludeChannelCommand::class,
       LoggerMessageCommand::class,
       MessagesStoreCommand::class,

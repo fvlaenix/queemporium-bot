@@ -5,7 +5,8 @@
   <command className="com.fvlaenix.queemporium.commands.AuthorCollectCommand"/>
   <command className="com.fvlaenix.queemporium.commands.AuthorMappingCommand"/>
   <command className="com.fvlaenix.queemporium.commands.DependentDeleterCommand"/>
-  <command className="com.fvlaenix.queemporium.commands.EmojiesStoreCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.emoji.OnlineEmojiesStoreCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.emoji.LongTermEmojiesStoreCommand"/>
   <command className="com.fvlaenix.queemporium.commands.ExcludeChannelCommand"/>
   <command className="com.fvlaenix.queemporium.commands.LoggerMessageCommand"/>
   <command className="com.fvlaenix.queemporium.commands.MessagesStoreCommand"/>
