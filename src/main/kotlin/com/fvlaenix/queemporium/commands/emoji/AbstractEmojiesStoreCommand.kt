@@ -22,8 +22,15 @@ abstract class AbstractEmojiesStoreCommand(
   private val messageEmojiDataConnector = MessageEmojiDataConnector(databaseConfiguration.toDatabase())
   private val emojiDataConnector = EmojiDataConnector(databaseConfiguration.toDatabase())
 
-  protected suspend fun runOverOld(jda: JDA, takeDistance: Duration) {
-    LOG.log(Level.INFO, "Start emojies collect")
+  protected suspend fun runOverOld(
+    jda: JDA,
+    takeDistance: Duration,
+    guildThreshold: Int,
+    channelThreshold: Int,
+    messageThreshold: Int,
+    reactionThreshold: Int
+  ) {
+    LOG.log(Level.INFO, "Start emojies collect. Distance: $takeDistance. Guild Threshold: $guildThreshold, Channel Threshold: $channelThreshold, Message Threshold: $messageThreshold, Reaction Threshold: $reactionThreshold")
     val computeGuild: (Guild) -> List<MessageChannel> = { guild ->
       guild.channels.mapNotNull channel@{ channel ->
         channel.id
@@ -58,7 +65,7 @@ abstract class AbstractEmojiesStoreCommand(
       emojiDataConnector.delete(messageId)
 
       coroutineScope {
-        val reactions = channelTransform(message.reactions, 16) { messageReaction ->
+        val reactions = channelTransform(message.reactions, reactionThreshold) { messageReaction ->
           runCatching {
             messageReaction.retrieveUsers().complete().map { author ->
               Pair(author.id, messageReaction.emoji.name)
@@ -67,7 +74,7 @@ abstract class AbstractEmojiesStoreCommand(
             LOG.log(Level.SEVERE, "Failed to get emoji", exception)
           }.getOrNull()
         }
-        channelTransform(reactions, 16) { reactionList ->
+        channelTransform(reactions, reactionThreshold) { reactionList ->
           reactionList.forEach { reaction ->
             emojiDataConnector.insert(EmojiData(messageId, reaction.second, reaction.first))
           }
@@ -78,6 +85,9 @@ abstract class AbstractEmojiesStoreCommand(
     runOverOld(
       jda = jda,
       jobName = "EmojiesStore",
+      guildThreshold = guildThreshold,
+      channelThreshold = channelThreshold,
+      messageThreshold = messageThreshold,
       computeGuild = computeGuild,
       takeWhile = takeWhile,
       computeMessage = computeMessage

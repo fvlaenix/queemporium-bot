@@ -14,13 +14,23 @@ class OnlineEmojiesStoreCommand(
   databaseConfiguration: DatabaseConfiguration,
   parameters: Map<String, String>
 ) : AbstractEmojiesStoreCommand(databaseConfiguration) {
-
   private val distanceInDays = parameters["distanceInDays"]?.toIntOrNull() ?: 7
+  private val guildThreshold = parameters["guildThreshold"]?.toIntOrNull() ?: 2
+  private val channelsThreshold = parameters["channelThreshold"]?.toIntOrNull() ?: 4
+  private val messageThreshold = parameters["messageThreshold"]?.toIntOrNull() ?: Runtime.getRuntime().availableProcessors()
+  private val emojisThreshold = parameters["emojisThreshold"]?.toIntOrNull() ?: 16
 
   override suspend fun onReadySuspend(event: ReadyEvent) {
     while (true) {
       runCatching {
-        runOverOld(event.jda, distanceInDays.days)
+        runOverOld(
+          event.jda,
+          distanceInDays.days,
+          guildThreshold,
+          channelsThreshold,
+          messageThreshold,
+          emojisThreshold
+        )
       }.onFailure { exception ->
         LOG.log(Level.SEVERE, "Error while running emojies collect", exception)
       }
