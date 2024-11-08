@@ -28,9 +28,10 @@ abstract class AbstractEmojiesStoreCommand(
     guildThreshold: Int,
     channelThreshold: Int,
     messageThreshold: Int,
-    reactionThreshold: Int
+    reactionThreshold: Int,
+    isShuffle: Boolean
   ) {
-    LOG.log(Level.INFO, "Start emojies collect. Distance: $takeDistance. Guild Threshold: $guildThreshold, Channel Threshold: $channelThreshold, Message Threshold: $messageThreshold, Reaction Threshold: $reactionThreshold")
+    LOG.log(Level.INFO, "Start emojies collect. Distance: $takeDistance. Guild Threshold: $guildThreshold, Channel Threshold: $channelThreshold, Message Threshold: $messageThreshold, Reaction Threshold: $reactionThreshold, Shuffle: $isShuffle")
     val computeGuild: (Guild) -> List<MessageChannel> = { guild ->
       guild.channels.mapNotNull channel@{ channel ->
         channel.id
@@ -89,7 +90,8 @@ abstract class AbstractEmojiesStoreCommand(
       messageThreshold = messageThreshold,
       computeGuild = computeGuild,
       takeWhile = takeWhile,
-      computeMessage = computeMessage
+      computeMessage = computeMessage,
+      isShuffled = isShuffle
     )
   }
 }

@@ -29,7 +29,8 @@ class OnlineEmojiesStoreCommand(
           guildThreshold,
           channelsThreshold,
           messageThreshold,
-          emojisThreshold
+          emojisThreshold,
+          false
         )
       }.onFailure { exception ->
         LOG.log(Level.SEVERE, "Error while running emojies collect", exception)

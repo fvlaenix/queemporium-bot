@@ -133,7 +133,8 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
     messageThreshold: Int = Runtime.getRuntime().availableProcessors(),
     computeGuild: suspend (Guild) -> List<MessageChannel>,
     takeWhile: (Message) -> Boolean,
-    computeMessage: suspend (Message) -> Unit
+    computeMessage: suspend (Message) -> Unit,
+    isShuffled: Boolean = false
   ) {
     val computeChannel: (MessageChannel) -> List<Message> = channel@{ channel ->
       var attempts = 5
@@ -141,7 +142,11 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
         attempts--
         try {
           val messages = channel.iterableHistory.takeWhile(takeWhile).reversed()
-          return@channel messages
+          return@channel if (isShuffled) {
+            messages.shuffled()
+          } else {
+            messages
+          }
         } catch (_: InsufficientPermissionException) {
           LOG.log(Level.INFO, "$jobName: Insufficient permissions for channel ${channel.getName()}")
           return@channel emptyList()

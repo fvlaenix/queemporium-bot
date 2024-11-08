@@ -17,6 +17,7 @@ class LongTermEmojiesStoreCommand(
   private val channelsThreshold = parameters["channelThreshold"]?.toIntOrNull() ?: 4
   private val messageThreshold = parameters["messageThreshold"]?.toIntOrNull() ?: Runtime.getRuntime().availableProcessors()
   private val emojisThreshold = parameters["emojisThreshold"]?.toIntOrNull() ?: 16
+  private val isShuffle = parameters["isShuffle"]?.toBooleanStrictOrNull() == true
 
   override suspend fun onReadySuspend(event: ReadyEvent) {
     runCatching {
@@ -26,7 +27,8 @@ class LongTermEmojiesStoreCommand(
         guildThreshold,
         channelsThreshold,
         messageThreshold,
-        emojisThreshold
+        emojisThreshold,
+        isShuffle
       )
     }.onFailure { exception ->
       LOG.log(Level.SEVERE, "Error while running emojies collect", exception)
