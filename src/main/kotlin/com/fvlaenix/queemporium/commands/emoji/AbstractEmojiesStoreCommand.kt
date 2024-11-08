@@ -33,13 +33,11 @@ abstract class AbstractEmojiesStoreCommand(
   ) {
     LOG.log(Level.INFO, "Start emojies collect. Distance: $takeDistance. Guild Threshold: $guildThreshold, Channel Threshold: $channelThreshold, Message Threshold: $messageThreshold, Reaction Threshold: $reactionThreshold, Shuffle: $isShuffle")
     val computeGuild: (Guild) -> List<MessageChannel> = { guild ->
-      guild.channels.mapNotNull channel@{ channel ->
-        channel.id
-        if (channel is MessageChannel) {
-          channel
-        } else {
-          null
-        }
+      val channels = guild.channels.mapNotNull channel@{ channel -> channel as? MessageChannel }
+      if (isShuffle) {
+        channels.shuffled()
+      } else {
+        channels
       }
     }
     val startTime = System.currentTimeMillis() / 1000

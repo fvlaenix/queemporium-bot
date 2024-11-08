@@ -93,14 +93,20 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
     messageThreshold: Int,
     computeGuild: suspend (Guild) -> List<MessageChannel>,
     computeChannel: suspend (MessageChannel) -> List<Message>,
-    computeMessage: suspend (Message) -> Unit
+    computeMessage: suspend (Message) -> Unit,
+    isShuffled: Boolean
   ) {
     val guildCounter = CoroutineUtils.AtomicProgressCounter()
     val channelCounter = CoroutineUtils.AtomicProgressCounter()
     val messageCounter = CoroutineUtils.AtomicProgressCounter()
     coroutineScope {
       guildCounter.totalIncrease(jda.guilds.size)
-      val channelsChannel = flatChannelTransform(jda.guilds, guildThreshold) { guild ->
+      val guilds = if (isShuffled) {
+        jda.guilds.shuffled()
+      } else {
+        jda.guilds
+      }
+      val channelsChannel = flatChannelTransform(guilds, guildThreshold) { guild ->
         LOG.log(Level.INFO, "$jobName: Guild processing ${guildCounter.status()}: ${guild.name}")
         val channels = computeGuild(guild)
         channelCounter.totalIncrease(channels.size)
@@ -157,6 +163,16 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
       LOG.log(Level.SEVERE, "$jobName: Can't take channel ${channel.getName()} in few attempts")
       emptyList()
     }
-    runOverOld(jda, jobName, guildThreshold, channelThreshold, messageThreshold, computeGuild, computeChannel, computeMessage)
+    runOverOld(
+      jda,
+      jobName,
+      guildThreshold,
+      channelThreshold,
+      messageThreshold,
+      computeGuild,
+      computeChannel,
+      computeMessage,
+      isShuffled
+    )
   }
 }
