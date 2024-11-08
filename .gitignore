@@ -43,4 +43,4 @@ bin/
 /.idea/
 /src/main/resources/database.properties
 /src/main/resources/search.properties
-/src/main/resources/bot-properties.xml
+/src/main/resources/bot-properties*.xml
