@@ -75,9 +75,8 @@ abstract class AbstractEmojiesStoreCommand(
           }.getOrNull()
         }
         channelTransform(reactions, reactionThreshold) { reactionList ->
-          reactionList.forEach { reaction ->
-            emojiDataConnector.insert(EmojiData(messageId, reaction.second, reaction.first))
-          }
+          val emojiDatas = reactionList.map { reaction -> EmojiData(messageId, reaction.second, reaction.first) }
+          emojiDataConnector.insert(emojiDatas)
         }
       }
       messageEmojiDataConnector.insert(MessageEmojiData(messageId, message.reactions.sumOf { it.count }))

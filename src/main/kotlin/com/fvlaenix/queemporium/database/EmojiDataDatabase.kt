@@ -26,17 +26,27 @@ class EmojiDataConnector(val database: Database) {
       SchemaUtils.create(EmojiDataTable)
     }
   }
-  
-  fun insert(emojiData: EmojiData) = transaction(database) {
+
+  private fun insertUnderTransaction(emojiData: EmojiData) {
     if (EmojiDataTable.select {
-        (EmojiDataTable.emojiId eq emojiData.emojiId) and 
-        (EmojiDataTable.messageId eq emojiData.messageId) and 
-        (EmojiDataTable.authorId eq emojiData.authorId)
-    }.count() > 0) return@transaction
+        (EmojiDataTable.emojiId eq emojiData.emojiId) and
+            (EmojiDataTable.messageId eq emojiData.messageId) and
+            (EmojiDataTable.authorId eq emojiData.authorId)
+      }.count() > 0) return
     EmojiDataTable.insert {
       it[messageId] = emojiData.messageId
       it[emojiId] = emojiData.emojiId
       it[authorId] = emojiData.authorId
+    }
+  }
+
+  fun insert(emojiData: EmojiData) = transaction(database) {
+    insertUnderTransaction(emojiData)
+  }
+
+  fun insert(emojiDatas: Collection<EmojiData>) = transaction(database) {
+    emojiDatas.forEach { emojiData ->
+      insertUnderTransaction(emojiData)
     }
   }
   
