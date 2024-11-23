@@ -62,14 +62,18 @@ object DownloadUtils {
     }
   }
   
-  suspend fun readImageFromUrl(url: String, compressSize: CompressSize): Pair<BufferedImage, Size>? {
+  suspend fun readImageFromUrl(url: String, compressSize: CompressSize?): Pair<BufferedImage, Size>? {
     return DOWNLOAD_SEMAPHORE.withPermit { readImageFromUrl(url) }?.let { (image, size) ->
-      val scaledSize = compressSize.getScaledSize(size)
-      Thumbnails.of(image).size(scaledSize.width, scaledSize.height).asBufferedImage() to size
+      if (compressSize == null) {
+        image to size
+      } else {
+        val scaledSize = compressSize.getScaledSize(size)
+        Thumbnails.of(image).size(scaledSize.width, scaledSize.height).asBufferedImage() to size
+      }
     }
   }
   
-  suspend fun readImageFromAttachment(attachment: Attachment, compressSize: CompressSize): Pair<BufferedImage, AdditionalImageInfo>? {
+  suspend fun readImageFromAttachment(attachment: Attachment, compressSize: CompressSize?): Pair<BufferedImage, AdditionalImageInfo>? {
     var attemptsLeft = STANDARD_ATTEMPTS
     val okHttpClient = OkHttpClient()
     while (attemptsLeft > 0) {
@@ -86,10 +90,12 @@ object DownloadUtils {
         }
         val proxy = attachment.proxy.withClient(client) as AttachmentProxy
         val originalSize = Size(attachment.width, attachment.height)
-        val size = compressSize.getScaledSize(originalSize)
+        val size = compressSize?.getScaledSize(originalSize) ?: originalSize
         return DOWNLOAD_SEMAPHORE.withPermit {
-          readImageRepeatedly({ proxy.download(size.width, size.height).get() }, attempts = 2) to
-                  AdditionalImageInfo(attachment.fileName, attachment.isSpoiler, originalSize.width, originalSize.height)
+          readImageRepeatedly(
+            { if (compressSize == null) proxy.download().get() else proxy.download(size.width, size.height).get() },
+            attempts = 2
+          ) to AdditionalImageInfo(attachment.fileName, attachment.isSpoiler, originalSize.width, originalSize.height)
         }
       } catch (e: IOException) {
         LOG.log(Level.SEVERE, "Can't read attachment from file: ${attachment.url}", e)

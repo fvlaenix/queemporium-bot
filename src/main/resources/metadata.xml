@@ -2,6 +2,7 @@
   <command className="com.fvlaenix.queemporium.commands.duplicate.OnlinePictureCompare"/>
   <command className="com.fvlaenix.queemporium.commands.duplicate.RevengePicturesCommand"/>
   <command className="com.fvlaenix.queemporium.commands.duplicate.UploadPicturesCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.advent.AdventCommand"/>
   <command className="com.fvlaenix.queemporium.commands.AuthorCollectCommand"/>
   <command className="com.fvlaenix.queemporium.commands.AuthorMappingCommand"/>
   <command className="com.fvlaenix.queemporium.commands.DependentDeleterCommand"/>
