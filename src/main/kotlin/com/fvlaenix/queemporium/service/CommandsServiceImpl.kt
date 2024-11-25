@@ -1,6 +1,7 @@
 package com.fvlaenix.queemporium.service
 
 import com.fvlaenix.queemporium.commands.*
+import com.fvlaenix.queemporium.commands.advent.AdventCommand
 import com.fvlaenix.queemporium.commands.duplicate.OnlinePictureCompare
 import com.fvlaenix.queemporium.commands.duplicate.RevengePicturesCommand
 import com.fvlaenix.queemporium.commands.emoji.OnlineEmojiesStoreCommand
@@ -100,7 +101,8 @@ class CommandsServiceImpl(
       MessagesStoreCommand::class,
       PixivCompressedDetectorCommand::class,
       SetDuplicateChannelCommand::class,
-      SearchCommand::class
+      SearchCommand::class,
+      AdventCommand::class
     )
   }
 
