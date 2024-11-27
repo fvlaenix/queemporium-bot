@@ -102,7 +102,8 @@ class CommandsServiceImpl(
       PixivCompressedDetectorCommand::class,
       SetDuplicateChannelCommand::class,
       SearchCommand::class,
-      AdventCommand::class
+      AdventCommand::class,
+      PermissionsInfoCommand::class
     )
   }
 

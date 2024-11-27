@@ -33,7 +33,12 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
     "message from ${message.author.name} with url: ${message.jumpUrl}"
   
   protected fun Message.isFromAdmin(): Boolean = member?.hasPermission(Permission.ADMINISTRATOR) == true
-  
+
+  protected fun Message.isFromRoleAdmin(): Boolean {
+    val roles = member?.roles ?: return false
+    return roles.any { role -> role.name.equals("admin", ignoreCase = true) }
+  }
+
   open suspend fun onReadySuspend(event: ReadyEvent) {}
   
   override fun onReady(event: ReadyEvent) {

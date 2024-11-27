@@ -81,7 +81,7 @@ class AdventCommand(
     val postMessage = event.message
     val postGuildId = event.message.guildId!!
     val postChannelId = event.message.channelId
-    if (!postMessage.isFromAdmin()) {
+    if (!postMessage.isFromAdmin() && !postMessage.isFromRoleAdmin()) {
       answerService.sendReply(postMessage, "Pathetic, only admins can use this!")
       return
     }

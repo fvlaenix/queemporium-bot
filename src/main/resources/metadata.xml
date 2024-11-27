@@ -11,6 +11,7 @@
   <command className="com.fvlaenix.queemporium.commands.ExcludeChannelCommand"/>
   <command className="com.fvlaenix.queemporium.commands.LoggerMessageCommand"/>
   <command className="com.fvlaenix.queemporium.commands.MessagesStoreCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.PermissionsInfoCommand"/>
   <command className="com.fvlaenix.queemporium.commands.PixivCompressedDetectorCommand"/>
   <command className="com.fvlaenix.queemporium.commands.SearchCommand"/>
   <command className="com.fvlaenix.queemporium.commands.SetDuplicateChannelCommand"/>
