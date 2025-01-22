@@ -28,10 +28,10 @@ private val LOG: Logger = Logger.getLogger(CoroutineListenerAdapter::class.java.
 open class CoroutineListenerAdapter : ListenerAdapter() {
   private fun getCoroutinePool(): ExecutorCoroutineDispatcher = DiscordBot.MAIN_BOT_POOL
   private fun getCoroutineScope(): CoroutineScope = DiscordBot.MAIN_SCOPE
-  
+
   protected fun messageInfo(message: Message): String =
     "message from ${message.author.name} with url: ${message.jumpUrl}"
-  
+
   protected fun Message.isFromAdmin(): Boolean = member?.hasPermission(Permission.ADMINISTRATOR) == true
 
   protected fun Message.isFromRoleAdmin(): Boolean {
@@ -40,7 +40,7 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
   }
 
   open suspend fun onReadySuspend(event: ReadyEvent) {}
-  
+
   override fun onReady(event: ReadyEvent) {
     getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER) {
       try {
@@ -50,11 +50,11 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
       }
     }
   }
-  
+
   protected open fun receiveMessageFilter(event: MessageReceivedEvent): Boolean = true
-  
+
   open suspend fun onMessageReceivedSuspend(event: MessageReceivedEvent) {}
-  
+
   override fun onMessageReceived(event: MessageReceivedEvent) {
     if (!receiveMessageFilter(event)) return
     getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER) {
@@ -67,7 +67,7 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
   }
 
   open suspend fun onMessageUpdateSuspend(event: MessageUpdateEvent) {}
-  
+
   override fun onMessageUpdate(event: MessageUpdateEvent) {
     getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER) {
       try {
@@ -135,7 +135,7 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
     }
     LOG.log(Level.INFO, "$jobName: Finish onReady")
   }
-  
+
   protected suspend fun runOverOld(
     jda: JDA,
     jobName: String,

@@ -29,10 +29,10 @@ class MessageDataConnector(private val database: Database) {
       SchemaUtils.create(MessageDataTable)
     }
   }
-  
+
   fun add(messageData: MessageData) = transaction(database) {
     val message = MessageDataTable.select { MessageDataTable.messageId eq messageData.messageId }
-    if (message.count() > 0) return@transaction 
+    if (message.count() > 0) return@transaction
     MessageDataTable.insert {
       it[messageId] = messageData.messageId
       it[guildId] = messageData.guildId
@@ -43,15 +43,15 @@ class MessageDataConnector(private val database: Database) {
       it[epoch] = messageData.epoch
     }
   }
-  
+
   fun get(messageId: String): MessageData? = transaction(database) {
     MessageDataTable.select { MessageDataTable.messageId eq messageId }.map { get(it) }.singleOrNull()
   }
-  
-  fun delete(messageId: String) = transaction(database) { 
+
+  fun delete(messageId: String) = transaction(database) {
     MessageDataTable.deleteWhere { MessageDataTable.messageId eq messageId }
   }
-  
+
   companion object {
     fun get(resultRow: ResultRow): MessageData = MessageData(
       resultRow[MessageDataTable.messageId],

@@ -4,6 +4,7 @@ import com.fvlaenix.queemporium.commands.CoroutineListenerAdapter
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.database.*
 import com.fvlaenix.queemporium.service.AnswerService
+import com.fvlaenix.queemporium.service.DuplicateImageService
 import com.fvlaenix.queemporium.utils.CoroutineUtils
 import kotlinx.coroutines.withContext
 import net.dv8tion.jda.api.JDA
@@ -14,13 +15,14 @@ import kotlin.coroutines.coroutineContext
 
 abstract class ReportPictureCommand(
   databaseConfiguration: DatabaseConfiguration,
-  private val answerService: AnswerService
+  private val answerService: AnswerService,
+  protected val duplicateImageService: DuplicateImageService
 ) : CoroutineListenerAdapter() {
   private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
   private val messageDuplicateDataConnector = MessageDuplicateDataConnector(databaseConfiguration.toDatabase())
   private val dependencyConnector = MessageDependencyConnector(databaseConfiguration.toDatabase())
-  
+
   suspend fun getMessage(compressSize: CompressSize, message: Message) {
     if (message.author.isSystem) return
     val duplicateChannelId = guildInfoConnector.getDuplicateInfoChannel(message.guildId!!) ?: return
@@ -46,11 +48,11 @@ abstract class ReportPictureCommand(
 
     messageDataConnector.add(messageData)
     if (messageDuplicateDataConnector.exists(messageData.messageId)) return
-    
+
     withContext(coroutineContext + CoroutineUtils.CurrentMessageMessageProblemHandler()) {
       assert(coroutineContext[CoroutineUtils.CURRENT_MESSAGE_EXCEPTION_CONTEXT_KEY] != null)
-      
-      DuplicateImageService.sendPictures(
+
+      duplicateImageService.addImageWithCheck(
         message = message,
         compressSize = compressSize,
         withHistoryReload = true
@@ -58,7 +60,8 @@ abstract class ReportPictureCommand(
         val isSpoiler =
           duplicateMessageInfo.additionalImageInfo.isSpoiler || originalImageDatas.any { it.additionalImageInfo.isSpoiler }
         val originalData = originalImageDatas.map {
-          messageDuplicateDataConnector.get(it.messageId)!!.withMessageData(messageDataConnector.get(it.messageId)!!) to it
+          messageDuplicateDataConnector.get(it.messageId)!!
+            .withMessageData(messageDataConnector.get(it.messageId)!!) to it
         }
         val duplicateMessageDatas = answerService.sendDuplicateMessageInfo(
           duplicateChannel = duplicateChannel,
@@ -93,7 +96,7 @@ abstract class ReportPictureCommand(
       messageDuplicateDataConnector.add(messageDuplicateData.copy(messageProblems = messageProblemsHandler.messageProblems))
     }
   }
-  
+
   suspend fun runOverOld(jda: JDA, takeWhile: (Message) -> Boolean, computeMessage: suspend (Message) -> Unit) {
     val computeGuild: (Guild) -> List<MessageChannel> = { guild ->
       val guildId = guild.id
@@ -108,9 +111,9 @@ abstract class ReportPictureCommand(
         }
       }
     }
-    
+
     runOverOld(
-      jda = jda, 
+      jda = jda,
       jobName = "DuplicatePicture",
       computeGuild = computeGuild,
       takeWhile = takeWhile,

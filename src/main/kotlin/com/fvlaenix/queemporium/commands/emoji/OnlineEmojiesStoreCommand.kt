@@ -1,6 +1,7 @@
 package com.fvlaenix.queemporium.commands.emoji
 
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.configuration.commands.OnlineEmojiesStoreCommandConfig
 import kotlinx.coroutines.delay
 import net.dv8tion.jda.api.events.session.ReadyEvent
 import java.util.logging.Level
@@ -12,24 +13,19 @@ private val LOG = Logger.getLogger(OnlineEmojiesStoreCommand::class.java.name)
 
 class OnlineEmojiesStoreCommand(
   databaseConfiguration: DatabaseConfiguration,
-  parameters: Map<String, String>
+  private val config: OnlineEmojiesStoreCommandConfig
 ) : AbstractEmojiesStoreCommand(databaseConfiguration) {
-  private val distanceInDays = parameters["distanceInDays"]?.toIntOrNull() ?: 7
-  private val guildThreshold = parameters["guildThreshold"]?.toIntOrNull() ?: 2
-  private val channelsThreshold = parameters["channelThreshold"]?.toIntOrNull() ?: 4
-  private val messageThreshold = parameters["messageThreshold"]?.toIntOrNull() ?: Runtime.getRuntime().availableProcessors()
-  private val emojisThreshold = parameters["emojisThreshold"]?.toIntOrNull() ?: 16
 
   override suspend fun onReadySuspend(event: ReadyEvent) {
     while (true) {
       runCatching {
         runOverOld(
           event.jda,
-          distanceInDays.days,
-          guildThreshold,
-          channelsThreshold,
-          messageThreshold,
-          emojisThreshold,
+          config.distanceInDays.days,
+          config.guildThreshold,
+          config.channelThreshold,
+          config.messageThreshold,
+          config.emojisThreshold,
           false
         )
       }.onFailure { exception ->

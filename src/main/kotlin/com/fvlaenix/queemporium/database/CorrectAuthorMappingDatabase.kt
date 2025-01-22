@@ -15,13 +15,13 @@ data class CorrectAuthorMappingData(
 object CorrectAuthorMappingTable : Table() {
   val from = varchar("from", 255)
   val to = varchar("to", 255)
-  
+
   init {
     index(true, from, to)
   }
 }
 
-class CorrectAuthorMappingConnector(val database: Database): AuthorMapper() {
+class CorrectAuthorMappingConnector(val database: Database) : AuthorMapper() {
   init {
     transaction(database) {
       SchemaUtils.create(CorrectAuthorMappingTable)
@@ -33,7 +33,8 @@ class CorrectAuthorMappingConnector(val database: Database): AuthorMapper() {
       CorrectAuthorMappingTable
         .selectAll()
         .associate {
-          it[CorrectAuthorMappingTable.from].split("/").map { it.trim() } to it[CorrectAuthorMappingTable.to].split("/").map { it.trim() }
+          it[CorrectAuthorMappingTable.from].split("/").map { it.trim() } to
+              it[CorrectAuthorMappingTable.to].split("/").map { it.trim() }
         }
     }
 }

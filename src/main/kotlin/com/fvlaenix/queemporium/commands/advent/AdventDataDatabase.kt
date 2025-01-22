@@ -46,11 +46,11 @@ class AdventDataConnector(val database: Database) {
   fun getAdvents(): List<AdventData> = transaction(database) {
     AdventDataTable.selectAll().map { get(it) }
   }
-  
+
   fun markAsRevealed(guildId: String, messageId: String) = transaction(database) {
     AdventDataTable.update({
       (AdventDataTable.guildPostId eq guildId) and
-      (AdventDataTable.messageId eq messageId)
+          (AdventDataTable.messageId eq messageId)
     }) {
       it[isRevealed] = true
     }

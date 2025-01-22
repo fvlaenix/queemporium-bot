@@ -6,6 +6,7 @@ import com.fvlaenix.queemporium.database.MessageDataConnector
 import com.fvlaenix.queemporium.database.MessageDuplicateData
 import com.fvlaenix.queemporium.database.MessageDuplicateDataConnector
 import com.fvlaenix.queemporium.service.AnswerService
+import com.fvlaenix.queemporium.service.DuplicateImageService
 import com.fvlaenix.queemporium.utils.CoroutineUtils
 import kotlinx.coroutines.withContext
 import net.dv8tion.jda.api.events.session.ReadyEvent
@@ -13,13 +14,14 @@ import kotlin.coroutines.coroutineContext
 
 class UploadPicturesCommand(
   databaseConfiguration: DatabaseConfiguration,
-  answerService: AnswerService
-) : ReportPictureCommand(databaseConfiguration, answerService) {
+  answerService: AnswerService,
+  duplicateImageService: DuplicateImageService
+) : ReportPictureCommand(databaseConfiguration, answerService, duplicateImageService) {
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
   private val messageDuplicateDataConnector = MessageDuplicateDataConnector(databaseConfiguration.toDatabase())
-  
+
   override suspend fun onReadySuspend(event: ReadyEvent) {
-    val compressSize = DuplicateImageService.checkServerAliveness(event) ?: return
+    val compressSize = duplicateImageService.checkServerAliveness(event) ?: return
     runOverOld(event.jda, { true }) { message ->
       val messageId = message.id
       val messageData = MessageData(
@@ -37,13 +39,13 @@ class UploadPicturesCommand(
         countImages = message.attachments.size + message.embeds.size,
         messageProblems = emptyList()
       )
-      
+
       messageDataConnector.add(messageData)
       if (messageDuplicateDataConnector.exists(messageData.messageId)) return@runOverOld
-      
+
       withContext(coroutineContext + CoroutineUtils.CurrentMessageMessageProblemHandler()) {
         assert(coroutineContext[CoroutineUtils.CURRENT_MESSAGE_EXCEPTION_CONTEXT_KEY] != null)
-        DuplicateImageService.sendPictures(
+        duplicateImageService.addImageWithCheck(
           message = message,
           compressSize = compressSize,
           withHistoryReload = false

@@ -8,9 +8,9 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 class SetDuplicateChannelCommand(
   databaseConfiguration: DatabaseConfiguration,
   private val answerService: AnswerService
-): CoroutineListenerAdapter() {
+) : CoroutineListenerAdapter() {
   private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
-  
+
   override fun receiveMessageFilter(event: MessageReceivedEvent): Boolean =
     event.message.contentRaw == "/shogun-sama beg-this-channel-duplicate"
 

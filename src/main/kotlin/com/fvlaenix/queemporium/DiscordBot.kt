@@ -1,8 +1,6 @@
 package com.fvlaenix.queemporium
 
 import com.fvlaenix.queemporium.configuration.BotConfiguration
-import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
-import com.fvlaenix.queemporium.service.AnswerServiceImpl
 import com.fvlaenix.queemporium.service.CommandsService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -21,15 +19,14 @@ private val LOG = Logger.getLogger(DiscordBot::class.java.name)
 
 class DiscordBot(
   botConfiguration: BotConfiguration,
-  databaseConfiguration: DatabaseConfiguration,
-  commandsService: CommandsService,
-  answerService: AnswerServiceImpl
+  private val commandsService: CommandsService
 ) {
   companion object {
     @OptIn(DelicateCoroutinesApi::class)
     val MAIN_BOT_POOL = newFixedThreadPoolContext(4, "MainBotPool")
     val MAIN_SCOPE = CoroutineScope(Dispatchers.Default)
   }
+
   private val jda: JDABuilder = JDABuilder
     .createDefault(
       botConfiguration.token.raw,
@@ -39,9 +36,7 @@ class DiscordBot(
     .setChunkingFilter(ChunkingFilter.ALL)
     .setMemberCachePolicy(MemberCachePolicy.ALL)
     .disableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.SCHEDULED_EVENTS)
-    .addEventListeners(
-      *commandsService.getCommands(botConfiguration, databaseConfiguration, answerService).toTypedArray()
-    )
+    .addEventListeners(*commandsService.getCommands(botConfiguration).toTypedArray())
     .setActivity(Activity.customStatus("Dominates Emporium"))
 
   fun run() {

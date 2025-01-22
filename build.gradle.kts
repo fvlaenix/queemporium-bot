@@ -27,6 +27,9 @@ dependencies {
     compileOnly("org.apache.tomcat:annotations-api:6.0.53")
     protobuf(files("discord-bots-rpc/duplicate-image-request.proto", "discord-bots-rpc/is-alive.proto", "discord-bots-rpc/image.proto"))
 
+    // koin
+    implementation("io.insert-koin:koin-core:4.0.1")
+
     // discord
     implementation("net.dv8tion:JDA:5.2.0")
 

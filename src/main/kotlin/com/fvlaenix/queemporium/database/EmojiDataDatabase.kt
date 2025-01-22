@@ -1,6 +1,5 @@
 package com.fvlaenix.queemporium.database
 
-import net.dv8tion.jda.api.entities.emoji.Emoji
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -16,7 +15,7 @@ data class EmojiTopMessageData(
   val url: String,
   val emojiesCount: Int
 ) {
-  constructor(resultRow: ResultRow): this(
+  constructor(resultRow: ResultRow) : this(
     resultRow[EmojiDataTable.messageId],
     resultRow[AuthorDataTable.authorName],
     resultRow[MessageDataTable.url],
@@ -28,7 +27,7 @@ object EmojiDataTable : Table() {
   val messageId = varchar("messageId", 400)
   val emojiId = varchar("emojiId", 100)
   val authorId = varchar("authorId", 100)
-  
+
   init {
     index(false, authorId)
     index(true, messageId, emojiId, authorId)
@@ -64,7 +63,7 @@ class EmojiDataConnector(val database: Database) {
       insertUnderTransaction(emojiData)
     }
   }
-  
+
   fun delete(messageId: String) = transaction(database) {
     EmojiDataTable.deleteWhere { EmojiDataTable.messageId eq messageId }
   }
@@ -90,11 +89,28 @@ class EmojiDataConnector(val database: Database) {
       }
     }
 
-  fun getTopMessages(guildId: String, channelId: String?, startEpoch: Long, endEpoch: Long, count: Int): List<EmojiTopMessageData> = transaction(database) {
+  fun getTopMessages(
+    guildId: String,
+    channelId: String?,
+    startEpoch: Long,
+    endEpoch: Long,
+    count: Int
+  ): List<EmojiTopMessageData> = transaction(database) {
     MessageDataTable
-      .join(EmojiDataTable, JoinType.LEFT, additionalConstraint = { MessageDataTable.messageId eq EmojiDataTable.messageId })
-      .join(AuthorDataTable, JoinType.INNER, additionalConstraint = { MessageDataTable.authorId eq AuthorDataTable.authorId })
-      .slice(AuthorDataTable.authorName, MessageDataTable.url, EmojiDataTable.messageId.count(), EmojiDataTable.messageId)
+      .join(
+        EmojiDataTable,
+        JoinType.LEFT,
+        additionalConstraint = { MessageDataTable.messageId eq EmojiDataTable.messageId })
+      .join(
+        AuthorDataTable,
+        JoinType.INNER,
+        additionalConstraint = { MessageDataTable.authorId eq AuthorDataTable.authorId })
+      .slice(
+        AuthorDataTable.authorName,
+        MessageDataTable.url,
+        EmojiDataTable.messageId.count(),
+        EmojiDataTable.messageId
+      )
       .selectByTimeAndGuildChannel(guildId, channelId, startEpoch, endEpoch)
       .groupBy(MessageDataTable.messageId, AuthorDataTable.authorName)
       .orderBy(EmojiDataTable.messageId.count(), SortOrder.DESC)

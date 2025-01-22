@@ -1,14 +1,17 @@
-package com.fvlaenix.queemporium.commands.duplicate
+package com.fvlaenix.queemporium.service
 
-import DUPLICATE_IMAGE_HOSTNAME
 import com.fvlaenix.alive.protobuf.isAliveRequest
 import com.fvlaenix.duplicate.protobuf.DuplicateImagesServiceGrpcKt
 import com.fvlaenix.duplicate.protobuf.addImageRequest
+import com.fvlaenix.duplicate.protobuf.deleteImageRequest
 import com.fvlaenix.duplicate.protobuf.getCompressionSizeRequest
+import com.fvlaenix.image.protobuf.image
+import com.fvlaenix.queemporium.configuration.DuplicateImageServiceConfig
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.database.CompressSize
 import com.fvlaenix.queemporium.database.MessageProblem
 import com.fvlaenix.queemporium.exception.EXCEPTION_HANDLER
+import com.fvlaenix.queemporium.service.DuplicateImageService.DuplicateImageData
 import com.fvlaenix.queemporium.utils.ChannelUtils
 import com.fvlaenix.queemporium.utils.ChannelUtils.STANDARD_IMAGE_CHANNEL_SIZE
 import com.fvlaenix.queemporium.utils.CoroutineUtils
@@ -33,20 +36,16 @@ import kotlin.coroutines.coroutineContext
 import kotlin.io.path.Path
 import kotlin.io.path.extension
 
-private val LOG = Logger.getLogger(DuplicateImageService::class.java.name)
+private val LOG = Logger.getLogger(DuplicateImageServiceImpl::class.java.name)
 
-object DuplicateImageService {
-  private val DUPLICATE_SEND_SEMAPHORE = Semaphore(20)
-
-  class DuplicateImageData(
-    val messageId: String,
-    val numberInMessage: Int,
-    val additionalImageInfo: AdditionalImageInfo,
-    val level: Long
-  )
+class DuplicateImageServiceImpl(val duplicateImageServiceConfig: DuplicateImageServiceConfig) : DuplicateImageService {
+  private val duplicateSendSemaphore = Semaphore(20)
 
   suspend fun <T> withOpenedChannel(block: suspend (DuplicateImagesServiceGrpcKt.DuplicateImagesServiceCoroutineStub) -> T): T {
-    val duplicateImageChannel = ManagedChannelBuilder.forAddress(DUPLICATE_IMAGE_HOSTNAME, 50055)
+    val duplicateImageChannel = ManagedChannelBuilder.forAddress(
+      duplicateImageServiceConfig.hostname,
+      duplicateImageServiceConfig.port
+    )
       .usePlaintext()
       .maxInboundMessageSize(STANDARD_IMAGE_CHANNEL_SIZE) // 50 mb
       .build()
@@ -55,7 +54,7 @@ object DuplicateImageService {
     return ChannelUtils.runWithClose(duplicateImageChannel, duplicateChannelService, block)
   }
 
-  private suspend fun sendPicture(
+  private suspend fun addImageWithCheck(
     guildId: String?,
     channelId: String,
     messageId: String,
@@ -73,7 +72,7 @@ object DuplicateImageService {
             this.messageId = messageId
             this.numberInMessage = numberInMessage
             this.additionalInfo = Json.encodeToString(additionalImageInfo)
-            this.image = com.fvlaenix.image.protobuf.image {
+            this.image = image {
               val outputStream = ByteArrayOutputStream()
               ImageIO.write(image, Path(fileName).extension, outputStream)
               this.content = outputStream.toByteArray().toByteString()
@@ -105,7 +104,7 @@ object DuplicateImageService {
     }
   }
 
-  private suspend fun CoroutineScope.sendPictures(
+  private fun CoroutineScope.addImageWithCheck(
     epoch: Long,
     channelInput: Channel<MessageUtils.MessageImageInfo>,
     channelOutput: Channel<Pair<MessageUtils.MessageImageInfo, List<DuplicateImageData>>>
@@ -114,7 +113,7 @@ object DuplicateImageService {
       val jobs = mutableListOf<Job>()
       for (picture in channelInput) {
         val job = launch(EXCEPTION_HANDLER) picture@{
-          val result = sendPicture(
+          val result = addImageWithCheck(
             guildId = picture.guildId,
             channelId = picture.channelId,
             messageId = picture.messageId,
@@ -142,17 +141,17 @@ object DuplicateImageService {
     }
   }
 
-  suspend fun sendPictures(
+  override suspend fun addImageWithCheck(
     message: Message,
     compressSize: CompressSize,
     withHistoryReload: Boolean,
     callback: suspend (Pair<MessageUtils.MessageImageInfo, List<DuplicateImageData>>) -> Unit
   ) {
     coroutineScope {
-      DUPLICATE_SEND_SEMAPHORE.withPermit {
+      duplicateSendSemaphore.withPermit {
         val imagesChannel = addImagesFromMessage(message, withHistoryReload, compressSize)
         val duplicateChannel = Channel<Pair<MessageUtils.MessageImageInfo, List<DuplicateImageData>>>(Channel.UNLIMITED)
-        sendPictures(message.timeCreated.toEpochSecond(), imagesChannel, duplicateChannel)
+        addImageWithCheck(message.timeCreated.toEpochSecond(), imagesChannel, duplicateChannel)
         for (duplicate in duplicateChannel) {
           try {
             callback(duplicate)
@@ -164,7 +163,7 @@ object DuplicateImageService {
     }
   }
 
-  suspend fun checkServerAliveness(event: ReadyEvent): CompressSize? {
+  override suspend fun checkServerAliveness(event: ReadyEvent): CompressSize? {
     var compressSize: CompressSize? = null
     val isAlive = ChannelUtils.checkServerAliveness("duplicateImages") {
       withOpenedChannel { service ->
@@ -179,5 +178,16 @@ object DuplicateImageService {
       event.jda.shutdown()
     }
     return compressSize
+  }
+
+  override suspend fun deleteImage(deleteData: List<DuplicateImageService.DeleteImageData>) {
+    withOpenedChannel { service ->
+      deleteData.forEach { (messageId, numberInMessage) ->
+        service.deleteImage(deleteImageRequest {
+          this.messageId = messageId
+          this.numberInMessage = numberInMessage
+        })
+      }
+    }
   }
 }

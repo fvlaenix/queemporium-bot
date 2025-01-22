@@ -41,7 +41,7 @@ class AdventCommand(
       text = adventData.messageDescription
     ).await()
     // todo make normal answerservice to this
-    originalMessage.forwardTo(postChannel).queue ({ }, { e ->
+    originalMessage.forwardTo(postChannel).queue({ }, { e ->
       DiscordBot.MAIN_SCOPE.launch(Dispatchers.IO) {
         answerService.sendMessage(postChannel, "I can't send message! Please look at it by link")
       }
@@ -87,8 +87,10 @@ class AdventCommand(
     }
     val jda = event.jda
 
-    val (allCommandsEvents, debugData, errors) = getEventsFromCommand(postMessage.contentRaw,
-      jda, postGuildId, postChannelId)
+    val (allCommandsEvents, debugData, errors) = getEventsFromCommand(
+      postMessage.contentRaw,
+      jda, postGuildId, postChannelId
+    )
 
     if (errors.isEmpty()) {
       if (debugData.isNotBlank()) {
