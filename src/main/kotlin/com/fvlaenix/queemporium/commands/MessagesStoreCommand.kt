@@ -11,7 +11,7 @@ import net.dv8tion.jda.api.events.session.ReadyEvent
 
 class MessagesStoreCommand(val databaseConfiguration: DatabaseConfiguration) : CoroutineListenerAdapter() {
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
-  
+
   private fun computeMessage(message: Message) {
     val messageId = message.id
     val messageData = MessageData(
@@ -26,7 +26,7 @@ class MessagesStoreCommand(val databaseConfiguration: DatabaseConfiguration) : C
 
     messageDataConnector.add(messageData)
   }
-  
+
   override suspend fun onReadySuspend(event: ReadyEvent) {
     val computeGuild: (Guild) -> List<MessageChannel> = { guild ->
       guild.channels.mapNotNull channel@{ channel ->

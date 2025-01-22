@@ -5,8 +5,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AdditionalImageInfo(
   val fileName: String,
-  val isSpoiler: Boolean, 
-  val originalSizeHeight: Int, 
+  val isSpoiler: Boolean,
+  val originalSizeHeight: Int,
   val originalSizeWidth: Int
 )
 
@@ -16,7 +16,7 @@ data class CompressSize(val width: Int?, val height: Int?) {
   init {
     assert((height == null && width != null) || (height != null && width == null))
   }
-  
+
   fun getScaledSize(size: Size): Size {
     val scale = if (this.height == null) {
       size.width.toDouble() / this.width!!

@@ -19,7 +19,7 @@ class MessageEmojiDataConnector(val database: Database) {
       SchemaUtils.create(MessageEmojiDataTable)
     }
   }
-  
+
   fun insert(message: MessageEmojiData) = transaction(database) {
     if (MessageEmojiDataTable.select { MessageEmojiDataTable.messageId eq message.messageId }.count() > 0) {
       MessageEmojiDataTable.update({ MessageEmojiDataTable.messageId eq message.messageId }) {
@@ -33,16 +33,16 @@ class MessageEmojiDataConnector(val database: Database) {
       }
     }
   }
-  
+
   fun get(messageId: String) = transaction(database) {
     MessageEmojiDataTable.select { MessageEmojiDataTable.messageId eq messageId }
       .singleOrNull()?.let { get(it) }
   }
-  
+
   fun delete(messageId: String) = transaction(database) {
     MessageEmojiDataTable.deleteWhere { MessageEmojiDataTable.messageId eq messageId }
   }
-  
+
   companion object {
     fun get(resultRow: ResultRow) = MessageEmojiData(
       resultRow[MessageEmojiDataTable.messageId],

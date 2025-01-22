@@ -14,23 +14,25 @@ private val LOG = Logger.getLogger(AuthorCollectCommand::class.java.name)
 
 class AuthorCollectCommand(val databaseConfiguration: DatabaseConfiguration) : CoroutineListenerAdapter() {
   private val authorDataConnector = AuthorDataConnector(databaseConfiguration.toDatabase())
-  
+
   private fun runCollect(jda: JDA) {
     LOG.log(Level.INFO, "Start author collect")
     jda.guilds.forEach { guild ->
       val guildId = guild.id
       guild.loadMembers().onSuccess { members ->
         members.forEach { member ->
-          authorDataConnector.insert(AuthorData(
-            member.id,
-            guildId,
-            member.user.name
-          ))
+          authorDataConnector.insert(
+            AuthorData(
+              member.id,
+              guildId,
+              member.user.name
+            )
+          )
         }
       }
     }
   }
-  
+
   override suspend fun onReadySuspend(event: ReadyEvent) {
     while (true) {
       runCollect(event.jda)

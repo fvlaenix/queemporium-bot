@@ -16,12 +16,12 @@ private val LOG: Logger = Logger.getLogger(DependentDeleterCommand::class.java.n
 class DependentDeleterCommand(databaseConfiguration: DatabaseConfiguration) : CoroutineListenerAdapter() {
   private val messageDependencyConnector = MessageDependencyConnector(databaseConfiguration.toDatabase())
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
-  
+
   override suspend fun onMessageDeleteSuspend(event: MessageDeleteEvent) {
     if (!event.isFromGuild) return
-    
+
     val messageId = event.messageId
-    
+
     val dependencyMessages = messageDependencyConnector.getDependencies(messageId)
     dependencyMessages.forEach { dependencyMessage ->
       try {
@@ -33,7 +33,8 @@ class DependentDeleterCommand(databaseConfiguration: DatabaseConfiguration) : Co
         } else {
           jda.getPrivateChannelById(messageData.channelId) ?: return
         }
-        val message: Message = kotlin.runCatching { channel.retrieveMessageById(messageData.messageId).complete() }.getOrNull() ?: return
+        val message: Message =
+          kotlin.runCatching { channel.retrieveMessageById(messageData.messageId).complete() }.getOrNull() ?: return
         message.delete().queue {
           messageDependencyConnector.removeMessage(dependencyMessage)
         }

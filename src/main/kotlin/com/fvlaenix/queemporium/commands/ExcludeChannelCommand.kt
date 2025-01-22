@@ -8,17 +8,17 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 class ExcludeChannelCommand(
   databaseConfiguration: DatabaseConfiguration,
   private val answerService: AnswerService
-): CoroutineListenerAdapter() {
+) : CoroutineListenerAdapter() {
   companion object {
     const val COMMAND_ADD_TO_EXCLUDE = "/shogun-sama beg-remove-decree"
     const val COMMAND_REMOVE_FROM_EXCLUDE = "/shogun-sama beg-add-decree"
   }
-  
+
   private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
-  
-  override fun receiveMessageFilter(event: MessageReceivedEvent): Boolean = 
+
+  override fun receiveMessageFilter(event: MessageReceivedEvent): Boolean =
     event.message.contentRaw == COMMAND_REMOVE_FROM_EXCLUDE ||
-    event.message.contentRaw == COMMAND_ADD_TO_EXCLUDE
+        event.message.contentRaw == COMMAND_ADD_TO_EXCLUDE
 
   override suspend fun onMessageReceivedSuspend(event: MessageReceivedEvent) {
     if (!event.isFromGuild) {

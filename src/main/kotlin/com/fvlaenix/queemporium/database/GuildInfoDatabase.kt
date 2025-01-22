@@ -23,7 +23,7 @@ class GuildInfoConnector(private val database: Database) {
       SchemaUtils.create(GuildInfoTable)
     }
   }
-  
+
   fun getGuildInfo(guildId: String): GuildInfo? = transaction(database) {
     val guild = GuildInfoTable.select { GuildInfoTable.guildId eq guildId }
     if (guild.count() > 0) get(guild.single())
@@ -76,7 +76,7 @@ class GuildInfoConnector(private val database: Database) {
   fun getAllGuilds(): List<GuildInfo> = transaction(database) {
     return@transaction GuildInfoTable.selectAll().map { get(it) }
   }
-  
+
   companion object {
     fun get(resultRow: ResultRow): GuildInfo = GuildInfo(
       resultRow[GuildInfoTable.guildId],

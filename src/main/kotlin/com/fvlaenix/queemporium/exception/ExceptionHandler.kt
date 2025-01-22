@@ -3,7 +3,6 @@ package com.fvlaenix.queemporium.exception
 import kotlinx.coroutines.CoroutineExceptionHandler
 import java.util.logging.Level
 import java.util.logging.Logger
-import kotlin.coroutines.CoroutineContext
 
 class ExceptionHandler
 

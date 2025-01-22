@@ -11,8 +11,12 @@ private val LOG = Logger.getLogger(ChannelUtils::class.java.name)
 
 object ChannelUtils {
   const val STANDARD_IMAGE_CHANNEL_SIZE = 50 * 1024 * 1024 // 50 mb
-  
-  suspend fun <T, COROUTINE_STUB: AbstractCoroutineStub<*>> runWithClose(channel: ManagedChannel, service: COROUTINE_STUB, body: suspend (COROUTINE_STUB) -> T): T {
+
+  suspend fun <T, COROUTINE_STUB : AbstractCoroutineStub<*>> runWithClose(
+    channel: ManagedChannel,
+    service: COROUTINE_STUB,
+    body: suspend (COROUTINE_STUB) -> T
+  ): T {
     return try {
       body(service)
     } finally {

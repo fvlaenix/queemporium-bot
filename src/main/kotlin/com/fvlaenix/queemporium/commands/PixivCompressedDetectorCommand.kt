@@ -12,7 +12,7 @@ class PixivCompressedDetectorCommand(
   val answerService: AnswerService
 ) : CoroutineListenerAdapter() {
   private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
-  
+
   override suspend fun onMessageReceivedSuspend(event: MessageReceivedEvent) {
     if (event.author.isBot) return
     val attachments = event.message.attachments

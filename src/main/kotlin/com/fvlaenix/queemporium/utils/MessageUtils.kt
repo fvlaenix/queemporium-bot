@@ -21,8 +21,12 @@ object MessageUtils {
     val numberInMessage: Int,
     val additionalImageInfo: AdditionalImageInfo
   )
-  
-  fun CoroutineScope.addImagesFromMessage(message: Message, withHistoryReload: Boolean = true, compressSize: CompressSize?): Channel<MessageImageInfo> {
+
+  fun CoroutineScope.addImagesFromMessage(
+    message: Message,
+    withHistoryReload: Boolean = true,
+    compressSize: CompressSize?
+  ): Channel<MessageImageInfo> {
     val channel = Channel<MessageImageInfo>(Channel.UNLIMITED)
     var currentId = 0
     val serverId = message.guildId!!
@@ -33,8 +37,8 @@ object MessageUtils {
       for (attachment in message.attachments) {
         if (attachment.isImage) {
           val id = currentId++
-          val job = launch attachment@ { 
-            val (image, additionalInfo) = readImageFromAttachment(attachment, compressSize).let { 
+          val job = launch attachment@{
+            val (image, additionalInfo) = readImageFromAttachment(attachment, compressSize).let {
               if (it == null) {
                 kotlin.coroutines.coroutineContext[CoroutineUtils.CURRENT_MESSAGE_EXCEPTION_CONTEXT_KEY]?.messageProblems?.add(
                   MessageProblem.ImageProblem.InternalError(id, "Image can't be loaded")
@@ -49,7 +53,7 @@ object MessageUtils {
                 guildId = serverId,
                 channelId = channelId,
                 messageId = messageId,
-                numberInMessage = id, 
+                numberInMessage = id,
                 additionalImageInfo = additionalInfo
               )
             )
@@ -57,7 +61,9 @@ object MessageUtils {
           jobs.add(job)
         }
       }
-      if (withHistoryReload) { delay(10000) }
+      if (withHistoryReload) {
+        delay(10000)
+      }
       val reloadedMessage =
         if (withHistoryReload) message.channel.getHistoryAround(message.id, 1).complete().getMessageById(message.id)
         else message
@@ -67,7 +73,7 @@ object MessageUtils {
           if (url != null) {
             val id = currentId
             currentId++
-            val job = launch embed@ {
+            val job = launch embed@{
               val (image, size) = readImageFromUrl(url, compressSize).let {
                 if (it == null) {
                   kotlin.coroutines.coroutineContext[CoroutineUtils.CURRENT_MESSAGE_EXCEPTION_CONTEXT_KEY]?.messageProblems?.add(
@@ -102,7 +108,7 @@ object MessageUtils {
         channel.close()
       }
     }
-    
+
     return channel
   }
 }

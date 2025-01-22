@@ -1,9 +1,9 @@
 package com.fvlaenix.queemporium.service
 
-import com.fvlaenix.queemporium.commands.duplicate.DuplicateImageService
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.database.CorrectAuthorMappingData
 import com.fvlaenix.queemporium.database.MessageDuplicateData
+import com.fvlaenix.queemporium.service.DuplicateImageService.DuplicateImageData
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -41,7 +41,7 @@ abstract class AnswerService {
     messageData: MessageDuplicateData.FullInfo,
     additionalImageInfo: AdditionalImageInfo,
     isSpoiler: Boolean,
-    originalData: List<Pair<MessageDuplicateData.FullInfo, DuplicateImageService.DuplicateImageData>>
+    originalData: List<Pair<MessageDuplicateData.FullInfo, DuplicateImageData>>
   ): List<Deferred<String?>> {
     val duplicateMessageDatas = mutableListOf<Deferred<String?>>()
 
@@ -98,11 +98,13 @@ abstract class AnswerService {
         val duplicateMessageData = sendMessage(
           destination = duplicateChannel,
           text = accumulator,
-          imageWithFileNames = listOf(ImageUploadInfo(
-            image = image,
-            fileName = fileName,
-            isSpoiler = isSpoiler
-          )),
+          imageWithFileNames = listOf(
+            ImageUploadInfo(
+              image = image,
+              fileName = fileName,
+              isSpoiler = isSpoiler
+            )
+          ),
         )
         duplicateMessageDatas.add(duplicateMessageData)
         accumulator = prefix
@@ -112,11 +114,13 @@ abstract class AnswerService {
     val duplicateMessageData = sendMessage(
       destination = duplicateChannel,
       text = accumulator,
-      imageWithFileNames = listOf(ImageUploadInfo(
-        image = image,
-        fileName = fileName,
-        isSpoiler = isSpoiler
-      )),
+      imageWithFileNames = listOf(
+        ImageUploadInfo(
+          image = image,
+          fileName = fileName,
+          isSpoiler = isSpoiler
+        )
+      ),
     )
     duplicateMessageDatas.add(duplicateMessageData)
     return duplicateMessageDatas

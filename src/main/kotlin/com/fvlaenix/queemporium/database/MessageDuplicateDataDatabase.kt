@@ -50,10 +50,11 @@ class MessageDuplicateDataConnector(val database: Database) {
       SchemaUtils.create(MessageDuplicateDataTable)
     }
   }
-  
+
   fun add(messageDuplicateData: MessageDuplicateData) = transaction(database) {
-    val existing = MessageDuplicateDataTable.select { MessageDuplicateDataTable.messageId eq messageDuplicateData.messageId }
-    if (existing.count() > 0) return@transaction 
+    val existing =
+      MessageDuplicateDataTable.select { MessageDuplicateDataTable.messageId eq messageDuplicateData.messageId }
+    if (existing.count() > 0) return@transaction
     MessageDuplicateDataTable.insert {
       it[messageId] = messageDuplicateData.messageId
       it[hasSource] = messageDuplicateData.hasSource
@@ -61,22 +62,22 @@ class MessageDuplicateDataConnector(val database: Database) {
       it[messageProblems] = Json.encodeToString(messageDuplicateData.messageProblems)
     }
   }
-  
+
   fun exists(messageId: String): Boolean = transaction(database) {
     MessageDuplicateDataTable.select { MessageDuplicateDataTable.messageId eq messageId }.count() > 0
   }
-  
+
   fun get(messageId: String) = transaction(database) {
     val result =
       MessageDuplicateDataTable.select { MessageDuplicateDataTable.messageId eq messageId }
         .singleOrNull()
     result?.let { get(it) }
   }
-  
+
   fun delete(messageId: String) = transaction(database) {
     MessageDuplicateDataTable.deleteWhere { MessageDuplicateDataTable.messageId eq messageId }
   }
-  
+
   companion object {
     fun get(resultRow: ResultRow): MessageDuplicateData = MessageDuplicateData(
       resultRow[MessageDuplicateDataTable.messageId],

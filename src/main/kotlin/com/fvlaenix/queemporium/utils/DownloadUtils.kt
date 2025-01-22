@@ -18,24 +18,26 @@ import java.util.concurrent.ExecutionException
 import java.util.logging.Level
 import java.util.logging.Logger
 import javax.imageio.ImageIO
-import kotlin.jvm.Throws
 
 private val LOG = Logger.getLogger(DownloadUtils::class.java.name)
 private const val STANDARD_ATTEMPTS = 6
 
 object DownloadUtils {
-  
+
   private val DOWNLOAD_SEMAPHORE = Semaphore(16)
-  
+
   @Throws(IOException::class)
   private fun readImage(inputStringGetter: () -> InputStream): BufferedImage? {
     return inputStringGetter().use { inputStream ->
       ImageIO.read(inputStream)
     }
   }
-  
+
   @Throws(IOException::class)
-  private fun readImageRepeatedly(inputStringGetter: () -> InputStream, attempts: Int = STANDARD_ATTEMPTS): BufferedImage {
+  private fun readImageRepeatedly(
+    inputStringGetter: () -> InputStream,
+    attempts: Int = STANDARD_ATTEMPTS
+  ): BufferedImage {
     var attemptsLeft = attempts
     while (attemptsLeft > 0) {
       val image: BufferedImage? = try {
@@ -51,7 +53,7 @@ object DownloadUtils {
     }
     throw IOException("Count of attempts failed")
   }
-  
+
   private fun readImageFromUrl(url: String): Pair<BufferedImage, Size>? {
     return try {
       val image = readImageRepeatedly({ URL(url).openStream() })
@@ -61,7 +63,7 @@ object DownloadUtils {
       null
     }
   }
-  
+
   suspend fun readImageFromUrl(url: String, compressSize: CompressSize?): Pair<BufferedImage, Size>? {
     return DOWNLOAD_SEMAPHORE.withPermit { readImageFromUrl(url) }?.let { (image, size) ->
       if (compressSize == null) {
@@ -72,8 +74,11 @@ object DownloadUtils {
       }
     }
   }
-  
-  suspend fun readImageFromAttachment(attachment: Attachment, compressSize: CompressSize?): Pair<BufferedImage, AdditionalImageInfo>? {
+
+  suspend fun readImageFromAttachment(
+    attachment: Attachment,
+    compressSize: CompressSize?
+  ): Pair<BufferedImage, AdditionalImageInfo>? {
     var attemptsLeft = STANDARD_ATTEMPTS
     val okHttpClient = OkHttpClient()
     while (attemptsLeft > 0) {
