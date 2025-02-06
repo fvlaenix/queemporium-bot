@@ -40,12 +40,10 @@ class AdventCommand(
       destination = postChannel,
       text = adventData.messageDescription
     ).await()
-    // todo make normal answerservice to this
-    originalMessage.forwardTo(postChannel).queue({ }, { e ->
-      DiscordBot.MAIN_SCOPE.launch(Dispatchers.IO) {
-        answerService.sendMessage(postChannel, "I can't send message! Please look at it by link")
-      }
-    })
+    val messageId = answerService.forwardMessage(originalMessage, postChannel).await()
+    if (messageId == null) {
+      answerService.sendMessage(postChannel, "I can't send message! Please look at it by link")
+    }
   }
 
   private fun runAdvent(jda: JDA) {

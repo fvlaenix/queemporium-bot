@@ -5,6 +5,8 @@ import com.fvlaenix.queemporium.commands.advent.AdventCommand
 import com.fvlaenix.queemporium.commands.duplicate.OnlinePictureCompare
 import com.fvlaenix.queemporium.commands.duplicate.RevengePicturesCommand
 import com.fvlaenix.queemporium.commands.emoji.OnlineEmojiesStoreCommand
+import com.fvlaenix.queemporium.commands.halloffame.HallOfFameCommand
+import com.fvlaenix.queemporium.commands.halloffame.SetHallOfFameCommand
 import com.fvlaenix.queemporium.configuration.BotConfiguration
 import com.fvlaenix.queemporium.configuration.MetadataConfiguration
 import net.dv8tion.jda.api.hooks.ListenerAdapter
@@ -187,7 +189,9 @@ class CommandsServiceImpl(
       SetDuplicateChannelCommand::class,
       SearchCommand::class,
       AdventCommand::class,
-      PermissionsInfoCommand::class
+      PermissionsInfoCommand::class,
+      HallOfFameCommand::class,
+      SetHallOfFameCommand::class
     )
 
     private val SERVICE_MAPPING: Map<KClass<*>, KClass<*>> = mapOf(

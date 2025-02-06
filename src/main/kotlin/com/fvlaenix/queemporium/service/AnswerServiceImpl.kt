@@ -2,6 +2,7 @@ package com.fvlaenix.queemporium.service
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
+import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
 import net.dv8tion.jda.api.utils.FileUpload
 import java.awt.image.BufferedImage
@@ -58,6 +59,17 @@ class AnswerServiceImpl : AnswerService() {
       destination.sendMessage(text)
     }
       .queue({ deferred.complete(it.id) }, callback)
+    return deferred
+  }
+
+  override suspend fun forwardMessage(
+    message: Message,
+    destination: MessageChannel,
+    successCallback: (Message) -> Unit,
+    failedCallback: (Throwable) -> Unit
+  ): Deferred<String?> {
+    val deferred = CompletableDeferred<String?>()
+    message.forwardTo(destination).queue({ deferred.complete(it.id); successCallback(it) }, { deferred.complete(null); failedCallback(it) })
     return deferred
   }
 }

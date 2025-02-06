@@ -33,6 +33,13 @@ abstract class AnswerService {
     return sendMessage(destination.channel, text, imageWithFileNames)
   }
 
+  abstract suspend fun forwardMessage(
+    message: Message,
+    destination: MessageChannel,
+    successCallback: (Message) -> Unit = {},
+    failedCallback: (Throwable) -> Unit = {}
+  ): Deferred<String?>
+
   suspend fun sendDuplicateMessageInfo(
     duplicateChannel: MessageChannel,
     messageAuthorId: String,
