@@ -15,4 +15,6 @@
   <command className="com.fvlaenix.queemporium.commands.PixivCompressedDetectorCommand"/>
   <command className="com.fvlaenix.queemporium.commands.SearchCommand"/>
   <command className="com.fvlaenix.queemporium.commands.SetDuplicateChannelCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.halloffame.HallOfFameCommand"/>
+  <command className="com.fvlaenix.queemporium.commands.halloffame.SetHallOfFameCommand"/>
 </bot-metadata>

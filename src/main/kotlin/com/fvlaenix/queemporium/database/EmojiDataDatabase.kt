@@ -117,4 +117,18 @@ class EmojiDataConnector(val database: Database) {
       .limit(count)
       .map { EmojiTopMessageData(it) }
   }
+
+  fun getMessagesAboveThreshold(
+    guildId: String,
+    threshold: Int,
+  ): List<String> = transaction(database) {
+    (EmojiDataTable.join(MessageDataTable, JoinType.INNER) {
+      EmojiDataTable.messageId eq MessageDataTable.messageId
+    })
+      .slice(EmojiDataTable.messageId, EmojiDataTable.messageId.count())
+      .select { MessageDataTable.guildId eq guildId }
+      .groupBy(EmojiDataTable.messageId)
+      .having { EmojiDataTable.messageId.count() greaterEq threshold }
+      .map { it[EmojiDataTable.messageId] }
+  }
 }
