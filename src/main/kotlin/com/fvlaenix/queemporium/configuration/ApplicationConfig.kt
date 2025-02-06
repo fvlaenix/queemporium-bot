@@ -46,7 +46,7 @@ data class ApplicationConfig(
         botPropertiesPath = properties.getProperty("bot.properties.path"),
         searchPropertiesPath = properties.getProperty("search.properties.path"),
         metadataPropertiesPath = properties.getProperty("metadata.properties.path"),
-        duplicateImagePropertiesPath = properties.getProperty("duplicate.image.hostname")
+        duplicateImagePropertiesPath = properties.getProperty("duplicate.image.properties.path")
       )
     }
   }
