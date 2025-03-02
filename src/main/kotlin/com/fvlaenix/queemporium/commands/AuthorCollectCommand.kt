@@ -20,15 +20,8 @@ class AuthorCollectCommand(val databaseConfiguration: DatabaseConfiguration) : C
     jda.guilds.forEach { guild ->
       val guildId = guild.id
       guild.loadMembers().onSuccess { members ->
-        members.forEach { member ->
-          authorDataConnector.insert(
-            AuthorData(
-              member.id,
-              guildId,
-              member.user.name
-            )
-          )
-        }
+        val authorsData = members.map { member -> AuthorData(member.id, guildId, member.user.name) }
+        authorDataConnector.replaceAuthors(authorsData, guild.id)
       }
     }
   }

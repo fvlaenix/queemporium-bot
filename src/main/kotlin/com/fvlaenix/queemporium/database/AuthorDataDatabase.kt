@@ -26,16 +26,13 @@ class AuthorDataConnector(val database: Database) {
     }
   }
 
-  fun insert(author: AuthorData) = transaction(database) {
-    if (AuthorDataTable.select { (AuthorDataTable.authorId eq author.authorId) and (AuthorDataTable.guildId eq author.guildId) }
-        .count() > 0) {
-      AuthorDataTable.update({ (AuthorDataTable.authorId eq author.authorId) and (AuthorDataTable.guildId eq author.guildId) }) {
-        it[authorName] = author.authorName
-      }
-    } else {
+  fun replaceAuthors(authors: List<AuthorData>, guildId: String) = transaction(database) {
+    AuthorDataTable.deleteWhere { AuthorDataTable.guildId eq guildId }
+
+    authors.forEach { author ->
       AuthorDataTable.insert {
         it[authorId] = author.authorId
-        it[guildId] = author.guildId
+        it[AuthorDataTable.guildId] = author.guildId
         it[authorName] = author.authorName
       }
     }
