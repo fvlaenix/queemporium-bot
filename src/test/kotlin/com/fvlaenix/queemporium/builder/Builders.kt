@@ -1,9 +1,12 @@
 package com.fvlaenix.queemporium.builder
 
+import com.fvlaenix.queemporium.configuration.BotConfiguration
 import com.fvlaenix.queemporium.mock.TestEnvironment
+import com.fvlaenix.queemporium.service.CommandsServiceImpl
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion
 import net.dv8tion.jda.api.hooks.ListenerAdapter
+import org.koin.core.context.GlobalContext
 
 class TestBotBuilder(private val environment: TestEnvironment) {
   fun createGuild(name: String, block: GuildBuilder.() -> Unit = {}): Guild {
@@ -14,6 +17,22 @@ class TestBotBuilder(private val environment: TestEnvironment) {
 
   fun addListener(listener: ListenerAdapter) {
     environment.addListener(listener)
+  }
+
+  fun addCommandsFromKoin() {
+    val koinContext = GlobalContext.getOrNull() ?: return
+
+    if (koinContext.getAll<CommandsServiceImpl>().isNotEmpty()) {
+      val commandsService = koinContext.get<CommandsServiceImpl>()
+
+      if (koinContext.getAll<BotConfiguration>().isNotEmpty()) {
+        val botConfiguration = koinContext.get<BotConfiguration>()
+
+        commandsService.getCommands(botConfiguration).forEach { command ->
+          addListener(command)
+        }
+      }
+    }
   }
 }
 
@@ -36,6 +55,7 @@ class ChannelBuilder(
 fun createEnvironment(block: TestBotBuilder.() -> Unit): TestEnvironment {
   val environment = TestEnvironment()
   val builder = TestBotBuilder(environment)
+  builder.addCommandsFromKoin()
   builder.block()
   environment.start()
   return environment
