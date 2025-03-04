@@ -25,6 +25,7 @@ import java.util.*
 
 class TestMessage(
   private val testJda: JDA,
+  private val testGuild: Guild?,
   private val testChannel: MessageChannelUnion,
   private val idLong: Long,
   private val content: String,
@@ -137,13 +138,11 @@ class TestMessage(
     TODO("Not yet implemented")
   }
 
-  override fun getGuildIdLong(): Long {
-    TODO("Not yet implemented")
-  }
+  override fun getGuildIdLong(): Long =
+    guild.id.toLong()
 
-  override fun getGuild(): Guild {
-    TODO("Not yet implemented")
-  }
+  override fun getGuild(): Guild =
+    testGuild!!
 
   override fun getAttachments(): @Unmodifiable List<Message.Attachment?> =
     attachments.toList()
@@ -232,9 +231,8 @@ class TestMessage(
     TODO("Not yet implemented")
   }
 
-  override fun isFromGuild(): Boolean {
-    TODO("Not yet implemented")
-  }
+  override fun isFromGuild(): Boolean =
+    testGuild != null
 
   override fun getChannelType(): ChannelType {
     TODO("Not yet implemented")
@@ -252,9 +250,8 @@ class TestMessage(
     TODO("Not yet implemented")
   }
 
-  override fun getChannelIdLong(): Long {
-    TODO("Not yet implemented")
-  }
+  override fun getChannelIdLong(): Long =
+    testChannel.idLong
 
   override fun getContentDisplay(): String = content
   override fun getMessageReference(): MessageReference? {
@@ -282,9 +279,8 @@ class TestMessage(
     TODO("Not yet implemented")
   }
 
-  override fun getJumpUrl(): String {
-    TODO("Not yet implemented")
-  }
+  override fun getJumpUrl(): String =
+    "https://myowntestdiscord.com/channels${if (testGuild != null) "/$guildId" else ""}/${channelId}/${id}"
 
   // Базовые методы для работы с сообщениями
   override fun getId(): String = idLong.toString()

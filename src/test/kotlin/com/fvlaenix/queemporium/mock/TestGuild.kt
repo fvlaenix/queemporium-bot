@@ -573,9 +573,8 @@ class TestGuild(
     TODO("Not yet implemented")
   }
 
-  override fun getChannelCache(): SortedChannelCacheView<GuildChannel?> {
-    TODO("Not yet implemented")
-  }
+  override fun getChannelCache(): SortedChannelCacheView<GuildChannel?> =
+    SortedChannelCacheViewGuildChannel(channels.toList())
 
   override fun getChannels(includeHidden: Boolean): @Unmodifiable List<GuildChannel?> =
     textChannelsMap.values.map { it as GuildChannel? }

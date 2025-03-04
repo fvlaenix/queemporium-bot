@@ -113,6 +113,7 @@ class TestEnvironment {
 
     val message = TestMessage(
       jda,
+      guild,
       channel,
       nextId(),
       message,
