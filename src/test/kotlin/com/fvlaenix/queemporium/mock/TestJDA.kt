@@ -61,6 +61,7 @@ import java.util.concurrent.TimeUnit
 import java.util.stream.Stream
 
 class TestJDA : JDA {
+  private val bot = createMockBot(this, 0, "queemporium")
   private val guildsMap = mutableMapOf<Long, Guild>()
   private val listeners = mutableListOf<ListenerAdapter>()
 
@@ -283,9 +284,7 @@ class TestJDA : JDA {
     TODO("Not yet implemented")
   }
 
-  override fun getSelfUser(): SelfUser {
-    TODO("Not yet implemented")
-  }
+  override fun getSelfUser(): SelfUser = bot
 
   override fun getPresence(): Presence {
     TODO("Not yet implemented")

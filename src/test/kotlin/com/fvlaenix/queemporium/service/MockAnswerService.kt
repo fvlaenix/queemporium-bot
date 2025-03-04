@@ -23,7 +23,8 @@ class MockAnswerService : AnswerService() {
     imageWithFileNames: List<ImageUploadInfo>
   ): Deferred<String?> {
     answers.add(MockAnswer(text, imageWithFileNames))
-    return CompletableDeferred(currentAnswer.incrementAndGet().toString())
+    val id = currentAnswer.incrementAndGet().toString()
+    return CompletableDeferred(id)
   }
 
   override suspend fun forwardMessage(

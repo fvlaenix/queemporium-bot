@@ -46,6 +46,7 @@ class TestGuild(
   private val name: String
 ) : Guild {
   private val textChannelsMap = mutableMapOf<Long, TextChannel>()
+  private val bot = createMockBotMember(this, testJda.selfUser, "Queemporium Bot")
 
   override fun getJDA(): JDA = testJda
 
@@ -525,9 +526,7 @@ class TestGuild(
     TODO("Not yet implemented")
   }
 
-  override fun getSelfMember(): Member {
-    TODO("Not yet implemented")
-  }
+  override fun getSelfMember(): Member = bot
 
   override fun getNSFWLevel(): Guild.NSFWLevel {
     TODO("Not yet implemented")
