@@ -34,8 +34,8 @@ class OnlineEmojiesStoreCommandConfig(
 
       return OnlineEmojiesStoreCommandConfig(
         distanceInDays = feature.parameter
-          .first { it.name == "distanceInDays" }
-          .value.toIntOrNull() ?: 7,
+          .firstOrNull { it.name == "distanceInDays" }
+          ?.value?.toIntOrNull() ?: 7,
         guildThreshold = feature.parameter
           .firstOrNull { it.name == "guildThreshold" }
           ?.value?.toIntOrNull() ?: 2,
