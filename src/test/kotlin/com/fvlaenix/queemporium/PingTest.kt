@@ -83,7 +83,7 @@ class PingTest {
     environment.jda.addEventListener(pingCommand)
     environment.start()
 
-    val message = TestMessage(environment.jda, channel, 2, "/shogun-sama ping", mockk())
+    val message = TestMessage(environment.jda, guild, channel, 2, "/shogun-sama ping", mockk())
 
     val event = MessageReceivedEvent(environment.jda, 0, message)
     pingCommand.onMessageReceived(event)

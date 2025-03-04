@@ -56,6 +56,7 @@ class TestTextChannel(
     val textMessage = text.toString()
     val message = TestMessage(
       testJda,
+      guild,
       this,
       testEnvironment.nextId(),
       textMessage,
@@ -82,9 +83,7 @@ class TestTextChannel(
   }
 
   override fun getName(): String = name
-  override fun getType(): ChannelType {
-    TODO("Not yet implemented")
-  }
+  override fun getType(): ChannelType = ChannelType.TEXT
 
   override fun getId(): String = idLong.toString()
   override fun getIdLong(): Long = idLong
