@@ -147,9 +147,8 @@ class TestMessage(
   override fun getAttachments(): @Unmodifiable List<Message.Attachment?> =
     attachments.toList()
 
-  override fun getEmbeds(): @Unmodifiable List<MessageEmbed?> {
-    TODO("Not yet implemented")
-  }
+  override fun getEmbeds(): @Unmodifiable List<MessageEmbed?> =
+    emptyList()
 
   override fun getComponents(): @Unmodifiable List<LayoutComponent?> {
     TODO("Not yet implemented")

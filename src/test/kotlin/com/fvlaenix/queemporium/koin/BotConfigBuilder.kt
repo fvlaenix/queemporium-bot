@@ -16,7 +16,7 @@ class BotConfigBuilder {
     var metadataConfiguration: MetadataConfiguration = mockk()
     var answerService: AnswerService = mockk()
 
-    fun enableCommands(vararg commandClassNames: String) {
+    fun enableCommandsByNames(vararg commandClassNames: String) {
         val commands = commandClassNames.map { MetadataConfiguration.Command(it) }
 
         val features = commandClassNames.map { 
@@ -27,7 +27,7 @@ class BotConfigBuilder {
         every { botConfiguration.features } returns features
     }
 
-    inline fun <reified T : Any> enableCommands(vararg commandClasses: KClass<T>) {
-        enableCommands(*commandClasses.map { it.java.name }.toTypedArray())
+    fun enableCommands(vararg commandClasses: KClass<*>) {
+        enableCommandsByNames(*commandClasses.map { it.java.name }.toTypedArray())
     }
 }

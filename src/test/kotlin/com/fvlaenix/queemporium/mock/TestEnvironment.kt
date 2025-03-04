@@ -78,7 +78,11 @@ class TestEnvironment {
 
   fun awaitAll() {
     runBlocking {
-      DiscordBot.MAIN_SCOPE.coroutineContext.job.children.forEach { it.join() }
+      var isReady = false
+      while (!isReady) {
+        isReady = true
+        DiscordBot.MAIN_SCOPE.coroutineContext.job.children.forEach { isReady = false; it.join() }
+      }
     }
   }
 
