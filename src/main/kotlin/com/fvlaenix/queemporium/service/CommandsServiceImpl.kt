@@ -98,13 +98,7 @@ class CommandsServiceImpl(
       }
       val uninitializedParameters = mutableListOf<KClass<*>>()
       val parameters = constructor.parameters.map { param ->
-        val classifier = (param.type.classifier as KClass<*>).let {
-          if (SERVICE_MAPPING.containsKey(it)) {
-            SERVICE_MAPPING[it]!!
-          } else {
-            it
-          }
-        }
+        val classifier = param.type.classifier as KClass<*>
         if (classifier.javaPrimitiveType != null) {
           throw Exception(
             "Can't inject primitive type ${classifier.simpleName} in class ${clazz.simpleName}. Found primitive type in constructor of class.\n" +
@@ -192,12 +186,6 @@ class CommandsServiceImpl(
       PermissionsInfoCommand::class,
       HallOfFameCommand::class,
       SetHallOfFameCommand::class
-    )
-
-    private val SERVICE_MAPPING: Map<KClass<*>, KClass<*>> = mapOf(
-      AnswerService::class to AnswerServiceImpl::class,
-      DuplicateImageService::class to DuplicateImageServiceImpl::class,
-      SearchService::class to SearchServiceImpl::class,
     )
   }
 

@@ -3,6 +3,7 @@ import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.di.applicationConfigModule
 import com.fvlaenix.queemporium.di.configurationModule
 import com.fvlaenix.queemporium.di.loadCoreModule
+import com.fvlaenix.queemporium.di.productionServiceModule
 import org.koin.core.context.GlobalContext.startKoin
 import java.util.logging.Level
 import java.util.logging.LogManager
@@ -30,6 +31,9 @@ fun main() {
 
   launchBotLog.log(Level.INFO, "Loading config module")
   koin.loadModules(listOf(configurationModule))
+
+  launchBotLog.log(Level.INFO, "Loading services module")
+  koin.loadModules(listOf(productionServiceModule))
 
   launchBotLog.log(Level.INFO, "Loading core module")
   koin.loadCoreModule()
