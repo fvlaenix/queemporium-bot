@@ -32,9 +32,6 @@ class CommandsServiceImpl(
   override fun getCommands(
     botConfiguration: BotConfiguration
   ): List<ListenerAdapter> {
-    val defaultFeatures = STANDARD_COMMANDS.map {
-      Feature(it, true, emptyMap())
-    }
     val features = botConfiguration.features.map { feature ->
       val clazz = try {
         Class.forName(feature.className).kotlin
@@ -65,7 +62,6 @@ class CommandsServiceImpl(
       }
     }
 
-    defaultFeatures.forEach(::addFeature)
     features.forEach(::addFeature)
 
     // convert into listeners
@@ -166,27 +162,6 @@ class CommandsServiceImpl(
     val constructors = clazz.constructors
     check(constructors.size == 1) { "$clazz should have only one constructor! I can't select one! Count: ${constructors.size}" }
     return constructors.first()
-  }
-
-  companion object {
-    private val STANDARD_COMMANDS: List<KClass<*>> = listOf(
-      OnlinePictureCompare::class,
-      RevengePicturesCommand::class,
-      AuthorCollectCommand::class,
-      AuthorMappingCommand::class,
-      DependentDeleterCommand::class,
-      OnlineEmojiesStoreCommand::class,
-      ExcludeChannelCommand::class,
-      LoggerMessageCommand::class,
-      MessagesStoreCommand::class,
-      PixivCompressedDetectorCommand::class,
-      SetDuplicateChannelCommand::class,
-      SearchCommand::class,
-      AdventCommand::class,
-      PermissionsInfoCommand::class,
-      HallOfFameCommand::class,
-      SetHallOfFameCommand::class
-    )
   }
 
   data class Feature(
