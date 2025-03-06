@@ -16,6 +16,10 @@ import java.util.function.BooleanSupplier
 import java.util.function.Consumer
 
 class TestMessageCreateAction(val answer: ImmediatelyTestRestAction<Message?>) : MessageCreateAction {
+
+  private var referencedMessageId: String? = null
+  private var failOnInvalidReply: Boolean = true
+
   override fun setNonce(nonce: String?): MessageCreateAction {
     TODO("Not yet implemented")
   }
@@ -26,15 +30,18 @@ class TestMessageCreateAction(val answer: ImmediatelyTestRestAction<Message?>) :
     channelId: String,
     messageId: String
   ): MessageCreateAction {
-    TODO("Not yet implemented")
+    this.referencedMessageId = messageId
+    return this
   }
 
   override fun setMessageReference(messageId: String?): MessageCreateAction {
-    TODO("Not yet implemented")
+    this.referencedMessageId = messageId
+    return this
   }
 
   override fun failOnInvalidReply(fail: Boolean): MessageCreateAction {
-    TODO("Not yet implemented")
+    this.failOnInvalidReply = fail
+    return this
   }
 
   override fun setStickers(stickers: Collection<StickerSnowflake?>?): MessageCreateAction {
@@ -172,5 +179,17 @@ class TestMessageCreateAction(val answer: ImmediatelyTestRestAction<Message?>) :
 
   override fun submit(shouldQueue: Boolean): CompletableFuture<Message?> {
     return answer.submit(shouldQueue)
+  }
+
+  fun getReferencedMessageId(): String? {
+    return referencedMessageId
+  }
+
+  fun hasMessageReference(): Boolean {
+    return referencedMessageId != null
+  }
+
+  fun isFailingOnInvalidReply(): Boolean {
+    return failOnInvalidReply
   }
 }
