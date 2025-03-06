@@ -1,6 +1,7 @@
 package com.fvlaenix.queemporium.commands
 
 import com.fvlaenix.queemporium.configuration.ApplicationConfig
+import com.fvlaenix.queemporium.service.AnswerService
 import com.fvlaenix.queemporium.service.SearchService
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import java.io.InputStream
@@ -55,6 +56,7 @@ data class SearchConfiguration(
 }
 
 class SearchCommand(
+  val answerService: AnswerService,
   val searchService: SearchService
 ) : CoroutineListenerAdapter() {
   override fun receiveMessageFilter(event: MessageReceivedEvent): Boolean =
@@ -64,12 +66,18 @@ class SearchCommand(
     val message = event.message
     val attachmentsUrl = message.attachments.filter { it.isImage }.map { it.url }
     attachmentsUrl.forEach { url ->
-      val parts = searchService.search(url)
+      val parts = try {
+        searchService.search(url)
+      } catch (e: Exception) {
+        LOG.log(Level.SEVERE, "Couldn't search '$url'", e)
+        answerService.sendReply(message, "No sources found: Internal error")
+        return
+      }
       if (parts.isEmpty()) {
-        message.reply("No sources found").queue()
+        answerService.sendReply(message, "No sources found")
       }
       parts.forEach { part ->
-        message.reply(part).queue()
+        answerService.sendReply(message, part)
       }
     }
   }

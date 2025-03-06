@@ -1,6 +1,5 @@
-package com.fvlaenix.queemporium.duplicate
+package com.fvlaenix.queemporium.commands.duplicate
 
-import com.fvlaenix.queemporium.commands.duplicate.OnlinePictureCompare
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.service.DuplicateImageService
 import com.fvlaenix.queemporium.verification.verify

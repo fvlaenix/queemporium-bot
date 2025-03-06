@@ -1,4 +1,4 @@
-package com.fvlaenix.queemporium.duplicate
+package com.fvlaenix.queemporium.commands.duplicate
 
 import com.fvlaenix.queemporium.builder.createEnvironment
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration

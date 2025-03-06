@@ -1,4 +1,4 @@
-package com.fvlaenix.queemporium.duplicate
+package com.fvlaenix.queemporium.commands.duplicate
 
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.database.CompressSize
