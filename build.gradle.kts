@@ -27,6 +27,11 @@ dependencies {
     compileOnly("org.apache.tomcat:annotations-api:6.0.53")
     protobuf(files("discord-bots-rpc/duplicate-image-request.proto", "discord-bots-rpc/is-alive.proto", "discord-bots-rpc/image.proto"))
 
+    testImplementation("io.grpc:grpc-testing:1.59.0")
+    testImplementation("io.grpc:grpc-protobuf:1.59.0")
+    testImplementation("io.grpc:grpc-stub:1.59.0")
+    testImplementation("io.grpc:grpc-kotlin-stub:1.3.0")
+
     // koin
     implementation("io.insert-koin:koin-core:4.0.1")
 
