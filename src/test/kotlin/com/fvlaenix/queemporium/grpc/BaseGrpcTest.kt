@@ -15,9 +15,10 @@ import org.koin.core.Koin
 import org.koin.dsl.module
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.reflect.KClass
 
 /**
- * Base class for gRPC services integration testing.
+ * Base abstract class for gRPC services integration testing.
  * Extends BaseKoinTest and provides setup for test gRPC server and test services.
  */
 abstract class BaseGrpcTest : BaseKoinTest() {
@@ -40,6 +41,14 @@ abstract class BaseGrpcTest : BaseKoinTest() {
   protected lateinit var clientChannel: ManagedChannel
 
   /**
+   * Returns the list of command classes to be enabled for testing.
+   * Should be overridden by subclasses to specify which commands to test.
+   */
+  protected open fun getCommandsForTest(): Array<KClass<*>> {
+    return emptyArray()
+  }
+
+  /**
    * Sets up test environment before each test.
    */
   @BeforeEach
@@ -56,9 +65,6 @@ abstract class BaseGrpcTest : BaseKoinTest() {
 
     logger.log(Level.INFO, "Test gRPC server started on port $serverPort")
 
-    // Configure Koin
-    koin = setupBotKoinWithGrpc(serverPort)
-
     // Create client channel for direct API calls
     clientChannel = ManagedChannelBuilder.forAddress("localhost", serverPort)
       .usePlaintext()
@@ -66,6 +72,9 @@ abstract class BaseGrpcTest : BaseKoinTest() {
 
     duplicateImagesClient = DuplicateImagesServiceGrpcKt
       .DuplicateImagesServiceCoroutineStub(clientChannel)
+
+    // Configure Koin with the commands for this test
+    koin = setupBotKoinWithGrpc(serverPort)
   }
 
   /**
@@ -93,19 +102,29 @@ abstract class BaseGrpcTest : BaseKoinTest() {
    * @return Configured Koin instance
    */
   private fun setupBotKoinWithGrpc(port: Int): Koin {
-    return setupBotKoin {}
-      .apply {
-        loadModules(listOf(module {
-          single {
-            DuplicateImageServiceConfig(
-              hostname = "localhost",
-              port = port
-            )
-          }
+    // Create DuplicateImageServiceConfig for test server
+    val serviceConfig = DuplicateImageServiceConfig(
+      hostname = "localhost",
+      port = port
+    )
 
-          single<DuplicateImageService> { DuplicateImageServiceImpl(get()) }
-        }))
+    // Setup Koin with bot configuration and enable commands for this test
+    val botKoin = setupBotKoin {
+      // Enable the commands specified by the test
+      enableCommands(*getCommandsForTest())
+
+      // Other settings if needed
+    }
+
+    // Register the gRPC configuration and service
+    botKoin.loadModules(listOf(module {
+      single { serviceConfig }
+      single<DuplicateImageService> {
+        DuplicateImageServiceImpl(get())
       }
+    }))
+
+    return botKoin
   }
 
   /**
@@ -115,8 +134,6 @@ abstract class BaseGrpcTest : BaseKoinTest() {
     val databaseConfig = koin.get<DatabaseConfiguration>()
     return GuildInfoConnector(databaseConfig.toDatabase())
   }
-
-  // Helper methods for setting up test scenarios
 
   /**
    * Simulates server unavailability.
