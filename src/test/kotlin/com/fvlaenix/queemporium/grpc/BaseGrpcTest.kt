@@ -7,6 +7,7 @@ import com.fvlaenix.queemporium.database.GuildInfoConnector
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.service.DuplicateImageService
 import com.fvlaenix.queemporium.service.DuplicateImageServiceImpl
+import com.fvlaenix.queemporium.service.MockAnswerService
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import org.junit.jupiter.api.AfterEach
@@ -40,6 +41,9 @@ abstract class BaseGrpcTest : BaseKoinTest() {
   protected lateinit var duplicateImagesClient: DuplicateImagesServiceGrpcKt.DuplicateImagesServiceCoroutineStub
   protected lateinit var clientChannel: ManagedChannel
 
+  // Mock answer service for verification
+  protected lateinit var answerService: MockAnswerService
+
   /**
    * Returns the list of command classes to be enabled for testing.
    * Should be overridden by subclasses to specify which commands to test.
@@ -54,6 +58,9 @@ abstract class BaseGrpcTest : BaseKoinTest() {
   @BeforeEach
   fun setupGrpcServer() {
     logger.log(Level.INFO, "Setting up test gRPC server")
+
+    // Create a mock answer service
+    answerService = MockAnswerService()
 
     // Initialize test services
     duplicateService = TestDuplicateImagesService()
@@ -75,6 +82,11 @@ abstract class BaseGrpcTest : BaseKoinTest() {
 
     // Configure Koin with the commands for this test
     koin = setupBotKoinWithGrpc(serverPort)
+
+    // Register the answer service with Koin
+    koin.loadModules(listOf(module {
+      single { answerService }
+    }))
   }
 
   /**
@@ -110,6 +122,8 @@ abstract class BaseGrpcTest : BaseKoinTest() {
 
     // Setup Koin with bot configuration and enable commands for this test
     val botKoin = setupBotKoin {
+      this.answerService = this@BaseGrpcTest.answerService
+
       // Enable the commands specified by the test
       enableCommands(*getCommandsForTest())
 
