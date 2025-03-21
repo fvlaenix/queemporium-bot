@@ -23,7 +23,6 @@ class TestEnvironment {
   fun nextId(): Long = currentId++
 
   fun createGuild(name: String): Guild {
-    require(!isStarted) { "Cannot modify server state after bot start" }
     val id = nextId()
     val guild = TestGuild(jda, id, name)
     jda.addGuild(guild)
@@ -31,7 +30,6 @@ class TestEnvironment {
   }
 
   fun createTextChannel(guild: Guild, name: String): MessageChannelUnion {
-    require(!isStarted) { "Cannot modify server state after bot start" }
     val id = nextId()
     val channel = TestTextChannel(this, jda, guild as TestGuild, id, name)
     guild.addTextChannel(channel)
@@ -50,13 +48,11 @@ class TestEnvironment {
   }
 
   fun notifyMessage(message: Message) {
-    require(isStarted) { "Cannot send messages before bot start" }
     val messageReceivedEvent = MessageReceivedEvent(jda, 0, message)
     jda.notifyMessageSend(messageReceivedEvent)
   }
 
   fun addListener(listener: ListenerAdapter) {
-    require(!isStarted) { "Cannot add listeners after bot start" }
     listeners.add(listener)
   }
 
