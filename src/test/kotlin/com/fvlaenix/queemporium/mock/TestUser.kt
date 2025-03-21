@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Unmodifiable
 import java.time.OffsetDateTime
 import java.util.*
 
+// TODO replace to mockk
 class TestUser(
   private val testJda: JDA,
   private val idLong: Long,
