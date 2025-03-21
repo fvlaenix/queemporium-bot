@@ -8,9 +8,10 @@ import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
 import java.util.concurrent.atomic.AtomicInteger
 
 data class MockAnswer(
+  val channelId: String,
   val text: String,
   val imageWithFileNames: List<ImageUploadInfo>,
-  val forwardFrom: String? = null
+  val forwardFrom: String? = null,
 )
 
 class MockAnswerService : AnswerService() {
@@ -22,7 +23,13 @@ class MockAnswerService : AnswerService() {
     text: String,
     imageWithFileNames: List<ImageUploadInfo>
   ): Deferred<String?> {
-    answers.add(MockAnswer(text, imageWithFileNames))
+    answers.add(
+      MockAnswer(
+        channelId = destination.id,
+        text = text,
+        imageWithFileNames = imageWithFileNames
+      )
+    )
     val id = currentAnswer.incrementAndGet().toString()
     return CompletableDeferred(id)
   }
@@ -33,11 +40,14 @@ class MockAnswerService : AnswerService() {
     successCallback: (Message) -> Unit,
     failedCallback: (Throwable) -> Unit
   ): Deferred<String?> {
-    answers.add(MockAnswer(
-      "",
-      emptyList(),
-      message.id
-    ))
+    answers.add(
+      MockAnswer(
+        channelId = destination.id,
+        text = "",
+        imageWithFileNames = emptyList(),
+        forwardFrom = message.id
+      )
+    )
     return CompletableDeferred(currentAnswer.incrementAndGet().toString())
   }
 }
