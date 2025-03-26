@@ -270,8 +270,12 @@ class TestMessage(
   }
 
   override fun getAuthor(): User = author
+
   override fun getMember(): Member? {
-    TODO("Not yet implemented")
+    if (isFromGuild && testGuild != null) {
+      return testGuild.getMember(author)
+    }
+    return null
   }
 
   override fun getApproximatePosition(): Int {

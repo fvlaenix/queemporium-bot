@@ -5,8 +5,10 @@ import io.mockk.mockk
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User
+import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.session.ReadyEvent
@@ -47,9 +49,53 @@ class TestEnvironment {
     return user
   }
 
+  fun createPrivateChannel(user: User): PrivateChannel {
+    // Check if channel already exists for this user
+    val existingChannel = jda.privateChannelCache.find { it?.user?.idLong == user.idLong }
+    if (existingChannel != null) {
+      return existingChannel
+    }
+
+    // Create new private channel
+    val id = nextId()
+    val privateChannel = TestPrivateChannel(this, jda, id, user)
+
+    // Store in JDA
+    jda.addPrivateChannel(privateChannel)
+
+    // Configure user to return this channel
+    val userOpenPrivateChannelAction = ImmediatelyTestRestAction.builder<PrivateChannel>(jda)
+      .withResult(privateChannel)
+      .build()
+
+    return privateChannel
+  }
+
+  /**
+   * Gets the private channel for the given user, creating it if it doesn't exist
+   *
+   * @param user The user whose private channel to get
+   * @return The private channel
+   */
+  fun getPrivateChannel(user: User): PrivateChannel {
+    val existingChannel = jda.privateChannelCache.find { it?.user?.idLong == user.idLong }
+    return existingChannel ?: createPrivateChannel(user)
+  }
+
   fun notifyMessage(message: Message) {
     val messageReceivedEvent = MessageReceivedEvent(jda, 0, message)
     jda.notifyMessageSend(messageReceivedEvent)
+  }
+
+  fun createMember(
+    guild: Guild,
+    user: User,
+    isAdmin: Boolean = false,
+    isRoleAdmin: Boolean = false
+  ): Member {
+    val member = TestUtils.createMockMember(user, guild, isAdmin, isRoleAdmin)
+    (guild as TestGuild).addMember(member)
+    return member
   }
 
   fun addListener(listener: ListenerAdapter) {
@@ -122,5 +168,44 @@ class TestEnvironment {
     )
 
     return sendMessage(message)
+  }
+
+  /**
+   * Sends a direct message from the given user
+   *
+   * @param user The user sending the message
+   * @param message The message content
+   * @param attachments Optional list of attachments
+   * @return The message create action
+   */
+  fun sendDirectMessage(
+    user: User,
+    message: String,
+    attachments: List<Message.Attachment> = emptyList()
+  ): MessageCreateAction {
+    // Get or create private channel for this user
+    val privateChannel = getPrivateChannel(user) as TestPrivateChannel
+
+    // Create the message
+    val testMessage = TestMessage(
+      jda,
+      null, // No guild for private messages
+      privateChannel,
+      nextId(),
+      message,
+      user,
+      attachments
+    )
+
+    // Add to channel and notify
+    privateChannel.addMessage(testMessage)
+    notifyMessage(testMessage)
+
+    // Create and return action
+    val restAction = ImmediatelyTestRestAction.builder<Message?>(jda)
+      .withResult(testMessage)
+      .build()
+
+    return TestMessageCreateAction(restAction)
   }
 }

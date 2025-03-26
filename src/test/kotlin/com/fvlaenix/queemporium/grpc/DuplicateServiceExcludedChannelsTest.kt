@@ -50,7 +50,7 @@ class DuplicateServiceExcludedChannelsTest : BaseGrpcTest() {
         guildInfoConnector.setDuplicateInfo(testGuild.id, duplicateChannel.id)
         
         // Add excluded channel
-        guildInfoConnector.addExcludedChannel(testGuild.id, excludedChannel.id)
+        guildInfoConnector.addExcludingChannel(testGuild.id, excludedChannel.id)
         
         // Create a user
         val user = env.createUser("Test User", false)
