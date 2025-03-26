@@ -26,6 +26,7 @@ import net.dv8tion.jda.api.requests.restaction.order.ChannelOrderAction
 import net.dv8tion.jda.api.requests.restaction.order.RoleOrderAction
 import net.dv8tion.jda.api.requests.restaction.pagination.AuditLogPaginationAction
 import net.dv8tion.jda.api.requests.restaction.pagination.BanPaginationAction
+import net.dv8tion.jda.api.utils.ClosableIterator
 import net.dv8tion.jda.api.utils.FileUpload
 import net.dv8tion.jda.api.utils.cache.MemberCacheView
 import net.dv8tion.jda.api.utils.cache.SnowflakeCacheView
@@ -39,6 +40,7 @@ import java.time.temporal.TemporalAccessor
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
+import java.util.stream.Stream
 
 class TestGuild(
   private val testJda: TestJDA,
@@ -47,6 +49,11 @@ class TestGuild(
 ) : Guild {
   private val textChannelsMap = mutableMapOf<Long, TextChannel>()
   private val bot = createMockBotMember(this, testJda.selfUser, "Queemporium Bot")
+  private val membersMap = mutableMapOf<String, Member>()
+
+  fun addMember(member: Member) {
+    membersMap[member.user.id] = member
+  }
 
   override fun getJDA(): JDA = testJda
 
@@ -533,11 +540,34 @@ class TestGuild(
   }
 
   override fun getMember(user: UserSnowflake): Member? {
-    TODO("Not yet implemented")
+    return membersMap[user.id]
   }
 
   override fun getMemberCache(): MemberCacheView {
-    TODO("Not yet implemented")
+    return object : MemberCacheView {
+      override fun getElementById(id: Long): Member? = membersMap[id.toString()]
+      override fun getElementsByUsername(p0: String, p1: Boolean): @Unmodifiable List<Member?> = TODO("Not yet implemented")
+      override fun getElementsByNickname(p0: String?, p1: Boolean): @Unmodifiable List<Member?> = TODO("Not yet implemented")
+      override fun getElementsWithRoles(vararg p0: Role?): @Unmodifiable List<Member?> = TODO("Not yet implemented")
+      override fun getElementsWithRoles(p0: Collection<Role?>): @Unmodifiable List<Member?> = TODO("Not yet implemented")
+      override fun asList(): @Unmodifiable List<Member?> = membersMap.values.toList()
+      override fun asSet(): @Unmodifiable Set<Member?> = membersMap.values.toSet()
+      override fun lockedIterator(): ClosableIterator<Member?> =
+        object : ClosableIterator<Member?> {
+          private val iterator = membersMap.values.iterator()
+          override fun hasNext(): Boolean = iterator.hasNext()
+          override fun next(): Member = iterator.next()
+          override fun close() {}
+          override fun remove() = throw UnsupportedOperationException("Cannot remove from MemberCacheView")
+        }
+      override fun size(): Long = membersMap.size.toLong()
+      override fun isEmpty(): Boolean = membersMap.isEmpty()
+      override fun getElementsByName(name: String, ignoreCase: Boolean): @Unmodifiable List<Member?> =
+        membersMap.values.filter { it.effectiveName.equals(name, ignoreCase) }
+      override fun stream(): Stream<Member?> = membersMap.values.map { it as Member? }.stream()
+      override fun parallelStream(): Stream<Member?> = membersMap.values.map { it as Member? }.parallelStream()
+      override fun iterator(): MutableIterator<Member?> = membersMap.values.toMutableList().iterator()
+    }
   }
 
   override fun getScheduledEventCache(): SortedSnowflakeCacheView<ScheduledEvent?> {

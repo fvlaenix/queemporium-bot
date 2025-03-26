@@ -37,7 +37,7 @@ class OnlinePictureCompare(
     if (!event.isFromGuild) return
     val message = event.message
     if (
-      guildInfoConnector.isChannelExclude(message.guildId!!, message.channelId) ||
+      guildInfoConnector.isChannelExcluded(message.guildId!!, message.channelId) ||
       guildInfoConnector.getDuplicateInfoChannel(message.guildId!!) == message.channelId
     ) return
     coroutineScope {
@@ -54,7 +54,7 @@ class OnlinePictureCompare(
     val messageId = event.messageId
 
     if (
-      guildInfoConnector.isChannelExclude(guildId, channelId) ||
+      guildInfoConnector.isChannelExcluded(guildId, channelId) ||
       guildInfoConnector.getDuplicateInfoChannel(guildId) == channelId
     ) return
     val messageDuplicateData = messageDuplicateDataConnector.get(messageId) ?: return

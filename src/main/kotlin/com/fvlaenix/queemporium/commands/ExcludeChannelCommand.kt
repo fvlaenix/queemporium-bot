@@ -31,19 +31,19 @@ class ExcludeChannelCommand(
       answerService.sendReply(message, "Pathetic, only admins can use this!")
       return
     }
-    val isChannelExcluded = guildInfoConnector.isChannelExclude(message.guildId!!, channel.id)
+    val isChannelExcluded = guildInfoConnector.isChannelExcluded(message.guildId!!, channel.id)
     if (message.contentRaw == COMMAND_ADD_TO_EXCLUDE) {
       if (!isChannelExcluded) {
-        guildInfoConnector.addExcludedChannel(message.guildId!!, channel.id)
+        guildInfoConnector.addExcludingChannel(message.guildId!!, channel.id)
         answerService.sendReply(message, "Hmmm... All right, if you beg me...")
       } else {
         answerService.sendReply(message, "I don't watch this channel anyway, you pathetic fool")
       }
     } else {
-      if (isChannelExcluded) {
+      if (!isChannelExcluded) {
         answerService.sendReply(message, "I'm watching this channel as it is, you pathetic fool")
       } else {
-        guildInfoConnector.excludeExcludedChannel(message.guildId!!, channel.id)
+        guildInfoConnector.removeExcludingChannel(message.guildId!!, channel.id)
         answerService.sendReply(message, "Be careful! I'm eyeing this channel now!")
       }
     }

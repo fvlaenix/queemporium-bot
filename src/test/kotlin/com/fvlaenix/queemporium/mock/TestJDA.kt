@@ -64,6 +64,7 @@ class TestJDA : JDA {
   private val bot = createMockBot(this, 0, "queemporium")
   private val guildsMap = mutableMapOf<Long, Guild>()
   private val listeners = mutableListOf<ListenerAdapter>()
+  private val privateChannelsMap = mutableMapOf<Long, PrivateChannel>()
 
   override fun getGuildById(id: Long): Guild? = guildsMap[id]
 
@@ -246,7 +247,23 @@ class TestJDA : JDA {
   }
 
   override fun getPrivateChannelCache(): SnowflakeCacheView<PrivateChannel?> {
-    TODO("Not yet implemented")
+    return object : SnowflakeCacheView<PrivateChannel?> {
+      override fun getElementById(id: Long): PrivateChannel? = privateChannelsMap[id]
+      override fun asList(): List<PrivateChannel?> = privateChannelsMap.values.toList()
+      override fun asSet(): @Unmodifiable Set<PrivateChannel?> = privateChannelsMap.values.toSet()
+      override fun lockedIterator(): ClosableIterator<PrivateChannel?> = TODO("Not yet implemented")
+      override fun size(): Long = privateChannelsMap.size.toLong()
+      override fun isEmpty(): Boolean = privateChannelsMap.isEmpty()
+      override fun getElementsByName(name: String, ignoreCase: Boolean): @Unmodifiable List<PrivateChannel?> =
+        privateChannelsMap.values.filter { it.name.equals(name, ignoreCase) }
+      override fun stream(): Stream<PrivateChannel?> = privateChannelsMap.values.map { it as PrivateChannel? }.stream()
+      override fun parallelStream(): Stream<PrivateChannel?> = privateChannelsMap.values.map { it as PrivateChannel? }.parallelStream()
+      override fun iterator(): MutableIterator<PrivateChannel?> = privateChannelsMap.values.toMutableList().iterator()
+    }
+  }
+
+  internal fun addPrivateChannel(channel: PrivateChannel) {
+    privateChannelsMap[channel.idLong] = channel
   }
 
   override fun openPrivateChannelById(p0: Long): CacheRestAction<PrivateChannel?> {

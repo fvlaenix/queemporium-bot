@@ -103,7 +103,7 @@ abstract class ReportPictureCommand(
       guild.channels.mapNotNull channel@{ channel ->
         val channelId = channel.id
         if (channel is MessageChannel) {
-          if (guildInfoConnector.isChannelExclude(guildId, channelId)) return@channel null
+          if (guildInfoConnector.isChannelExcluded(guildId, channelId)) return@channel null
           if (guildInfoConnector.getDuplicateInfoChannel(guildId) == channelId) return@channel null
           channel
         } else {
