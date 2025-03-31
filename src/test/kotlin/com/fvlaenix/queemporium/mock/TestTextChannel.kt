@@ -22,11 +22,10 @@ import net.dv8tion.jda.api.entities.sticker.StickerSnowflake
 import net.dv8tion.jda.api.managers.channel.concrete.TextChannelManager
 import net.dv8tion.jda.api.requests.RestAction
 import net.dv8tion.jda.api.requests.restaction.*
+import net.dv8tion.jda.api.requests.restaction.pagination.MessagePaginationAction
 import net.dv8tion.jda.api.requests.restaction.pagination.ThreadChannelPaginationAction
-import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder
-import net.dv8tion.jda.internal.requests.RestActionImpl
-import net.dv8tion.jda.internal.requests.restaction.MessageCreateActionImpl
 import org.jetbrains.annotations.Unmodifiable
+import java.lang.Void
 
 class TestTextChannel(
   private val testEnvironment: TestEnvironment,
@@ -35,7 +34,7 @@ class TestTextChannel(
   private val idLong: Long,
   private val name: String
 ) : TextChannel, MessageChannelUnion, MessageChannel {
-  private val messages = mutableListOf<Message>()
+  internal val messages = mutableListOf<Message>()
 
   override fun getJDA(): JDA = testJda
   override fun getGuild(): Guild = testGuild
@@ -68,19 +67,34 @@ class TestTextChannel(
       .build()
 
     val action = TestMessageCreateAction(restAction)
-    testEnvironment.notifyMessage(message)
+    testEnvironment.notifyMessageSend(message)
     messages.add(message)
     return action
   }
 
-  override fun retrieveMessageById(id: Long): RestAction<Message> {
-    val message = messages.find { it.idLong == id }
+  override fun deleteMessageById(messageId: String): AuditableRestAction<Void?> {
+    val restAction = AuditableImmediatelyTestRestAction.builder<Void?>(jda)
+      .withResult(null)
+      .build()
+
+    val deleted = messages.singleOrNull { message -> message.id == messageId }
+    if (deleted != null) {
+      testEnvironment.notifyMessageDelete(deleted)
+    }
+    return restAction
+  }
+
+  override fun retrieveMessageById(id: String): RestAction<Message> {
+    val message = messages.find { it.id == id }
     return if (message != null) {
       ImmediatelyTestRestAction.builder<Message>(jda).withResult(message).build()
     } else {
       ImmediatelyTestRestAction.builder<Message>(jda).withError(RuntimeException("Message not found")).build()
     }
   }
+
+  override fun getIterableHistory(): MessagePaginationAction =
+    TestMessagePaginationAction(jda, this)
 
   override fun getName(): String = name
   override fun getType(): ChannelType = ChannelType.TEXT

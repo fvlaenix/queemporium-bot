@@ -209,9 +209,8 @@ class TestMessage(
     TODO("Not yet implemented")
   }
 
-  override fun delete(): AuditableRestAction<Void?> {
-    TODO("Not yet implemented")
-  }
+  override fun delete(): AuditableRestAction<Void?> =
+    channel.deleteMessageById(id)
 
   override fun getContentRaw(): String = content
   override fun getContentStripped(): String {
