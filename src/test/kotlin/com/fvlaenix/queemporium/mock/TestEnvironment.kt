@@ -1,6 +1,7 @@
 package com.fvlaenix.queemporium.mock
 
 import com.fvlaenix.queemporium.DiscordBot
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
@@ -10,6 +11,7 @@ import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion
+import net.dv8tion.jda.api.events.message.MessageDeleteEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.session.ReadyEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
@@ -82,9 +84,14 @@ class TestEnvironment {
     return existingChannel ?: createPrivateChannel(user)
   }
 
-  fun notifyMessage(message: Message) {
+  fun notifyMessageSend(message: Message) {
     val messageReceivedEvent = MessageReceivedEvent(jda, 0, message)
     jda.notifyMessageSend(messageReceivedEvent)
+  }
+
+  fun notifyMessageDelete(message: Message) {
+    val messageDeletedEvent = MessageDeleteEvent(jda, 0, message.idLong, message.channel)
+    jda.notifyMessageDeleted(messageDeletedEvent)
   }
 
   fun createMember(
@@ -113,9 +120,11 @@ class TestEnvironment {
 
     // Отправляем ReadyEvent всем слушателям
     val readyEvent = mockk<ReadyEvent>()
+    every { readyEvent.jda } returns jda
     listeners.forEach { listener ->
       listener.onReady(readyEvent)
     }
+    awaitAll()
   }
 
   fun awaitAll() {
@@ -140,7 +149,7 @@ class TestEnvironment {
     val action = TestMessageCreateAction(restAction)
 
     channel.addMessage(message)
-    notifyMessage(message)
+    notifyMessageSend(message)
 
     return action
   }
@@ -199,7 +208,7 @@ class TestEnvironment {
 
     // Add to channel and notify
     privateChannel.addMessage(testMessage)
-    notifyMessage(testMessage)
+    notifyMessageSend(testMessage)
 
     // Create and return action
     val restAction = ImmediatelyTestRestAction.builder<Message?>(jda)

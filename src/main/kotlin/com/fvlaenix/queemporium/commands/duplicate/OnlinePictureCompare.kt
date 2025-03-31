@@ -64,7 +64,6 @@ class OnlinePictureCompare(
         DuplicateImageService.DeleteImageData(messageId, i)
       }
     )
-    messageDataConnector.delete(messageId)
     messageDuplicateDataConnector.delete(messageId)
   }
 }

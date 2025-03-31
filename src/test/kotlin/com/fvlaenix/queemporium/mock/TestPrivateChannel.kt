@@ -64,7 +64,7 @@ class TestPrivateChannel(
             .build()
 
         val action = TestMessageCreateAction(restAction)
-        testEnvironment.notifyMessage(message)
+        testEnvironment.notifyMessageSend(message)
         messages.add(message)
         return action
     }

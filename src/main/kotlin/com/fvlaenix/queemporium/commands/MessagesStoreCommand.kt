@@ -6,6 +6,7 @@ import com.fvlaenix.queemporium.database.MessageDataConnector
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
+import net.dv8tion.jda.api.events.message.MessageDeleteEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.session.ReadyEvent
 
@@ -50,5 +51,9 @@ class MessagesStoreCommand(val databaseConfiguration: DatabaseConfiguration) : C
 
   override suspend fun onMessageReceivedSuspend(event: MessageReceivedEvent) {
     computeMessage(event.message)
+  }
+
+  override suspend fun onMessageDeleteSuspend(event: MessageDeleteEvent) {
+    messageDataConnector.delete(event.messageId)
   }
 }
