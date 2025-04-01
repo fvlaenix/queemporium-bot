@@ -33,11 +33,13 @@ import net.dv8tion.jda.api.utils.cache.SnowflakeCacheView
 import net.dv8tion.jda.api.utils.cache.SortedChannelCacheView
 import net.dv8tion.jda.api.utils.cache.SortedSnowflakeCacheView
 import net.dv8tion.jda.api.utils.concurrent.Task
+import net.dv8tion.jda.internal.utils.concurrent.task.GatewayTask
 import org.jetbrains.annotations.Unmodifiable
 import java.time.Duration
 import java.time.OffsetDateTime
 import java.time.temporal.TemporalAccessor
 import java.util.*
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 import java.util.stream.Stream
@@ -101,7 +103,8 @@ class TestGuild(
   }
 
   override fun loadMembers(callback: Consumer<Member?>): Task<Void?> {
-    TODO("Not yet implemented")
+    membersMap.values.forEach { callback.accept(it) }
+    return GatewayTask<Void?>(CompletableFuture.completedFuture<Void?>(null)) {}
   }
 
   override fun retrieveMemberById(id: Long): CacheRestAction<Member?> {

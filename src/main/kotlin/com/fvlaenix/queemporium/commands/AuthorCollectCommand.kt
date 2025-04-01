@@ -6,6 +6,7 @@ import com.fvlaenix.queemporium.database.AuthorDataConnector
 import kotlinx.coroutines.delay
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.session.ReadyEvent
+import org.jetbrains.annotations.TestOnly
 import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.time.Duration.Companion.days
@@ -31,5 +32,10 @@ class AuthorCollectCommand(val databaseConfiguration: DatabaseConfiguration) : C
       runCollect(event.jda)
       delay(1.days)
     }
+  }
+
+  @TestOnly
+  fun runTestCollect(jda: JDA) {
+    runCollect(jda)
   }
 }

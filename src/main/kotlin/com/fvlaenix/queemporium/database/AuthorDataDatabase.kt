@@ -37,4 +37,22 @@ class AuthorDataConnector(val database: Database) {
       }
     }
   }
+
+  fun getAuthorsByGuildId(guildId: String): List<AuthorData> = transaction(database) {
+    AuthorDataTable.select { AuthorDataTable.guildId eq guildId }
+      .map { row ->
+        AuthorData(
+          authorId = row[AuthorDataTable.authorId],
+          guildId = row[AuthorDataTable.guildId],
+          authorName = row[AuthorDataTable.authorName]
+        )
+      }
+  }
+
+  fun hasAuthor(guildId: String, authorId: String): Boolean = transaction(database) {
+    AuthorDataTable.select {
+      (AuthorDataTable.guildId eq guildId) and
+          (AuthorDataTable.authorId eq authorId)
+    }.count() > 0
+  }
 }
