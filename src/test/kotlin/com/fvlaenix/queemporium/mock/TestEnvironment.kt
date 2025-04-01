@@ -109,6 +109,20 @@ class TestEnvironment {
     listeners.add(listener)
   }
 
+  fun addReaction(message: TestMessage, user: User, emojiName: String): TestMessage {
+    val emoji = TestEmoji(emojiName)
+    message.addReaction(emoji, user)
+    return message
+  }
+
+  fun addReactions(message: TestMessage, emojiName: String, users: List<User>): TestMessage {
+    val emoji = TestEmoji(emojiName)
+    users.forEach { user ->
+      message.addReaction(emoji, user)
+    }
+    return message
+  }
+
   fun start() {
     require(!isStarted) { "Bot is already started" }
     isStarted = true

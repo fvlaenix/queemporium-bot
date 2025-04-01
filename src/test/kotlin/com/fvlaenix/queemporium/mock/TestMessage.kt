@@ -30,7 +30,8 @@ class TestMessage(
   private val idLong: Long,
   private val content: String,
   private val author: User,
-  private val attachments: List<Message.Attachment> = mutableListOf()
+  private val attachments: List<Message.Attachment> = mutableListOf(),
+  private val reactions: MutableList<TestMessageReaction> = mutableListOf()
 ) : Message {
   override fun getJDA(): JDA = testJda
 
@@ -48,6 +49,26 @@ class TestMessage(
 
   override fun addReaction(emoji: Emoji): RestAction<Void?> {
     TODO("Not yet implemented")
+  }
+
+  fun addReaction(emoji: TestEmoji, user: User): TestMessageReaction {
+    val existingReaction = reactions.find { it.emoji.name == emoji.name }
+    if (existingReaction != null) {
+      existingReaction.addUser(user)
+      return existingReaction
+    }
+
+    val reaction = TestMessageReaction(testJda, this, emoji, mutableListOf(user))
+    reactions.add(reaction)
+    return reaction
+  }
+
+  // Переопределяем getReactions из Message
+  override fun getReactions(): List<MessageReaction> = reactions.toList()
+
+  // Переопределение других методов для работы с реакциями, если необходимо
+  override fun getReaction(emoji: Emoji): MessageReaction? {
+    return reactions.find { it.emoji.name == emoji.name }
   }
 
   override fun clearReactions(): RestAction<Void?> {
@@ -70,10 +91,6 @@ class TestMessage(
   }
 
   override fun retrieveReactionUsers(emoji: Emoji): ReactionPaginationAction {
-    TODO("Not yet implemented")
-  }
-
-  override fun getReaction(emoji: Emoji): MessageReaction? {
     TODO("Not yet implemented")
   }
 
@@ -159,10 +176,6 @@ class TestMessage(
   }
 
   override fun endPoll(): AuditableRestAction<Message?> {
-    TODO("Not yet implemented")
-  }
-
-  override fun getReactions(): @Unmodifiable List<MessageReaction?> {
     TODO("Not yet implemented")
   }
 
