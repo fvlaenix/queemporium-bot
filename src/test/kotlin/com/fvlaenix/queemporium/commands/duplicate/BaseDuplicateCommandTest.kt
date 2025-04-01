@@ -44,6 +44,8 @@ abstract class BaseDuplicateCommandTest : BaseKoinTest() {
   protected lateinit var duplicateChannel: TextChannel
   protected lateinit var testUser: User
 
+  protected open var autoStartEnvironment: Boolean = true
+
   /**
    * Standard test environment setup
    */
@@ -68,7 +70,7 @@ abstract class BaseDuplicateCommandTest : BaseKoinTest() {
     guildInfoConnector = GuildInfoConnector(database)
 
     // Create test environment
-    env = createEnvironment {
+    env = createEnvironment(autoStart = autoStartEnvironment) {
       createGuild(defaultGuildName) {
         withChannel(defaultGeneralChannelName)
         withChannel(defaultDuplicateChannelName)
@@ -95,6 +97,10 @@ abstract class BaseDuplicateCommandTest : BaseKoinTest() {
    */
   protected open fun additionalSetUp() {
     // Does nothing by default, should be overridden in specific tests
+  }
+
+  protected fun startEnvironment() {
+    env.start()
   }
 
   /**
