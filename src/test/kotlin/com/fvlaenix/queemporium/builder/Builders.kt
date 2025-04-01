@@ -52,11 +52,15 @@ class ChannelBuilder(
   private val channel: MessageChannelUnion
 )
 
-fun createEnvironment(block: TestBotBuilder.() -> Unit): TestEnvironment {
+fun createEnvironment(autoStart: Boolean = true, block: TestBotBuilder.() -> Unit): TestEnvironment {
   val environment = TestEnvironment()
   val builder = TestBotBuilder(environment)
   builder.addCommandsFromKoin()
   builder.block()
-  environment.start()
+
+  if (autoStart) {
+    environment.start()
+  }
+
   return environment
 }

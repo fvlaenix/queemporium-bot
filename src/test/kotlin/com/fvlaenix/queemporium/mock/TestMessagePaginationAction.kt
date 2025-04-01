@@ -119,8 +119,10 @@ class TestMessagePaginationAction(
     TODO("Not yet implemented")
   }
 
-  override fun iterator(): PaginationAction.PaginationIterator<Message?> =
-    PaginationAction.PaginationIterator(channel.messages.toList()) { channel.messages }
+  override fun iterator(): PaginationAction.PaginationIterator<Message?> {
+    val messages = channel.messages.toMutableList()
+    return PaginationAction.PaginationIterator(channel.messages.toList()) { val copy = messages.toList(); messages.clear(); copy }
+  }
 
   override fun getJDA(): JDA {
     TODO("Not yet implemented")

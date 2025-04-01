@@ -1,4 +1,3 @@
-// Новый файл MockDuplicateImageService.kt
 package com.fvlaenix.queemporium.mock
 
 import com.fvlaenix.queemporium.database.CompressSize
@@ -11,27 +10,37 @@ import kotlinx.coroutines.coroutineScope
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.events.session.ReadyEvent
 
+/**
+ * Mock implementation of DuplicateImageService for testing purposes.
+ * Allows predefined responses for specific file names and tracks all received requests.
+ */
 class MockDuplicateImageService : DuplicateImageService {
-  // Хранилище для предопределенных ответов по имени файла
+  // Storage for predefined responses by file name
   private val responsesByFileName = mutableMapOf<String, List<DuplicateImageService.DuplicateImageData>>()
 
-  // Для общих ответов, не привязанных к конкретному имени файла
+  // For general responses, not tied to specific file name
   var nextResponse: List<DuplicateImageService.DuplicateImageData>? = null
   var defaultCompressSize: CompressSize = CompressSize(width = 500, height = null)
 
-  // Флаг для имитации неработающего сервера
+  // Flag to simulate non-working server
   var isServerAlive: Boolean = true
 
-  // Настраиваем ответ для конкретного файла
-  fun setResponseForFile(fileName: String, response: List<DuplicateImageService.DuplicateImageData>) {
-    responsesByFileName[fileName] = response
+  // List to track all requests made to this service
+  private val requests: MutableList<Any> = mutableListOf()
+
+  /**
+   * Configure response for a specific file
+   */
+  fun setResponseForFile(fileName: String, response: List<DuplicateImageService.DuplicateImageData>?) {
+    if (response == null) {
+      responsesByFileName.remove(fileName)
+    } else {
+      responsesByFileName[fileName] = response
+    }
   }
 
-  // Очистка всех настроенных ответов
-  fun clearResponses() {
-    responsesByFileName.clear()
-    nextResponse = null
-  }
+  fun countAddImageRequests(): Int =
+    requests.count { it is AddImageRequest }
 
   override suspend fun addImageWithCheck(
     message: Message,
@@ -39,6 +48,9 @@ class MockDuplicateImageService : DuplicateImageService {
     withHistoryReload: Boolean,
     callback: suspend (Pair<MessageUtils.MessageImageInfo, List<DuplicateImageService.DuplicateImageData>>) -> Unit
   ) {
+    // Record this request
+    requests.add(AddImageRequest(message.id, compressSize, withHistoryReload))
+
     val imagesChannel = coroutineScope {
       addImagesFromMessage(
         message = message,
@@ -50,8 +62,15 @@ class MockDuplicateImageService : DuplicateImageService {
     val duplicateChannel = Channel<Pair<MessageUtils.MessageImageInfo, List<DuplicateImageService.DuplicateImageData>>>(Channel.UNLIMITED)
 
     try {
-      // Обрабатываем каждое изображение
+      // Process each image
       imagesChannel.consumeEach { imageInfo ->
+        // Record this image processing
+        requests.add(ProcessImageRequest(
+          messageId = message.id,
+          fileName = imageInfo.additionalImageInfo.fileName,
+          numberInMessage = imageInfo.numberInMessage
+        ))
+
         val response = responsesByFileName[imageInfo.additionalImageInfo.fileName]
           ?: nextResponse
 
@@ -69,12 +88,35 @@ class MockDuplicateImageService : DuplicateImageService {
   }
 
   override suspend fun checkServerAliveness(event: ReadyEvent): CompressSize? {
-    // Проверяем "работоспособность" сервера
+    // Record this request
+    requests.add(CheckServerAlivenessRequest())
+
+    // Check "server availability"
     return if (isServerAlive) defaultCompressSize else null
   }
 
   override suspend fun deleteImage(deleteData: List<DuplicateImageService.DeleteImageData>) {
-    // Пустая реализация, так как мы не храним реальные данные
-    // В реальной ситуации здесь можно было бы удалять из responsesByFileName
+    // Record this request
+    requests.add(DeleteImageRequest(deleteData))
   }
+
+  // Data classes to track different request types
+
+  data class AddImageRequest(
+    val messageId: String,
+    val compressSize: CompressSize,
+    val withHistoryReload: Boolean
+  )
+
+  data class ProcessImageRequest(
+    val messageId: String,
+    val fileName: String,
+    val numberInMessage: Int
+  )
+
+  class CheckServerAlivenessRequest
+
+  data class DeleteImageRequest(
+    val deleteData: List<DuplicateImageService.DeleteImageData>
+  )
 }
