@@ -5,8 +5,7 @@ import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
 import net.dv8tion.jda.api.utils.ClosableIterator
 import net.dv8tion.jda.api.utils.cache.SortedChannelCacheView
 import org.jetbrains.annotations.Unmodifiable
-import java.util.NavigableSet
-import java.util.TreeSet
+import java.util.*
 import java.util.function.Consumer
 import java.util.stream.Stream
 

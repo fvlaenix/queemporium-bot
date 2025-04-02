@@ -548,10 +548,16 @@ class TestGuild(
   override fun getMemberCache(): MemberCacheView {
     return object : MemberCacheView {
       override fun getElementById(id: Long): Member? = membersMap[id.toString()]
-      override fun getElementsByUsername(p0: String, p1: Boolean): @Unmodifiable List<Member?> = TODO("Not yet implemented")
-      override fun getElementsByNickname(p0: String?, p1: Boolean): @Unmodifiable List<Member?> = TODO("Not yet implemented")
+      override fun getElementsByUsername(p0: String, p1: Boolean): @Unmodifiable List<Member?> =
+        TODO("Not yet implemented")
+
+      override fun getElementsByNickname(p0: String?, p1: Boolean): @Unmodifiable List<Member?> =
+        TODO("Not yet implemented")
+
       override fun getElementsWithRoles(vararg p0: Role?): @Unmodifiable List<Member?> = TODO("Not yet implemented")
-      override fun getElementsWithRoles(p0: Collection<Role?>): @Unmodifiable List<Member?> = TODO("Not yet implemented")
+      override fun getElementsWithRoles(p0: Collection<Role?>): @Unmodifiable List<Member?> =
+        TODO("Not yet implemented")
+
       override fun asList(): @Unmodifiable List<Member?> = membersMap.values.toList()
       override fun asSet(): @Unmodifiable Set<Member?> = membersMap.values.toSet()
       override fun lockedIterator(): ClosableIterator<Member?> =
@@ -562,10 +568,12 @@ class TestGuild(
           override fun close() {}
           override fun remove() = throw UnsupportedOperationException("Cannot remove from MemberCacheView")
         }
+
       override fun size(): Long = membersMap.size.toLong()
       override fun isEmpty(): Boolean = membersMap.isEmpty()
       override fun getElementsByName(name: String, ignoreCase: Boolean): @Unmodifiable List<Member?> =
         membersMap.values.filter { it.effectiveName.equals(name, ignoreCase) }
+
       override fun stream(): Stream<Member?> = membersMap.values.map { it as Member? }.stream()
       override fun parallelStream(): Stream<Member?> = membersMap.values.map { it as Member? }.parallelStream()
       override fun iterator(): MutableIterator<Member?> = membersMap.values.toMutableList().iterator()

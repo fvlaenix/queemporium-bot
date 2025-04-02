@@ -21,9 +21,11 @@ class AuthorMappingTests {
 
   @Test
   fun `test single element not exists`() {
-    val authorMapper = MockAuthorMapper(mapOf(
-      listOf("incorrect-1", "incorrect-2") to listOf("correct-1", "correct-2")
-    ))
+    val authorMapper = MockAuthorMapper(
+      mapOf(
+        listOf("incorrect-1", "incorrect-2") to listOf("correct-1", "correct-2")
+      )
+    )
     val text = "Hello World"
     val mapping = authorMapper.findMapping(text)
     assertNull(mapping)
@@ -31,9 +33,11 @@ class AuthorMappingTests {
 
   @Test
   fun `test single element exists`() {
-    val authorMapper = MockAuthorMapper(mapOf(
-      listOf("incorrect-1", "incorrect-2") to listOf("correct-1", "correct-2")
-    ))
+    val authorMapper = MockAuthorMapper(
+      mapOf(
+        listOf("incorrect-1", "incorrect-2") to listOf("correct-1", "correct-2")
+      )
+    )
     val text = "Hello World: incorrect-2"
     val mapping = authorMapper.findMapping(text)
     assertNotNull(mapping)
@@ -44,9 +48,11 @@ class AuthorMappingTests {
 
   @Test
   fun `test correct and incorrect in single element`() {
-    val authorMapper = MockAuthorMapper(mapOf(
-      listOf("incorrect-1", "incorrect-2") to listOf("correct-1", "correct-2")
-    ))
+    val authorMapper = MockAuthorMapper(
+      mapOf(
+        listOf("incorrect-1", "incorrect-2") to listOf("correct-1", "correct-2")
+      )
+    )
     val text = "Hello World: hhttpsss://x.com/incorrect-2: correct-1"
     val mapping = authorMapper.findMapping(text)
     assertNull(mapping)
@@ -54,9 +60,11 @@ class AuthorMappingTests {
 
   @Test
   fun `test incorrect in single element`() {
-    val authorMapper = MockAuthorMapper(mapOf(
-      listOf("incorrect-1", "incorrect-2") to listOf("correct-1", "correct-2")
-    ))
+    val authorMapper = MockAuthorMapper(
+      mapOf(
+        listOf("incorrect-1", "incorrect-2") to listOf("correct-1", "correct-2")
+      )
+    )
     val text = "Hello World: hhttpsss://x.com/incorrect-2: incorrect-1"
     val mapping = authorMapper.findMapping(text)
     assertNotNull(mapping)
@@ -66,10 +74,12 @@ class AuthorMappingTests {
 
   @Test
   fun `test incorrect in two elements`() {
-    val authorMapper = MockAuthorMapper(mapOf(
-      listOf("incorrect-1", "incorrect-2") to listOf("correct-1", "correct-2"),
-      listOf("abracadabra-1") to listOf("abracadabra-2")
-    ))
+    val authorMapper = MockAuthorMapper(
+      mapOf(
+        listOf("incorrect-1", "incorrect-2") to listOf("correct-1", "correct-2"),
+        listOf("abracadabra-1") to listOf("abracadabra-2")
+      )
+    )
     val text = "Hello World: hhttpsss://x.com/incorrect-2: incorrect-1"
     val mapping = authorMapper.findMapping(text)
     assertNotNull(mapping)
@@ -79,10 +89,12 @@ class AuthorMappingTests {
 
   @Test
   fun `test incorrect in two elements in second`() {
-    val authorMapper = MockAuthorMapper(mapOf(
-      listOf("incorrect-1", "incorrect-2") to listOf("correct-1", "correct-2"),
-      listOf("abracadabra-1") to listOf("abracadabra-2")
-    ))
+    val authorMapper = MockAuthorMapper(
+      mapOf(
+        listOf("incorrect-1", "incorrect-2") to listOf("correct-1", "correct-2"),
+        listOf("abracadabra-1") to listOf("abracadabra-2")
+      )
+    )
     val text = "Hello World: hhttpsss://x.com/aaaa abracadabra-1"
     val mapping = authorMapper.findMapping(text)
     assertNotNull(mapping)
@@ -93,9 +105,11 @@ class AuthorMappingTests {
   @Test
   fun `test when correct name is substring of incorrect name`() {
     // In this test, the correct name "artist" is a substring of the incorrect "artist-x"
-    val authorMapper = MockAuthorMapper(mapOf(
-      listOf("artist-x") to listOf("artist")
-    ))
+    val authorMapper = MockAuthorMapper(
+      mapOf(
+        listOf("artist-x") to listOf("artist")
+      )
+    )
 
     // Text contains an incorrect author name
     val text = "Check out this artwork by artist-x!"
@@ -109,9 +123,11 @@ class AuthorMappingTests {
 
   @Test
   fun `test when both incorrect and correct names are present`() {
-    val authorMapper = MockAuthorMapper(mapOf(
-      listOf("artist-x") to listOf("artist")
-    ))
+    val authorMapper = MockAuthorMapper(
+      mapOf(
+        listOf("artist-x") to listOf("artist")
+      )
+    )
 
     // Text contains both incorrect and correct author names
     val text = "Check out artworks by artist-x and artist!"
@@ -123,11 +139,13 @@ class AuthorMappingTests {
 
   @Test
   fun `test with different variants of substring relations`() {
-    val authorMapper = MockAuthorMapper(mapOf(
-      listOf("super-artist") to listOf("artist"),
-      listOf("artiste") to listOf("artist-proper"),
-      listOf("name-one") to listOf("name")
-    ))
+    val authorMapper = MockAuthorMapper(
+      mapOf(
+        listOf("super-artist") to listOf("artist"),
+        listOf("artiste") to listOf("artist-proper"),
+        listOf("name-one") to listOf("name")
+      )
+    )
 
     // Incorrect name "super-artist" contains correct "artist" as a suffix
     val text1 = "This is by super-artist."
@@ -153,9 +171,11 @@ class AuthorMappingTests {
 
   @Test
   fun `test case insensitivity`() {
-    val authorMapper = MockAuthorMapper(mapOf(
-      listOf("Artist-X") to listOf("artist")
-    ))
+    val authorMapper = MockAuthorMapper(
+      mapOf(
+        listOf("Artist-X") to listOf("artist")
+      )
+    )
 
     // Incorrect name with different case
     val text = "This is by ARTIST-X."
@@ -167,9 +187,11 @@ class AuthorMappingTests {
 
   @Test
   fun `test with punctuation near names`() {
-    val authorMapper = MockAuthorMapper(mapOf(
-      listOf("artist-x") to listOf("artist")
-    ))
+    val authorMapper = MockAuthorMapper(
+      mapOf(
+        listOf("artist-x") to listOf("artist")
+      )
+    )
 
     // Text with punctuation near the name
     val text = "This is by artist-x, and it's amazing!"

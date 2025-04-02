@@ -59,17 +59,20 @@ class MockDuplicateImageService : DuplicateImageService {
       )
     }
 
-    val duplicateChannel = Channel<Pair<MessageUtils.MessageImageInfo, List<DuplicateImageService.DuplicateImageData>>>(Channel.UNLIMITED)
+    val duplicateChannel =
+      Channel<Pair<MessageUtils.MessageImageInfo, List<DuplicateImageService.DuplicateImageData>>>(Channel.UNLIMITED)
 
     try {
       // Process each image
       imagesChannel.consumeEach { imageInfo ->
         // Record this image processing
-        requests.add(ProcessImageRequest(
-          messageId = message.id,
-          fileName = imageInfo.additionalImageInfo.fileName,
-          numberInMessage = imageInfo.numberInMessage
-        ))
+        requests.add(
+          ProcessImageRequest(
+            messageId = message.id,
+            fileName = imageInfo.additionalImageInfo.fileName,
+            numberInMessage = imageInfo.numberInMessage
+          )
+        )
 
         val response = responsesByFileName[imageInfo.additionalImageInfo.fileName]
           ?: nextResponse

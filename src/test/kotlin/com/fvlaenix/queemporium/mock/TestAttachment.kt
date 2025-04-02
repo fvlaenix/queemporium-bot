@@ -29,7 +29,8 @@ fun createTestAttachment(
 
   val testImage = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
   val download = CompletableFuture.completedFuture<InputStream>(
-    ByteArrayInputStream(ImageUtils.bufferedImageToByteArray(testImage)))
+    ByteArrayInputStream(ImageUtils.bufferedImageToByteArray(testImage))
+  )
 
   every { proxy.download() } returns download
   every { proxy.download(any(), any()) } returns download

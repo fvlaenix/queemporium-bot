@@ -10,24 +10,24 @@ import io.mockk.mockk
 import kotlin.reflect.KClass
 
 class BotConfigBuilder {
-    var applicationConfig: ApplicationConfig = mockk()
-    var databaseConfig: DatabaseConfiguration = createInMemoryDatabaseConfig()
-    var botConfiguration: BotConfiguration = mockk()
-    var metadataConfiguration: MetadataConfiguration = mockk()
-    var answerService: AnswerService = mockk()
+  var applicationConfig: ApplicationConfig = mockk()
+  var databaseConfig: DatabaseConfiguration = createInMemoryDatabaseConfig()
+  var botConfiguration: BotConfiguration = mockk()
+  var metadataConfiguration: MetadataConfiguration = mockk()
+  var answerService: AnswerService = mockk()
 
-    fun enableCommandsByNames(vararg commandClassNames: String) {
-        val commands = commandClassNames.map { MetadataConfiguration.Command(it) }
+  fun enableCommandsByNames(vararg commandClassNames: String) {
+    val commands = commandClassNames.map { MetadataConfiguration.Command(it) }
 
-        val features = commandClassNames.map { 
-            BotConfiguration.Feature(it, true, emptyList())
-        }
-
-        every { metadataConfiguration.commands } returns commands
-        every { botConfiguration.features } returns features
+    val features = commandClassNames.map {
+      BotConfiguration.Feature(it, true, emptyList())
     }
 
-    fun enableCommands(vararg commandClasses: KClass<*>) {
-        enableCommandsByNames(*commandClasses.map { it.java.name }.toTypedArray())
-    }
+    every { metadataConfiguration.commands } returns commands
+    every { botConfiguration.features } returns features
+  }
+
+  fun enableCommands(vararg commandClasses: KClass<*>) {
+    enableCommandsByNames(*commandClasses.map { it.java.name }.toTypedArray())
+  }
 }
