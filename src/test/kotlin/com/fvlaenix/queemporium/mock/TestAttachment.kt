@@ -1,4 +1,3 @@
-// Расширение TestAttachment.kt
 package com.fvlaenix.queemporium.mock
 
 import io.mockk.every
@@ -28,7 +27,6 @@ fun createTestAttachment(
   val proxy = mockk<AttachmentProxy>()
   every { attachment.proxy } returns proxy
 
-  // Создаем тестовое изображение
   val testImage = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
   val download = CompletableFuture.completedFuture<InputStream>(
     ByteArrayInputStream(ImageUtils.bufferedImageToByteArray(testImage)))

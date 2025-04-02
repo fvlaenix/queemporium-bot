@@ -442,7 +442,6 @@ class TestGuild(
     TODO("Not yet implemented")
   }
 
-  // Базовые методы с простой реализацией
   override fun getName(): String = name
   override fun getIconId(): String? {
     TODO("Not yet implemented")

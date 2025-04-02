@@ -127,12 +127,10 @@ class TestEnvironment {
     require(!isStarted) { "Bot is already started" }
     isStarted = true
 
-    // Регистрируем слушателей
     listeners.forEach { listener ->
       jda.addEventListener(listener)
     }
 
-    // Отправляем ReadyEvent всем слушателям
     val readyEvent = mockk<ReadyEvent>()
     every { readyEvent.jda } returns jda
     listeners.forEach { listener ->

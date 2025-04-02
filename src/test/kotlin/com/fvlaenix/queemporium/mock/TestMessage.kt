@@ -63,10 +63,8 @@ class TestMessage(
     return reaction
   }
 
-  // Переопределяем getReactions из Message
   override fun getReactions(): List<MessageReaction> = reactions.toList()
 
-  // Переопределение других методов для работы с реакциями, если необходимо
   override fun getReaction(emoji: Emoji): MessageReaction? {
     return reactions.find { it.emoji.name == emoji.name }
   }
@@ -297,7 +295,6 @@ class TestMessage(
   override fun getJumpUrl(): String =
     "https://myowntestdiscord.com/channels${if (testGuild != null) "/$guildId" else ""}/${channelId}/${id}"
 
-  // Базовые методы для работы с сообщениями
   override fun getId(): String = idLong.toString()
   override fun getIdLong(): Long = idLong
 
