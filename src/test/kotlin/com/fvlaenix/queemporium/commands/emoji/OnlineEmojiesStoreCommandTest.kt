@@ -173,7 +173,7 @@ private fun EmojiDataConnector.getEmojisForMessageByUser(messageId: String, user
   }
 }
 
-private fun EmojiDataConnector.getEmojisForMessage(messageId: String): List<EmojiData> {
+internal fun EmojiDataConnector.getEmojisForMessage(messageId: String): List<EmojiData> {
   return transaction(database) {
     EmojiDataTable.select { EmojiDataTable.messageId eq messageId }
       .map {

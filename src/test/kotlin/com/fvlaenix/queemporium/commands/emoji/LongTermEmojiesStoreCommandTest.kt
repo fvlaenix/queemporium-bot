@@ -1,15 +1,13 @@
 package com.fvlaenix.queemporium.commands.emoji
 
 import com.fvlaenix.queemporium.configuration.commands.LongTermEmojiesStoreCommandConfig
-import com.fvlaenix.queemporium.database.EmojiData
-import com.fvlaenix.queemporium.database.EmojiDataConnector
-import com.fvlaenix.queemporium.database.EmojiDataTable
 import com.fvlaenix.queemporium.mock.TestEmoji
 import com.fvlaenix.queemporium.mock.TestMessage
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.transaction
+import net.dv8tion.jda.api.entities.Message
 import org.junit.jupiter.api.Test
 import org.koin.dsl.module
+import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import kotlin.reflect.KClass
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -25,34 +23,18 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
 
   override var autoStartEnvironment: Boolean = false
 
-  override fun additionalSetUp() {
-    // Override the default config to use shorter durations and test-specific settings
-    val testConfigModule = module {
-      single {
-        LongTermEmojiesStoreCommandConfig(
-          distanceInDays = 1, // Use a shorter time span for tests
-          guildThreshold = 1,
-          channelThreshold = 2,
-          messageThreshold = 2,
-          emojisThreshold = 2,
-          isShuffle = false // Disable shuffling for predictable testing
-        )
-      }
-    }
-
-    koin.loadModules(listOf(testConfigModule), allowOverride = true)
-  }
-
   @Test
   fun `test long term command collects emoji data from historical messages`() {
     // Create several messages with reactions to simulate historical data
-    val messages = createMultipleMessagesWithReactions(
+    val now = OffsetDateTime.now()
+    val messages = createMultipleMessagesWithReactionsAndTimeStamps(
       count = 5,
       baseMessageText = "Historical message",
       reactionConfigs = listOf(
         ReactionConfig("👍", listOf(1, 2)),
         ReactionConfig("❤️", listOf(0, 3))
-      )
+      ),
+      timestamps = (1..5).map { daysAgo -> now.minus(daysAgo.toLong(), ChronoUnit.DAYS) }
     )
 
     // Verify that no emoji data exists before command runs
@@ -91,31 +73,26 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
 
   @Test
   fun `test long term command respects timeframe settings`() {
-    // Create messages with reactions at different "ages"
-    // In a real test, we'd need to manipulate timestamps
-    // Here we'll simulate by differentiating the messages
+    // Create messages with reactions at different timestamps
+    val now = OffsetDateTime.now()
 
-    // Recent messages (within distanceInDays setting)
-    val recentMessages = createMultipleMessagesWithReactions(
+    val recentMessages = createMultipleMessagesWithReactionsAndTimeStamps(
       count = 3,
       baseMessageText = "Recent message",
       reactionConfigs = listOf(
         ReactionConfig("👍", listOf(1, 2))
-      )
+      ),
+      timestamps = (0..2).map { hoursAgo -> now.minus(hoursAgo.toLong(), ChronoUnit.HOURS) }
     )
 
-    // Old messages (outside distanceInDays setting)
-    createMultipleMessagesWithReactions(
+    val oldMessages = createMultipleMessagesWithReactionsAndTimeStamps(
       count = 2,
       baseMessageText = "Old message",
       reactionConfigs = listOf(
         ReactionConfig("❤️", listOf(3, 4))
-      )
+      ),
+      timestamps = (2..3).map { daysAgo -> now.minus(daysAgo.toLong(), ChronoUnit.MONTHS) }
     )
-
-    // TODO Simulate setting older timestamps for oldMessages
-    // This would require modification to TestMessage to allow timestamp manipulation
-    // For now, we'll just move forward assuming the timestamps could be manipulated
 
     // Start the environment
     startEnvironment()
@@ -130,8 +107,11 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
       assertEquals(2, emojiData.count, "Recent message should have 2 reactions")
     }
 
-    // In a complete test, we would verify old messages have no data
-    // but since we can't manipulate timestamps in this framework yet, we skip this check
+    // Verify old messages are not processed due to time constraint
+    oldMessages.forEach { message ->
+      val emojiData = messageEmojiDataConnector.get(message.id)
+      assertEquals(null, emojiData, "Old messages outside timeframe should not be processed")
+    }
   }
 
   @Test
@@ -152,13 +132,15 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
 
     koin.loadModules(listOf(shuffleConfigModule), allowOverride = true)
 
-    // Create messages with reactions
-    val messages = createMultipleMessagesWithReactions(
+    // Create messages with reactions within the time window
+    val now = OffsetDateTime.now()
+    val messages = createMultipleMessagesWithReactionsAndTimeStamps(
       count = 10, // More messages to better observe shuffling effect
       baseMessageText = "Shuffle test message",
       reactionConfigs = listOf(
         ReactionConfig("👍", listOf(1, 2))
-      )
+      ),
+      timestamps = (0..9).map { hoursAgo -> now.minus(hoursAgo.toLong(), ChronoUnit.HOURS) }
     )
 
     // Start the environment
@@ -177,8 +159,9 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
 
   @Test
   fun `test long term command handles messages with many reactions`() {
-    // Create a message with many different reactions
-    val message = createMessageWithReactions(
+    // Create a message with many different reactions, within time window
+    val now = OffsetDateTime.now()
+    val message = createMessageWithReactionsAndTimeStamp(
       messageText = "Message with many reactions",
       reactionConfig = listOf(
         ReactionConfig("👍", listOf(1, 2)),
@@ -187,7 +170,8 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
         ReactionConfig("🎉", listOf(1, 3)),
         ReactionConfig("🔥", listOf(0, 4)),
         ReactionConfig("👀", listOf(0, 1))
-      )
+      ),
+      timestamp = now.minus(2, ChronoUnit.HOURS)
     )
 
     // Start the environment
@@ -217,26 +201,35 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
     val secondGuild = env.createGuild("Second Test Guild")
     env.createTextChannel(secondGuild, "general")
 
-    // Create messages in the first guild
-    val firstGuildMessages = createMultipleMessagesWithReactions(
+    val now = OffsetDateTime.now()
+
+    // Create messages in the first guild with timestamps
+    val firstGuildMessages = createMultipleMessagesWithReactionsAndTimeStamps(
       count = 3,
-      baseMessageText = "First guild message"
+      baseMessageText = "First guild message",
+      timestamps = (1..3).map { hoursAgo -> now.minus(hoursAgo.toLong(), ChronoUnit.HOURS) }
     )
 
     // Create messages in the second guild
+    val secondGuildUsers = (1..3).map { i ->
+      env.createUser("SecondGuildUser$i", false)
+    }
+
     // This requires manual creation since our helper method uses the default guild
     val secondGuildMessages = (1..3).map { i ->
       val message = env.sendMessage(
         "Second Test Guild",
         "general",
-        testUsers[0],
-        "Second guild message $i"
-      ).complete(true)!! as TestMessage
+        secondGuildUsers[0],
+        "Second guild message $i",
+        emptyList(),
+        now.minus(i.toLong(), ChronoUnit.HOURS)
+      ).complete(true)!!
 
       // Add reactions
       val emoji = TestEmoji("👍")
-      testUsers.take(3).forEach { user ->
-        message.addReaction(emoji, user)
+      secondGuildUsers.forEach { user ->
+        (message as TestMessage).addReaction(emoji, user)
       }
 
       message
@@ -261,17 +254,64 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
       assertEquals(3, emojiData.count, "Should have correct reaction count")
     }
   }
-}
 
-private fun EmojiDataConnector.getEmojisForMessage(messageId: String): List<EmojiData> {
-  return transaction(database) {
-    EmojiDataTable.select { EmojiDataTable.messageId eq messageId }
-      .map {
-        EmojiData(
-          messageId = it[EmojiDataTable.messageId],
-          emojiId = it[EmojiDataTable.emojiId],
-          authorId = it[EmojiDataTable.authorId]
-        )
+  /**
+   * Creates a message with reactions at a specific timestamp
+   */
+  private fun createMessageWithReactionsAndTimeStamp(
+    channelName: String = defaultGeneralChannelName,
+    messageText: String = "Test message with reactions",
+    reactionConfig: List<ReactionConfig> = emptyList(),
+    timestamp: OffsetDateTime
+  ): Message {
+    // Send the message with specific timestamp
+    val message = env.sendMessage(
+      defaultGuildName,
+      channelName,
+      testUsers[0], // Author is the first test user
+      messageText,
+      emptyList(),
+      timestamp
+    ).complete(true)!! as TestMessage
+
+    // Add reactions according to configuration
+    reactionConfig.forEach { config ->
+      val emoji = TestEmoji(config.emojiName)
+      config.userIndices.forEach { userIndex ->
+        if (userIndex >= 0 && userIndex < testUsers.size) {
+          message.addReaction(emoji, testUsers[userIndex])
+        }
       }
+    }
+
+    // Wait for processing to complete
+    env.awaitAll()
+
+    return message
+  }
+
+  /**
+   * Creates multiple messages with reactions and specific timestamps
+   */
+  private fun createMultipleMessagesWithReactionsAndTimeStamps(
+    count: Int = 5,
+    channelName: String = defaultGeneralChannelName,
+    baseMessageText: String = "Test message",
+    reactionConfigs: List<ReactionConfig> = listOf(
+      ReactionConfig("👍", listOf(1, 2)), // Basic default reactions
+      ReactionConfig("❤️", listOf(3, 4))
+    ),
+    timestamps: List<OffsetDateTime>
+  ): List<Message> {
+    require(timestamps.size >= count) { "Must provide at least $count timestamps" }
+
+    return (0 until count).map { i ->
+      createMessageWithReactionsAndTimeStamp(
+        channelName = channelName,
+        messageText = "$baseMessageText $i",
+        reactionConfig = reactionConfigs,
+        timestamp = timestamps[i]
+      )
+    }
   }
 }
