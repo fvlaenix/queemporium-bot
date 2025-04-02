@@ -6,12 +6,7 @@ import net.dv8tion.jda.api.entities.*
 import net.dv8tion.jda.api.entities.channel.ChannelType
 import net.dv8tion.jda.api.entities.channel.attribute.IPermissionContainer
 import net.dv8tion.jda.api.entities.channel.attribute.IThreadContainer
-import net.dv8tion.jda.api.entities.channel.concrete.NewsChannel
-import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel
-import net.dv8tion.jda.api.entities.channel.concrete.StageChannel
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
-import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
-import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel
+import net.dv8tion.jda.api.entities.channel.concrete.*
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel
@@ -25,7 +20,6 @@ import net.dv8tion.jda.api.requests.restaction.*
 import net.dv8tion.jda.api.requests.restaction.pagination.MessagePaginationAction
 import net.dv8tion.jda.api.requests.restaction.pagination.ThreadChannelPaginationAction
 import org.jetbrains.annotations.Unmodifiable
-import java.lang.Void
 
 class TestTextChannel(
   private val testEnvironment: TestEnvironment,
@@ -46,7 +40,6 @@ class TestTextChannel(
     TODO("Not yet implemented")
   }
 
-  // Методы для работы с сообщениями
   fun addMessage(message: Message) {
     messages.add(message)
   }

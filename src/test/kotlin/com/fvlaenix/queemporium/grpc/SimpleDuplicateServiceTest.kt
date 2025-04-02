@@ -1,10 +1,10 @@
 package com.fvlaenix.queemporium.grpc
 
 import com.fvlaenix.duplicate.protobuf.CheckImageResponseImagesInfoKt.checkImageResponseImageInfo
+import com.fvlaenix.duplicate.protobuf.GetCompressionSizeResponse
 import com.fvlaenix.duplicate.protobuf.addImageResponse
 import com.fvlaenix.duplicate.protobuf.addImageResponseOk
 import com.fvlaenix.duplicate.protobuf.checkImageResponseImagesInfo
-import com.fvlaenix.duplicate.protobuf.GetCompressionSizeResponse
 import com.fvlaenix.queemporium.builder.createEnvironment
 import com.fvlaenix.queemporium.commands.duplicate.OnlinePictureCompare
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
@@ -12,7 +12,6 @@ import com.fvlaenix.queemporium.mock.createTestAttachment
 import com.fvlaenix.queemporium.verification.verify
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import kotlin.reflect.KClass
 import kotlin.test.Ignore
@@ -160,7 +159,7 @@ class SimpleDuplicateServiceTest : BaseGrpcTest() {
 
     // Verify that the bot handled the service unavailability
     answerService.verify {
-      messagesContain("временно недоступен")
+      messagesContain("temporary unavailable")
     }
   }
 }
