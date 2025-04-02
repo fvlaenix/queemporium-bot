@@ -13,73 +13,73 @@ import java.util.function.Consumer
  * @param JDA The JDA instance
  */
 abstract class BaseTestRestAction<T>(protected val jda: JDA) {
-    protected var result: T? = null
-    protected var error: Throwable? = null
-    protected var delay: Long = 0
-    protected var isResultSet: Boolean = false
+  protected var result: T? = null
+  protected var error: Throwable? = null
+  protected var delay: Long = 0
+  protected var isResultSet: Boolean = false
 
-    /**
-     * Gets the JDA instance used for this RestAction.
-     *
-     * @return JDA instance
-     */
-    fun getJDA(): JDA = jda
+  /**
+   * Gets the JDA instance used for this RestAction.
+   *
+   * @return JDA instance
+   */
+  fun getJDA(): JDA = jda
 
-    /**
-     * Queues the request, and provides callbacks for success and failure.
-     *
-     * @param success Consumer to handle success
-     * @param failure Consumer to handle failure
-     */
-    fun queue(success: Consumer<in T?>?, failure: Consumer<in Throwable>?) {
-        submit(true).whenComplete { result, error ->
-            when {
-                error != null -> failure?.accept(error)
-                isResultSet -> success?.accept(result)
-            }
-        }
+  /**
+   * Queues the request, and provides callbacks for success and failure.
+   *
+   * @param success Consumer to handle success
+   * @param failure Consumer to handle failure
+   */
+  fun queue(success: Consumer<in T?>?, failure: Consumer<in Throwable>?) {
+    submit(true).whenComplete { result, error ->
+      when {
+        error != null -> failure?.accept(error)
+        isResultSet -> success?.accept(result)
+      }
+    }
+  }
+
+  /**
+   * Blocks the current thread and waits for the request to complete.
+   *
+   * @param shouldQueue Whether the request should be queued in JDA
+   * @return The response value
+   */
+  fun complete(shouldQueue: Boolean): T? {
+    return submit(shouldQueue).get()
+  }
+
+  /**
+   * Submits the request and returns a Future representing the pending result.
+   *
+   * @param shouldQueue Whether the request should be queued in JDA
+   * @return CompletableFuture containing the response value
+   */
+  fun submit(shouldQueue: Boolean): CompletableFuture<T?> {
+    val future = CompletableFuture<T?>()
+
+    if (delay > 0) {
+      CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS).execute {
+        completeWithResult(future)
+      }
+    } else {
+      completeWithResult(future)
     }
 
-    /**
-     * Blocks the current thread and waits for the request to complete.
-     *
-     * @param shouldQueue Whether the request should be queued in JDA
-     * @return The response value
-     */
-    fun complete(shouldQueue: Boolean): T? {
-        return submit(shouldQueue).get()
+    return future
+  }
+
+  /**
+   * Completes the future with either the result or error.
+   *
+   * @param future The future to complete
+   */
+  protected fun completeWithResult(future: CompletableFuture<T?>) {
+    when {
+      error != null -> future.completeExceptionally(error)
+      isResultSet -> future.complete(result)
+      else -> future.completeExceptionally(IllegalStateException("Neither result nor error was set"))
     }
-
-    /**
-     * Submits the request and returns a Future representing the pending result.
-     *
-     * @param shouldQueue Whether the request should be queued in JDA
-     * @return CompletableFuture containing the response value
-     */
-    fun submit(shouldQueue: Boolean): CompletableFuture<T?> {
-        val future = CompletableFuture<T?>()
-
-        if (delay > 0) {
-            CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS).execute {
-                completeWithResult(future)
-            }
-        } else {
-            completeWithResult(future)
-        }
-
-        return future
-    }
-
-    /**
-     * Completes the future with either the result or error.
-     *
-     * @param future The future to complete
-     */
-    protected fun completeWithResult(future: CompletableFuture<T?>) {
-        when {
-            error != null -> future.completeExceptionally(error)
-            isResultSet -> future.complete(result)
-            else -> future.completeExceptionally(IllegalStateException("Neither result nor error was set"))
-        }
-    }
+  }
 }

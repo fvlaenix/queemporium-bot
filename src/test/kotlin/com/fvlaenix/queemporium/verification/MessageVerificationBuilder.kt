@@ -12,7 +12,11 @@ class MessageVerificationBuilder(
   }
 
   fun hasAttachments(count: Int = 1) {
-    assertEquals(count, message.imageWithFileNames.size, "Expected $count attachments, but found ${message.imageWithFileNames.size}")
+    assertEquals(
+      count,
+      message.imageWithFileNames.size,
+      "Expected $count attachments, but found ${message.imageWithFileNames.size}"
+    )
   }
 
   fun channelId(id: String) {

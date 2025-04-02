@@ -1,4 +1,5 @@
 package com.fvlaenix.queemporium.commands.search
+
 import com.fvlaenix.queemporium.builder.createEnvironment
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.mock.TestEnvironment

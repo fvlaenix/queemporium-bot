@@ -59,6 +59,7 @@ class TestJDA : JDA {
       override fun isEmpty(): Boolean = guilds.isEmpty()
       override fun getElementsByName(name: String, ignoreCase: Boolean): @Unmodifiable List<Guild?> =
         guilds.filter { guild -> guild.name.equals(name, ignoreCase) }
+
       override fun stream(): Stream<Guild> = guilds.stream()
       override fun parallelStream(): Stream<Guild> = guilds.parallelStream()
       override fun iterator(): MutableIterator<Guild> = TODO("Not yet implemented")
@@ -238,8 +239,11 @@ class TestJDA : JDA {
       override fun isEmpty(): Boolean = privateChannelsMap.isEmpty()
       override fun getElementsByName(name: String, ignoreCase: Boolean): @Unmodifiable List<PrivateChannel?> =
         privateChannelsMap.values.filter { it.name.equals(name, ignoreCase) }
+
       override fun stream(): Stream<PrivateChannel?> = privateChannelsMap.values.map { it as PrivateChannel? }.stream()
-      override fun parallelStream(): Stream<PrivateChannel?> = privateChannelsMap.values.map { it as PrivateChannel? }.parallelStream()
+      override fun parallelStream(): Stream<PrivateChannel?> =
+        privateChannelsMap.values.map { it as PrivateChannel? }.parallelStream()
+
       override fun iterator(): MutableIterator<PrivateChannel?> = privateChannelsMap.values.toMutableList().iterator()
     }
   }

@@ -121,7 +121,9 @@ class TestMessagePaginationAction(
 
   override fun iterator(): PaginationAction.PaginationIterator<Message?> {
     val messages = channel.messages.toMutableList()
-    return PaginationAction.PaginationIterator(channel.messages.toList()) { val copy = messages.toList(); messages.clear(); copy }
+    return PaginationAction.PaginationIterator(channel.messages.toList()) {
+      val copy = messages.toList(); messages.clear(); copy
+    }
   }
 
   override fun getJDA(): JDA {

@@ -6,16 +6,8 @@ import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.mock.TestMessage
 import com.fvlaenix.queemporium.service.MockAnswerService
 import com.fvlaenix.queemporium.verification.verify
-import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.job
-import kotlinx.coroutines.runBlocking
-import net.dv8tion.jda.api.JDA
-import net.dv8tion.jda.api.entities.Guild
-import net.dv8tion.jda.api.entities.Message
-import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
-import net.dv8tion.jda.internal.entities.channel.concrete.TextChannelImpl
 import org.junit.jupiter.api.BeforeEach
 import kotlin.test.Test
 import kotlin.test.assertEquals
