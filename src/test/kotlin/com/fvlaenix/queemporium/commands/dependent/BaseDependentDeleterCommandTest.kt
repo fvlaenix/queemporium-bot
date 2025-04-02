@@ -2,7 +2,6 @@ package com.fvlaenix.queemporium.commands.dependent
 
 import com.fvlaenix.queemporium.builder.createEnvironment
 import com.fvlaenix.queemporium.commands.DependentDeleterCommand
-import com.fvlaenix.queemporium.commands.LoggerMessageCommand
 import com.fvlaenix.queemporium.commands.MessagesStoreCommand
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.database.MessageDataConnector
@@ -50,8 +49,7 @@ abstract class BaseDependentDeleterCommandTest : BaseKoinTest() {
     // Setup Koin with DependentDeleterCommand
     koin = setupBotKoin {
       this.answerService = this@BaseDependentDeleterCommandTest.answerService
-      // TODO remove LoggerMessageCommand
-      enableCommands(DependentDeleterCommand::class, MessagesStoreCommand::class, LoggerMessageCommand::class)
+      enableCommands(DependentDeleterCommand::class, MessagesStoreCommand::class)
     }
 
     // Setup database and connectors
