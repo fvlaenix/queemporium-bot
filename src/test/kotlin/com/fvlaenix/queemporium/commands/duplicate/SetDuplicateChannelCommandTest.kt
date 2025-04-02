@@ -10,7 +10,7 @@ import kotlin.test.assertNotNull
  */
 class SetDuplicateChannelCommandTest : BaseSetDuplicateChannelCommandTest() {
 
-  private val COMMAND = "/shogun-sama beg-this-channel-duplicate"
+  private val command = "/shogun-sama beg-this-channel-duplicate"
 
   @Test
   fun `test admin can set duplicate channel`() {
@@ -19,7 +19,7 @@ class SetDuplicateChannelCommandTest : BaseSetDuplicateChannelCommandTest() {
       defaultGuildName,
       defaultGeneralChannelName,
       adminUser,
-      COMMAND
+      command
     ).queue()
 
     // Wait for processing
@@ -44,7 +44,7 @@ class SetDuplicateChannelCommandTest : BaseSetDuplicateChannelCommandTest() {
       defaultGuildName,
       defaultGeneralChannelName,
       regularUser,
-      COMMAND
+      command
     ).queue()
 
     // Wait for processing
@@ -67,7 +67,7 @@ class SetDuplicateChannelCommandTest : BaseSetDuplicateChannelCommandTest() {
     val dmUser = env.createUser("DM User", false)
 
     // Send the direct message
-    env.sendDirectMessage(dmUser, COMMAND).queue()
+    env.sendDirectMessage(dmUser, command).queue()
 
     // Wait for processing
     env.awaitAll()
@@ -90,7 +90,7 @@ class SetDuplicateChannelCommandTest : BaseSetDuplicateChannelCommandTest() {
       defaultGuildName,
       defaultGeneralChannelName,
       adminUser,
-      COMMAND
+      command
     ).queue()
 
     env.awaitAll()
@@ -104,7 +104,7 @@ class SetDuplicateChannelCommandTest : BaseSetDuplicateChannelCommandTest() {
       defaultGuildName,
       newChannelName,
       adminUser,
-      COMMAND
+      command
     ).queue()
 
     env.awaitAll()

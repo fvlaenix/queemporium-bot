@@ -107,7 +107,7 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
     )
 
     // Old messages (outside distanceInDays setting)
-    val oldMessages = createMultipleMessagesWithReactions(
+    createMultipleMessagesWithReactions(
       count = 2,
       baseMessageText = "Old message",
       reactionConfigs = listOf(
@@ -217,7 +217,7 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
   fun `test long term command handles multiple guilds`() {
     // Create a second guild with its own channel and messages
     val secondGuild = env.createGuild("Second Test Guild")
-    val secondChannel = env.createTextChannel(secondGuild, "general")
+    env.createTextChannel(secondGuild, "general")
 
     // Create messages in the first guild
     val firstGuildMessages = createMultipleMessagesWithReactions(

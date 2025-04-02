@@ -63,10 +63,6 @@ class TestMessageReaction(
     }
   }
 
-  fun removeUser(user: User) {
-    users.remove(user)
-  }
-
   class ReactionPaginationActionImpl(val users: List<User>) : ReactionPaginationAction {
     override fun getReaction(): MessageReaction {
       TODO("Not yet implemented")

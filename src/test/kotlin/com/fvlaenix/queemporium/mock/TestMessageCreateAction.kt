@@ -181,15 +181,4 @@ class TestMessageCreateAction(val answer: ImmediatelyTestRestAction<Message?>) :
     return answer.submit(shouldQueue)
   }
 
-  fun getReferencedMessageId(): String? {
-    return referencedMessageId
-  }
-
-  fun hasMessageReference(): Boolean {
-    return referencedMessageId != null
-  }
-
-  fun isFailingOnInvalidReply(): Boolean {
-    return failOnInvalidReply
-  }
 }

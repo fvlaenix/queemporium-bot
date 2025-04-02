@@ -17,7 +17,7 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
   @Test
   fun `test upload command adds images to database`() {
     // Create a message with an image to upload
-    val messageWithImage = sendMessageWithImage(
+    sendMessageWithImage(
       messageText = "Message with image to upload",
       fileName = "image_to_upload.jpg"
     )
@@ -43,7 +43,7 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
     guildInfoConnector.addExcludingChannel(testGuild.id, generalChannel.id)
 
     // Create a message with an image in the excluded channel
-    val messageInExcludedChannel = sendMessageWithImage(
+    sendMessageWithImage(
       messageText = "Message in excluded channel",
       fileName = "image_in_excluded.jpg"
     )
@@ -61,7 +61,7 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
   @Test
   fun `test upload command handles multiple images`() {
     // Create a message with multiple images
-    val messageWithMultipleImages = sendMessageWithMultipleImages(
+    sendMessageWithMultipleImages(
       messageText = "Message with multiple images",
       fileConfigs = listOf(
         ImageConfig("upload1.jpg"),
@@ -85,7 +85,7 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
   @Test
   fun `test upload command handles service errors gracefully`() {
     // Create a message with an image
-    val messageWithImage = sendMessageWithImage(
+    sendMessageWithImage(
       messageText = "Message that will cause error",
       fileName = "error_image.jpg"
     )
@@ -109,7 +109,7 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
   @Test
   fun `test upload command properly processes spoilered images`() {
     // Create a message with a spoilered image
-    val messageWithSpoiler = sendMessageWithImage(
+    sendMessageWithImage(
       messageText = "Message with spoilered image",
       fileName = "spoiler_image.jpg",
       isSpoiler = true
@@ -133,14 +133,14 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
   @Test
   fun `test upload command handles images with different dimensions`() {
     // Create messages with images of different dimensions
-    val smallImage = sendMessageWithImage(
+    sendMessageWithImage(
       messageText = "Message with small image",
       fileName = "small_image.jpg",
       width = 50,
       height = 50
     )
 
-    val largeImage = sendMessageWithImage(
+    sendMessageWithImage(
       messageText = "Message with large image",
       fileName = "large_image.jpg",
       width = 1200,

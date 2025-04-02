@@ -76,23 +76,4 @@ class TestGrpcServer(private val port: Int = 0) {
       logger.log(Level.INFO, "gRPC server stopped")
     }
   }
-
-  /**
-   * Checks if the server is running.
-   *
-   * @return true if server is running, false otherwise
-   */
-  fun isRunning(): Boolean {
-    return ::server.isInitialized && !server.isShutdown && !server.isTerminated
-  }
-
-  /**
-   * Returns a service by its type if it was registered.
-   *
-   * @param T Service type
-   * @return Service instance or null if service is not registered
-   */
-  internal inline fun <reified T : BindableService> getService(): T? {
-    return services[T::class.java.name] as? T
-  }
 }

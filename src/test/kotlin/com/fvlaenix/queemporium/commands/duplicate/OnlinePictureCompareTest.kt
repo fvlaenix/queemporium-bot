@@ -15,7 +15,7 @@ class OnlinePictureCompareTest : BaseDuplicateCommandTest() {
   @Test
   fun `test duplicate detection with message chain`() {
     // Create a sequence - first an original message, then a duplicate referencing it
-    val (originalMessage, duplicateMessage) = createMessageChain(
+    val (originalMessage, _) = createMessageChain(
       originalText = "This is the original message with some content",
       originalFileName = "original.jpg",
       duplicateText = "This is a duplicate of the original",
