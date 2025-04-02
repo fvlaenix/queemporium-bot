@@ -1,5 +1,6 @@
 package com.fvlaenix.queemporium.commands
 
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent
@@ -9,7 +10,7 @@ import java.util.logging.Logger
 
 private val LOG = Logger.getLogger(LoggerMessageCommand::class.java.name)
 
-class LoggerMessageCommand : CoroutineListenerAdapter() {
+class LoggerMessageCommand(coroutineProvider: BotCoroutineProvider) : CoroutineListenerAdapter(coroutineProvider) {
   override suspend fun onReadySuspend(event: ReadyEvent) {
     LOG.log(Level.INFO, "Ready event got")
   }

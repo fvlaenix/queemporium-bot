@@ -1,9 +1,9 @@
 package com.fvlaenix.queemporium.mock
 
-import com.fvlaenix.queemporium.DiscordBot
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
+import com.fvlaenix.queemporium.coroutine.TestCoroutineProvider
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
@@ -16,6 +16,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.session.ReadyEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction
+import org.koin.core.context.GlobalContext
 
 class TestEnvironment {
   private var currentId = 0L
@@ -127,10 +128,11 @@ class TestEnvironment {
 
   fun awaitAll() {
     runBlocking {
-      var isReady = false
-      while (!isReady) {
-        isReady = true
-        DiscordBot.MAIN_SCOPE.coroutineContext.job.children.forEach { isReady = false; it.join() }
+      val testProvider = GlobalContext.get().get<BotCoroutineProvider>() as? TestCoroutineProvider
+        ?: throw IllegalStateException("Test environment requires TestCoroutineProvider")
+
+      runBlocking {
+        testProvider.awaitRegularJobs()
       }
     }
   }

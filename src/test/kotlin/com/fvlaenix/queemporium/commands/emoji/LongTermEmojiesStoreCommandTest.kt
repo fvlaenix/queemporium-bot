@@ -11,14 +11,12 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Test
 import org.koin.dsl.module
 import kotlin.reflect.KClass
-import kotlin.test.Ignore
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 /**
  * Tests for LongTermEmojiesStoreCommand
  */
-@Ignore("Fix awaitAll method to not hand when delay(12.hours) command is running")
 class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
 
   override fun getCommandsForTest(): Array<KClass<*>> {

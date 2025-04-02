@@ -1,6 +1,7 @@
 package com.fvlaenix.queemporium.commands.duplicate
 
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.database.CompressSize
 import com.fvlaenix.queemporium.database.GuildInfoConnector
 import com.fvlaenix.queemporium.database.MessageDataConnector
@@ -19,8 +20,9 @@ import net.dv8tion.jda.api.events.session.ReadyEvent
 class OnlinePictureCompare(
   databaseConfiguration: DatabaseConfiguration,
   answerService: AnswerService,
-  duplicateImageService: DuplicateImageService
-) : ReportPictureCommand(databaseConfiguration, answerService, duplicateImageService) {
+  duplicateImageService: DuplicateImageService,
+  coroutineProvider: BotCoroutineProvider
+) : ReportPictureCommand(databaseConfiguration, answerService, duplicateImageService, coroutineProvider) {
   private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
   private val messageDuplicateDataConnector = MessageDuplicateDataConnector(databaseConfiguration.toDatabase())

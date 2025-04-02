@@ -1,6 +1,7 @@
 package com.fvlaenix.queemporium.commands.duplicate
 
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.database.MessageData
 import com.fvlaenix.queemporium.database.MessageDataConnector
 import com.fvlaenix.queemporium.database.MessageDuplicateData
@@ -15,8 +16,9 @@ import kotlin.coroutines.coroutineContext
 class UploadPicturesCommand(
   databaseConfiguration: DatabaseConfiguration,
   answerService: AnswerService,
-  duplicateImageService: DuplicateImageService
-) : ReportPictureCommand(databaseConfiguration, answerService, duplicateImageService) {
+  duplicateImageService: DuplicateImageService,
+  coroutineProvider: BotCoroutineProvider
+) : ReportPictureCommand(databaseConfiguration, answerService, duplicateImageService, coroutineProvider) {
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
   private val messageDuplicateDataConnector = MessageDuplicateDataConnector(databaseConfiguration.toDatabase())
 

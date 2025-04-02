@@ -2,6 +2,7 @@ package com.fvlaenix.queemporium.commands.emoji
 
 import com.fvlaenix.queemporium.commands.CoroutineListenerAdapter
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.database.*
 import com.fvlaenix.queemporium.utils.CoroutineUtils.channelTransform
 import kotlinx.coroutines.coroutineScope
@@ -16,8 +17,9 @@ import kotlin.time.Duration
 private val LOG = Logger.getLogger(AbstractEmojiesStoreCommand::class.java.name)
 
 abstract class AbstractEmojiesStoreCommand(
-  val databaseConfiguration: DatabaseConfiguration
-) : CoroutineListenerAdapter() {
+  val databaseConfiguration: DatabaseConfiguration,
+  coroutineProvider: BotCoroutineProvider
+) : CoroutineListenerAdapter(coroutineProvider) {
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
   private val messageEmojiDataConnector = MessageEmojiDataConnector(databaseConfiguration.toDatabase())
   private val emojiDataConnector = EmojiDataConnector(databaseConfiguration.toDatabase())

@@ -1,8 +1,8 @@
 package com.fvlaenix.queemporium.commands.advent
 
-import com.fvlaenix.queemporium.DiscordBot
 import com.fvlaenix.queemporium.commands.CoroutineListenerAdapter
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.database.EmojiDataConnector
 import com.fvlaenix.queemporium.database.MessageDataConnector
 import com.fvlaenix.queemporium.service.AnswerService
@@ -21,7 +21,8 @@ import java.time.format.DateTimeFormatter
 class AdventCommand(
   databaseConfiguration: DatabaseConfiguration,
   val answerService: AnswerService,
-) : CoroutineListenerAdapter() {
+  coroutineProvider: BotCoroutineProvider
+) : CoroutineListenerAdapter(coroutineProvider) {
   val emojiDataConnector = EmojiDataConnector(databaseConfiguration.toDatabase())
   val adventDataConnector = AdventDataConnector(databaseConfiguration.toDatabase())
   val messagesDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
@@ -48,7 +49,7 @@ class AdventCommand(
 
   private fun runAdvent(jda: JDA) {
     currentJob?.cancel()
-    currentJob = DiscordBot.MAIN_SCOPE.launch(Dispatchers.IO) {
+    currentJob = coroutineProvider.mainScope.launch(Dispatchers.IO) {
       do {
         val data = adventDataConnector.getAdvents().filter { data -> !data.isRevealed }.sortedBy { it.epoch }
         val currentEpoch = Instant.now().toEpochMilli()

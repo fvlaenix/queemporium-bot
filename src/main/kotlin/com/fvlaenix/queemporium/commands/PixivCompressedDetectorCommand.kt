@@ -1,6 +1,7 @@
 package com.fvlaenix.queemporium.commands
 
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.database.GuildInfoConnector
 import com.fvlaenix.queemporium.service.AnswerService
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
@@ -9,8 +10,9 @@ private val COMPRESS_REGEX = "\\d+_p\\d+_master\\d+\\..*".toRegex()
 
 class PixivCompressedDetectorCommand(
   val databaseConfiguration: DatabaseConfiguration,
-  val answerService: AnswerService
-) : CoroutineListenerAdapter() {
+  val answerService: AnswerService,
+  coroutineProvider: BotCoroutineProvider
+) : CoroutineListenerAdapter(coroutineProvider) {
   private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
 
   override suspend fun onMessageReceivedSuspend(event: MessageReceivedEvent) {

@@ -2,10 +2,6 @@ package com.fvlaenix.queemporium
 
 import com.fvlaenix.queemporium.configuration.BotConfiguration
 import com.fvlaenix.queemporium.service.CommandsService
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.newFixedThreadPoolContext
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.requests.GatewayIntent
@@ -19,13 +15,8 @@ private val LOG = Logger.getLogger(DiscordBot::class.java.name)
 
 class DiscordBot(
   botConfiguration: BotConfiguration,
-  private val commandsService: CommandsService
+  commandsService: CommandsService
 ) {
-  companion object {
-    @OptIn(DelicateCoroutinesApi::class)
-    val MAIN_BOT_POOL = newFixedThreadPoolContext(4, "MainBotPool")
-    val MAIN_SCOPE = CoroutineScope(Dispatchers.Default)
-  }
 
   private val jda: JDABuilder = JDABuilder
     .createDefault(

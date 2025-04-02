@@ -4,6 +4,8 @@ import com.fvlaenix.queemporium.configuration.ApplicationConfig
 import com.fvlaenix.queemporium.configuration.BotConfiguration
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.configuration.MetadataConfiguration
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
+import com.fvlaenix.queemporium.coroutine.TestCoroutineProvider
 import com.fvlaenix.queemporium.service.AnswerService
 import com.fvlaenix.queemporium.service.CommandsServiceImpl
 import org.junit.jupiter.api.AfterEach
@@ -19,6 +21,7 @@ abstract class BaseKoinTest {
     configBuilder.configBlock()
 
     val testConfigModule = module {
+      single<BotCoroutineProvider> { TestCoroutineProvider() }
       single<ApplicationConfig> { configBuilder.applicationConfig }
       single<DatabaseConfiguration> { configBuilder.databaseConfig }
       single<BotConfiguration> { configBuilder.botConfiguration }

@@ -2,6 +2,7 @@ package com.fvlaenix.queemporium.commands.emoji
 
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.configuration.commands.LongTermEmojiesStoreCommandConfig
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import net.dv8tion.jda.api.events.session.ReadyEvent
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -11,8 +12,9 @@ private val LOG = Logger.getLogger(LongTermEmojiesStoreCommand::class.java.name)
 
 class LongTermEmojiesStoreCommand(
   databaseConfiguration: DatabaseConfiguration,
-  private val config: LongTermEmojiesStoreCommandConfig
-) : AbstractEmojiesStoreCommand(databaseConfiguration) {
+  private val config: LongTermEmojiesStoreCommandConfig,
+  coroutineProvider: BotCoroutineProvider
+) : AbstractEmojiesStoreCommand(databaseConfiguration, coroutineProvider) {
 
   override suspend fun onReadySuspend(event: ReadyEvent) {
     runCatching {

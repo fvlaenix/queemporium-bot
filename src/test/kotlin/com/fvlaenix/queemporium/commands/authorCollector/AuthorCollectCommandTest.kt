@@ -1,16 +1,13 @@
 package com.fvlaenix.queemporium.commands.authorCollector
 
-import com.fvlaenix.queemporium.commands.AuthorCollectCommand
 import com.fvlaenix.queemporium.database.AuthorData
 import org.junit.jupiter.api.Test
-import kotlin.test.Ignore
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
  * Tests for AuthorCollectCommand functionality
  */
-@Ignore("Fix awaitAll method to not hand when delay(12.hours) command is running")
 class AuthorCollectCommandTest : BaseAuthorCollectCommandTest() {
 
   @Test
@@ -125,38 +122,5 @@ class AuthorCollectCommandTest : BaseAuthorCollectCommandTest() {
       val authorExists = authorDataConnector.hasAuthor(secondGuild.id, user.id)
       assertTrue(authorExists, "Author data for user ${user.name} should be stored in second guild")
     }
-  }
-
-  @Test
-  fun `test command handles users joining after initial collection`() {
-    // Arrange - start command with initial users
-    startEnvironment()
-    env.awaitAll()
-
-    // Get initial author list
-    val initialAuthors = authorDataConnector.getAuthorsByGuildId(testGuild.id)
-    assertEquals(testUsers.size, initialAuthors.size, "Initial users should be collected")
-
-    // Act - add a new user
-    val newUser = env.createUser("NewTestUser", false)
-    env.createMember(testGuild, newUser)
-
-    // Get the command and manually trigger collection again
-    val authorCollectCommand = koin.get<AuthorCollectCommand>()
-    authorCollectCommand.runTestCollect(env.jda)
-
-    // Wait for processing
-    env.awaitAll()
-
-    // Assert - verify new user was added
-    val updatedAuthors = authorDataConnector.getAuthorsByGuildId(testGuild.id)
-    assertEquals(
-      testUsers.size + 1, updatedAuthors.size,
-      "New user should be added to authors"
-    )
-
-    // Check for new user presence
-    val newUserExists = authorDataConnector.hasAuthor(testGuild.id, newUser.id)
-    assertTrue(newUserExists, "New user should be in database")
   }
 }

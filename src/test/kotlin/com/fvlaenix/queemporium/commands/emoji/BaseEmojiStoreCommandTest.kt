@@ -19,13 +19,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.koin.core.Koin
 import org.koin.dsl.module
 import kotlin.reflect.KClass
-import kotlin.test.Ignore
 
 /**
  * Base test class for emoji store commands.
  * Provides common setup and utilities for testing OnlineEmojiesStoreCommand and LongTermEmojiesStoreCommand
  */
-@Ignore("Fix awaitAll method to not hand when delay(12.hours) command is running")
 abstract class BaseEmojiStoreCommandTest : BaseKoinTest() {
   // Core components for testing
   protected lateinit var env: TestEnvironment
