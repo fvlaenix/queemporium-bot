@@ -3,9 +3,8 @@ package com.fvlaenix.queemporium.commands.duplicate
 import com.fvlaenix.queemporium.verification.verify
 import org.junit.jupiter.api.Test
 import kotlin.reflect.KClass
-import kotlin.test.assertTrue
+import kotlin.test.assertEquals
 
-// TODO refactor code: assertTrue(x == y) => assertEquals(x, y)
 class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
 
   override fun getCommandsForTest(): Array<KClass<*>> {
@@ -29,7 +28,7 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
     env.awaitAll()
 
     // Verify that the image was added (through the mock service)
-    assertTrue(mockDuplicateService.countAddImageRequests() == 1, "Should have at least one request to add the image")
+    assertEquals(1, mockDuplicateService.countAddImageRequests(), "Should have at least one request to add the image")
 
     // Verify no duplicate notifications were sent
     answerService.verify {
@@ -55,7 +54,7 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
     env.awaitAll()
 
     // Verify no requests were made to add the image
-    assertTrue(mockDuplicateService.countAddImageRequests() == 0, "Should not have any requests for excluded channel")
+    assertEquals(0, mockDuplicateService.countAddImageRequests(), "Should not have any requests for excluded channel")
   }
 
   @Test
@@ -76,10 +75,7 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
     // Wait for completion
     env.awaitAll()
 
-    // Verify all images were added
-    // Note: Since mockDuplicateService doesn't track exact request count,
-    // we can just verify that there were requests
-    assertTrue(mockDuplicateService.countAddImageRequests() == 1, "Should have requests to add images")
+    assertEquals(1, mockDuplicateService.countAddImageRequests(), "Should have requests to add images")
   }
 
   @Test
@@ -122,7 +118,7 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
     env.awaitAll()
 
     // Verify image was processed
-    assertTrue(mockDuplicateService.countAddImageRequests() == 1, "Should have a request to add the spoilered image")
+    assertEquals(1, mockDuplicateService.countAddImageRequests(), "Should have a request to add the spoilered image")
 
     // Verify no duplicate notifications
     answerService.verify {
@@ -154,8 +150,9 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
     env.awaitAll()
 
     // Verify images were processed
-    assertTrue(
-      mockDuplicateService.countAddImageRequests() == 2,
+    assertEquals(
+      2,
+      mockDuplicateService.countAddImageRequests(),
       "Should have requests to add images of different sizes"
     )
 
