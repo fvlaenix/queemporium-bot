@@ -2,26 +2,9 @@ package com.fvlaenix.queemporium.mock
 
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.Permission
-import net.dv8tion.jda.api.entities.ApplicationInfo
-import net.dv8tion.jda.api.entities.Entitlement
-import net.dv8tion.jda.api.entities.Guild
-import net.dv8tion.jda.api.entities.Icon
-import net.dv8tion.jda.api.entities.Role
-import net.dv8tion.jda.api.entities.RoleConnectionMetadata
-import net.dv8tion.jda.api.entities.ScheduledEvent
-import net.dv8tion.jda.api.entities.SelfUser
-import net.dv8tion.jda.api.entities.User
-import net.dv8tion.jda.api.entities.Webhook
+import net.dv8tion.jda.api.entities.*
 import net.dv8tion.jda.api.entities.channel.Channel
-import net.dv8tion.jda.api.entities.channel.concrete.Category
-import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel
-import net.dv8tion.jda.api.entities.channel.concrete.MediaChannel
-import net.dv8tion.jda.api.entities.channel.concrete.NewsChannel
-import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel
-import net.dv8tion.jda.api.entities.channel.concrete.StageChannel
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
-import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
-import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel
+import net.dv8tion.jda.api.entities.channel.concrete.*
 import net.dv8tion.jda.api.entities.emoji.ApplicationEmoji
 import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji
 import net.dv8tion.jda.api.entities.sticker.StickerPack
@@ -39,11 +22,7 @@ import net.dv8tion.jda.api.managers.DirectAudioController
 import net.dv8tion.jda.api.managers.Presence
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.requests.RestAction
-import net.dv8tion.jda.api.requests.restaction.CacheRestAction
-import net.dv8tion.jda.api.requests.restaction.CommandEditAction
-import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction
-import net.dv8tion.jda.api.requests.restaction.GuildAction
-import net.dv8tion.jda.api.requests.restaction.TestEntitlementCreateAction
+import net.dv8tion.jda.api.requests.restaction.*
 import net.dv8tion.jda.api.requests.restaction.pagination.EntitlementPaginationAction
 import net.dv8tion.jda.api.sharding.ShardManager
 import net.dv8tion.jda.api.utils.ClosableIterator
@@ -54,8 +33,7 @@ import net.dv8tion.jda.api.utils.cache.ChannelCacheView
 import net.dv8tion.jda.api.utils.cache.SnowflakeCacheView
 import okhttp3.OkHttpClient
 import org.jetbrains.annotations.Unmodifiable
-import java.util.EnumSet
-import java.util.EventListener
+import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -163,9 +141,8 @@ class TestJDA : JDA {
     TODO("Not yet implemented")
   }
 
-  override fun getRegisteredListeners(): List<Any?> {
-    TODO("Not yet implemented")
-  }
+  override fun getRegisteredListeners(): List<Any?> =
+    listeners.toList()
 
   override fun <E : GenericEvent?> listenOnce(p0: Class<E?>): Once.Builder<E?> {
     TODO("Not yet implemented")
