@@ -17,6 +17,7 @@ import net.dv8tion.jda.api.events.session.ReadyEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction
 import org.koin.core.context.GlobalContext
+import java.time.OffsetDateTime
 
 class TestEnvironment {
   private var currentId = 0L
@@ -159,7 +160,8 @@ class TestEnvironment {
     channelName: String,
     user: User,
     message: String,
-    attachments: List<Message.Attachment> = emptyList()
+    attachments: List<Message.Attachment> = emptyList(),
+    timeCreated: OffsetDateTime = OffsetDateTime.now()
   ): MessageCreateAction {
     val guild = jda.getGuildsByName(guildName, true).firstOrNull()
       ?: throw Exception("Guild with name $guildName doesn't exist")
@@ -173,7 +175,9 @@ class TestEnvironment {
       nextId(),
       message,
       user,
-      attachments
+      attachments,
+      mutableListOf(),
+      timeCreated
     )
 
     return sendMessage(message)
@@ -185,12 +189,14 @@ class TestEnvironment {
    * @param user The user sending the message
    * @param message The message content
    * @param attachments Optional list of attachments
+   * @param timeCreated Optional time when the message was created
    * @return The message create action
    */
   fun sendDirectMessage(
     user: User,
     message: String,
-    attachments: List<Message.Attachment> = emptyList()
+    attachments: List<Message.Attachment> = emptyList(),
+    timeCreated: OffsetDateTime = OffsetDateTime.now()
   ): MessageCreateAction {
     // Get or create private channel for this user
     val privateChannel = getPrivateChannel(user) as TestPrivateChannel
@@ -203,7 +209,9 @@ class TestEnvironment {
       nextId(),
       message,
       user,
-      attachments
+      attachments,
+      mutableListOf(),
+      timeCreated
     )
 
     // Add to channel and notify

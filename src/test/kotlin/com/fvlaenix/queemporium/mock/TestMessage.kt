@@ -31,7 +31,8 @@ class TestMessage(
   private val content: String,
   private val author: User,
   private val attachments: List<Message.Attachment> = mutableListOf(),
-  private val reactions: MutableList<TestMessageReaction> = mutableListOf()
+  private val reactions: MutableList<TestMessageReaction> = mutableListOf(),
+  private val timeCreated: OffsetDateTime = OffsetDateTime.now()
 ) : Message {
   override fun getJDA(): JDA = testJda
 
@@ -298,7 +299,8 @@ class TestMessage(
   override fun getId(): String = idLong.toString()
   override fun getIdLong(): Long = idLong
 
-  override fun getTimeCreated(): OffsetDateTime = OffsetDateTime.now()
+  override fun getTimeCreated(): OffsetDateTime = timeCreated
+
   override fun formatTo(
     formatter: Formatter?,
     flags: Int,
@@ -307,6 +309,4 @@ class TestMessage(
   ) {
     TODO("Not yet implemented")
   }
-
-
 }

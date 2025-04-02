@@ -1,6 +1,8 @@
 package com.fvlaenix.queemporium.commands.messagestore
 
 import org.junit.jupiter.api.Test
+import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -19,19 +21,27 @@ class HistoricalMessagesStoreCommandTest : BaseMessagesStoreCommandTest() {
     // Create a user
     val user = env.createUser("Test User", false)
 
-    // Create several messages before the command starts processing
-    val messageContents = listOf(
-      "First historical message",
-      "Second historical message",
-      "Third historical message"
+    val now = OffsetDateTime.now()
+    val timeframes = listOf(
+      now.minus(30, ChronoUnit.DAYS),
+      now.minus(15, ChronoUnit.DAYS),
+      now.minus(7, ChronoUnit.DAYS)
     )
 
-    val messages = messageContents.map { content ->
+    val messageContents = listOf(
+      "First historical message (30 days ago)",
+      "Second historical message (15 days ago)",
+      "Third historical message (7 days ago)"
+    )
+
+    val messages = messageContents.zip(timeframes).map { (content, time) ->
       env.sendMessage(
         "Test Guild",
         "general",
         user,
-        content
+        content,
+        emptyList(),
+        time
       ).complete(true)!!
     }
 
@@ -56,6 +66,11 @@ class HistoricalMessagesStoreCommandTest : BaseMessagesStoreCommandTest() {
       val storedMessage = messageDataConnector.get(message.id)
       assertNotNull(storedMessage, "Historical message should be stored in database after startup")
       assertEquals(message.contentRaw, storedMessage.text, "Stored historical message text should match")
+      assertEquals(
+        message.timeCreated.toEpochSecond(),
+        storedMessage.epoch,
+        "Stored message epoch should match the created time"
+      )
     }
   }
 
@@ -64,14 +79,21 @@ class HistoricalMessagesStoreCommandTest : BaseMessagesStoreCommandTest() {
     // Create a user
     val user = env.createUser("Test User", false)
 
-    // Create a larger number of messages
+    val now = OffsetDateTime.now()
+
+    // Create a larger number of messages with varying timestamps
     val messageCount = 20
     val messages = (1..messageCount).map { index ->
+      val daysAgo = 7 + (index % 24)
+      val messageTime = now.minus(daysAgo.toLong(), ChronoUnit.DAYS)
+
       env.sendMessage(
         "Test Guild",
         "general",
         user,
-        "Historical message #$index"
+        "Historical message #$index (${daysAgo} days ago)",
+        emptyList(),
+        messageTime
       ).complete(true)!!
     }
 
@@ -87,11 +109,12 @@ class HistoricalMessagesStoreCommandTest : BaseMessagesStoreCommandTest() {
 
     // Count how many messages were properly stored
     val storedCount = messages.count { message ->
-      messageDataConnector.get(message.id) != null
+      val stored = messageDataConnector.get(message.id)
+      stored != null && stored.epoch == message.timeCreated.toEpochSecond()
     }
 
     // Assert that all messages were processed
-    assertEquals(messageCount, storedCount, "All historical messages should be processed")
+    assertEquals(messageCount, storedCount, "All historical messages should be processed with correct timestamps")
   }
 
   @Test
@@ -102,22 +125,28 @@ class HistoricalMessagesStoreCommandTest : BaseMessagesStoreCommandTest() {
       "second-channel"
     )
 
+    val now = OffsetDateTime.now()
+
     // Create a user
     val user = env.createUser("Test User", false)
 
-    // Create messages in different channels
+    // Create messages in different channels with different timestamps
     val firstChannelMessage = env.sendMessage(
       "Test Guild",
       "general",
       user,
-      "Message in first channel"
+      "Message in first channel",
+      emptyList(),
+      now.minus(14, ChronoUnit.DAYS)
     ).complete(true)!!
 
     val secondChannelMessage = env.sendMessage(
       "Test Guild",
       "second-channel",
       user,
-      "Message in second channel"
+      "Message in second channel",
+      emptyList(),
+      now.minus(21, ChronoUnit.DAYS)
     ).complete(true)!!
 
     // Clear the database
@@ -137,5 +166,14 @@ class HistoricalMessagesStoreCommandTest : BaseMessagesStoreCommandTest() {
     assertNotNull(secondStoredMessage, "Message from second channel should be stored")
     assertEquals(firstChannelMessage.channelId, firstStoredMessage.channelId)
     assertEquals(secondChannelMessage.channelId, secondStoredMessage.channelId)
+
+    assertEquals(
+      firstChannelMessage.timeCreated.toEpochSecond(), firstStoredMessage.epoch,
+      "First channel message epoch should match the created time"
+    )
+    assertEquals(
+      secondChannelMessage.timeCreated.toEpochSecond(), secondStoredMessage.epoch,
+      "Second channel message epoch should match the created time"
+    )
   }
 }
