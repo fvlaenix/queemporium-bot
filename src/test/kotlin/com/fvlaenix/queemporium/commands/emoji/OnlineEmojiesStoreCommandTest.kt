@@ -16,7 +16,6 @@ import kotlin.test.assertTrue
 /**
  * Tests for OnlineEmojiesStoreCommand
  */
-@Ignore("Fix awaitAll method to not hand when delay(12.hours) command is running")
 class OnlineEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
 
   override fun getCommandsForTest(): Array<KClass<*>> {
@@ -103,6 +102,7 @@ class OnlineEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
   }
 
   @Test
+  @Ignore("We don't have lookback period for now")
   fun `test command ignores messages older than specified timeframe`() {
     // Create a message that would be considered "old"
     // In an actual test, we'd need to manipulate time or message creation date

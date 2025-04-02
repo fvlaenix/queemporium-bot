@@ -1,6 +1,7 @@
 package com.fvlaenix.queemporium.commands
 
 import com.fvlaenix.queemporium.configuration.ApplicationConfig
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.service.AnswerService
 import com.fvlaenix.queemporium.service.SearchService
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
@@ -57,8 +58,9 @@ data class SearchConfiguration(
 
 class SearchCommand(
   val answerService: AnswerService,
-  val searchService: SearchService
-) : CoroutineListenerAdapter() {
+  val searchService: SearchService,
+  coroutineProvider: BotCoroutineProvider
+) : CoroutineListenerAdapter(coroutineProvider) {
   override fun receiveMessageFilter(event: MessageReceivedEvent): Boolean =
     event.message.contentRaw.startsWith("/shogun-sama search") || event.message.contentRaw.startsWith("/s s")
 

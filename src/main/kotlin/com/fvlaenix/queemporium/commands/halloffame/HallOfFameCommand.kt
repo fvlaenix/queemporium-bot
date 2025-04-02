@@ -1,8 +1,8 @@
 package com.fvlaenix.queemporium.commands.halloffame
 
-import com.fvlaenix.queemporium.DiscordBot
 import com.fvlaenix.queemporium.commands.CoroutineListenerAdapter
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.database.*
 import com.fvlaenix.queemporium.service.AnswerService
 import kotlinx.coroutines.CoroutineName
@@ -14,14 +14,14 @@ import net.dv8tion.jda.api.events.session.ReadyEvent
 import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
 
 private val LOG = Logger.getLogger(HallOfFameCommand::class.java.name)
 
 class HallOfFameCommand(
   databaseConfiguration: DatabaseConfiguration,
   private val answerService: AnswerService,
-) : CoroutineListenerAdapter() {
+  coroutineProvider: BotCoroutineProvider
+) : CoroutineListenerAdapter(coroutineProvider) {
   private val hallOfFameConnector = HallOfFameConnector(databaseConfiguration.toDatabase())
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
   private val dependencyConnector = MessageDependencyConnector(databaseConfiguration.toDatabase())
@@ -103,7 +103,7 @@ class HallOfFameCommand(
 
   private fun runHallOfFame(jda: JDA) {
     currentJob?.cancel()
-    DiscordBot.MAIN_SCOPE.launch(CoroutineName("Hall of Fame Send Part")) {
+    coroutineProvider.mainScope.launch(CoroutineName("Hall of Fame Send Part")) {
       while (true) {
         jda.guilds.forEach { guild ->
           processGuild(jda, guild.id)
@@ -111,7 +111,7 @@ class HallOfFameCommand(
         delay(4.hours)
       }
     }
-    DiscordBot.MAIN_SCOPE.launch(CoroutineName("Hall of Fame Retrieve Part")) {
+    coroutineProvider.mainScope.launch(CoroutineName("Hall of Fame Retrieve Part")) {
       while (true) {
         hallOfFameConnector.getAll().forEach { info ->
           updateHallOfFameMessages(info)

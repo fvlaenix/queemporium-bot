@@ -1,6 +1,7 @@
 package com.fvlaenix.queemporium.commands
 
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.database.MessageDataConnector
 import com.fvlaenix.queemporium.database.MessageDependencyConnector
 import net.dv8tion.jda.api.JDA
@@ -13,7 +14,10 @@ import java.util.logging.Logger
 
 private val LOG: Logger = Logger.getLogger(DependentDeleterCommand::class.java.name)
 
-class DependentDeleterCommand(databaseConfiguration: DatabaseConfiguration) : CoroutineListenerAdapter() {
+class DependentDeleterCommand(
+  databaseConfiguration: DatabaseConfiguration,
+  coroutineProvider: BotCoroutineProvider
+) : CoroutineListenerAdapter(coroutineProvider) {
   private val messageDependencyConnector = MessageDependencyConnector(databaseConfiguration.toDatabase())
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
 

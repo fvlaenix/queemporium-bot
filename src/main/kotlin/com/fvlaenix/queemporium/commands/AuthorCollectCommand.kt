@@ -1,9 +1,9 @@
 package com.fvlaenix.queemporium.commands
 
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.database.AuthorData
 import com.fvlaenix.queemporium.database.AuthorDataConnector
-import kotlinx.coroutines.delay
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.session.ReadyEvent
 import org.jetbrains.annotations.TestOnly
@@ -13,7 +13,10 @@ import kotlin.time.Duration.Companion.days
 
 private val LOG = Logger.getLogger(AuthorCollectCommand::class.java.name)
 
-class AuthorCollectCommand(val databaseConfiguration: DatabaseConfiguration) : CoroutineListenerAdapter() {
+class AuthorCollectCommand(
+  val databaseConfiguration: DatabaseConfiguration,
+  coroutineProvider: BotCoroutineProvider
+) : CoroutineListenerAdapter(coroutineProvider) {
   private val authorDataConnector = AuthorDataConnector(databaseConfiguration.toDatabase())
 
   private fun runCollect(jda: JDA) {
@@ -30,7 +33,7 @@ class AuthorCollectCommand(val databaseConfiguration: DatabaseConfiguration) : C
   override suspend fun onReadySuspend(event: ReadyEvent) {
     while (true) {
       runCollect(event.jda)
-      delay(1.days)
+      coroutineProvider.safeDelay(1.days)
     }
   }
 

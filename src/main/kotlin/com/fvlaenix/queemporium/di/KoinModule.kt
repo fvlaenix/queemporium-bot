@@ -3,6 +3,8 @@ package com.fvlaenix.queemporium.di
 import com.fvlaenix.queemporium.DiscordBot
 import com.fvlaenix.queemporium.commands.SearchConfiguration
 import com.fvlaenix.queemporium.configuration.*
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
+import com.fvlaenix.queemporium.coroutine.ProductionCoroutineProvider
 import com.fvlaenix.queemporium.service.*
 import org.koin.core.Koin
 import org.koin.dsl.module
@@ -32,6 +34,7 @@ val configurationModule = module {
 }
 
 val productionServiceModule = module {
+  single<BotCoroutineProvider> { ProductionCoroutineProvider() }
   single<AnswerService> { AnswerServiceImpl() }
   single { DuplicateImageServiceConfig.load(get()) }
   single<DuplicateImageService> { DuplicateImageServiceImpl(get()) }

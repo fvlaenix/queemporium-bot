@@ -1,14 +1,11 @@
 package com.fvlaenix.queemporium.commands
 
-import com.fvlaenix.queemporium.DiscordBot
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.exception.EXCEPTION_HANDLER
 import com.fvlaenix.queemporium.utils.CoroutineUtils
 import com.fvlaenix.queemporium.utils.CoroutineUtils.channelTransform
 import com.fvlaenix.queemporium.utils.CoroutineUtils.flatChannelTransform
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExecutorCoroutineDispatcher
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
@@ -26,9 +23,9 @@ import java.util.logging.Logger
 
 private val LOG: Logger = Logger.getLogger(CoroutineListenerAdapter::class.java.name)
 
-open class CoroutineListenerAdapter : ListenerAdapter() {
-  private fun getCoroutinePool(): ExecutorCoroutineDispatcher = DiscordBot.MAIN_BOT_POOL
-  private fun getCoroutineScope(): CoroutineScope = DiscordBot.MAIN_SCOPE
+open class CoroutineListenerAdapter(val coroutineProvider: BotCoroutineProvider) : ListenerAdapter() {
+  private fun getCoroutinePool(): ExecutorCoroutineDispatcher = coroutineProvider.botPool
+  private fun getCoroutineScope(): CoroutineScope = coroutineProvider.mainScope
 
   @TestOnly
   fun testCoroutineScope(): CoroutineScope = getCoroutineScope()
@@ -49,7 +46,9 @@ open class CoroutineListenerAdapter : ListenerAdapter() {
       try {
         onReadySuspend(event)
       } catch (e: Exception) {
-        LOG.log(Level.SEVERE, "Global Panic: Can't finish ready event", e)
+        if (e !is CancellationException) {
+          LOG.log(Level.SEVERE, "Global Panic: Can't finish ready event", e)
+        }
       }
     }
   }

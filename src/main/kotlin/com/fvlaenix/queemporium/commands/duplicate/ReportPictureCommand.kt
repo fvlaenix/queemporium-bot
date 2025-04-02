@@ -2,6 +2,7 @@ package com.fvlaenix.queemporium.commands.duplicate
 
 import com.fvlaenix.queemporium.commands.CoroutineListenerAdapter
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.database.*
 import com.fvlaenix.queemporium.service.AnswerService
 import com.fvlaenix.queemporium.service.DuplicateImageService
@@ -16,8 +17,9 @@ import kotlin.coroutines.coroutineContext
 abstract class ReportPictureCommand(
   databaseConfiguration: DatabaseConfiguration,
   private val answerService: AnswerService,
-  protected val duplicateImageService: DuplicateImageService
-) : CoroutineListenerAdapter() {
+  protected val duplicateImageService: DuplicateImageService,
+  coroutineProvider: BotCoroutineProvider
+) : CoroutineListenerAdapter(coroutineProvider) {
   private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
   private val messageDuplicateDataConnector = MessageDuplicateDataConnector(databaseConfiguration.toDatabase())

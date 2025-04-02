@@ -2,14 +2,16 @@ package com.fvlaenix.queemporium.commands.halloffame
 
 import com.fvlaenix.queemporium.commands.CoroutineListenerAdapter
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.database.HallOfFameConnector
 import com.fvlaenix.queemporium.service.AnswerService
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 
 class SetHallOfFameCommand(
     databaseConfiguration: DatabaseConfiguration,
-    private val answerService: AnswerService
-) : CoroutineListenerAdapter() {
+    private val answerService: AnswerService,
+    coroutineProvider: BotCoroutineProvider
+) : CoroutineListenerAdapter(coroutineProvider) {
     private val hallOfFameConnector = HallOfFameConnector(databaseConfiguration.toDatabase())
     
     override fun receiveMessageFilter(event: MessageReceivedEvent): Boolean =

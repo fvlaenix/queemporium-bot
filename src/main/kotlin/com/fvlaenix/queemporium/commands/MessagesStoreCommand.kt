@@ -1,6 +1,7 @@
 package com.fvlaenix.queemporium.commands
 
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.database.MessageData
 import com.fvlaenix.queemporium.database.MessageDataConnector
 import net.dv8tion.jda.api.entities.Guild
@@ -10,7 +11,10 @@ import net.dv8tion.jda.api.events.message.MessageDeleteEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.session.ReadyEvent
 
-class MessagesStoreCommand(val databaseConfiguration: DatabaseConfiguration) : CoroutineListenerAdapter() {
+class MessagesStoreCommand(
+  val databaseConfiguration: DatabaseConfiguration,
+  coroutineProvider: BotCoroutineProvider
+) : CoroutineListenerAdapter(coroutineProvider) {
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
 
   private fun computeMessage(message: Message) {

@@ -1,14 +1,16 @@
 package com.fvlaenix.queemporium.commands
 
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.database.GuildInfoConnector
 import com.fvlaenix.queemporium.service.AnswerService
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 
 class ExcludeChannelCommand(
   databaseConfiguration: DatabaseConfiguration,
-  private val answerService: AnswerService
-) : CoroutineListenerAdapter() {
+  private val answerService: AnswerService,
+  coroutineProvider: BotCoroutineProvider
+) : CoroutineListenerAdapter(coroutineProvider) {
   companion object {
     const val COMMAND_ADD_TO_EXCLUDE = "/shogun-sama beg-remove-decree"
     const val COMMAND_REMOVE_FROM_EXCLUDE = "/shogun-sama beg-add-decree"
