@@ -97,7 +97,7 @@ class HistoricalMessagesStoreCommandTest : BaseMessagesStoreCommandTest() {
   @Test
   fun `test messages from different channels are processed`() {
     // Create a second channel
-    val secondChannel = env.createTextChannel(
+    env.createTextChannel(
       env.jda.getGuildsByName("Test Guild", false).first(),
       "second-channel"
     )

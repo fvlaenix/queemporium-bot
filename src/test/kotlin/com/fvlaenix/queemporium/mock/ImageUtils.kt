@@ -10,8 +10,4 @@ object ImageUtils {
     ImageIO.write(image, format, outputStream)
     return outputStream.toByteArray()
   }
-
-  fun createTestImage(width: Int, height: Int): BufferedImage {
-    return BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
-  }
 }

@@ -26,28 +26,12 @@ class TestDuplicateImagesService : DuplicateImagesServiceGrpcKt.DuplicateImagesS
   var compressionSizeResponse: GetCompressionSizeResponse? = null
 
   // Request tracking
-  val requests = Collections.synchronizedList(mutableListOf<Any>())
+  val requests: MutableList<Any> = Collections.synchronizedList(mutableListOf<Any>())
 
   // Failure settings
   var simulateUnavailable = false
   var simulateTimeout = false
   var timeoutDuration = 10000L // ms
-
-  /**
-   * Resets all mock settings to initial state.
-   */
-  fun reset() {
-    isAliveResponse = null
-    addImageResponse = null
-    checkImageResponse = null
-    existsImageResponse = null
-    deleteImageResponse = null
-    compressionSizeResponse = null
-    requests.clear()
-    simulateUnavailable = false
-    simulateTimeout = false
-    timeoutDuration = 10000L
-  }
 
   /**
    * Service health check.

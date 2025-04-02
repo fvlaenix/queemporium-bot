@@ -43,7 +43,7 @@ class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
     )
 
     // Send a second message that will be a duplicate
-    val duplicateMessage = sendMessageWithImage(
+    sendMessageWithImage(
       messageText = "Duplicate message with image",
       fileName = "duplicate.jpg"
     )
@@ -117,7 +117,7 @@ class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
     )
 
     // Create a message with multiple images
-    val multiImageMessage = sendMessageWithMultipleImages(
+    sendMessageWithMultipleImages(
       messageText = "Message with multiple images",
       fileConfigs = listOf(
         ImageConfig("test1.jpg"),
@@ -183,13 +183,13 @@ class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
     )
 
     // Setup: create a "similar" message with high similarity
-    val highSimilarityMessage = sendMessageWithImage(
+    sendMessageWithImage(
       messageText = "High similarity message",
       fileName = "high_similarity.jpg"
     )
 
     // Setup: create a "similar" message with low similarity
-    val lowSimilarityMessage = sendMessageWithImage(
+    sendMessageWithImage(
       messageText = "Low similarity message",
       fileName = "low_similarity.jpg"
     )

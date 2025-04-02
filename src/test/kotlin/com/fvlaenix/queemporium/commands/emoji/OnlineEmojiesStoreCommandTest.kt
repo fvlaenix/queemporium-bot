@@ -185,11 +185,3 @@ private fun EmojiDataConnector.getEmojisForMessage(messageId: String): List<Emoj
       }
   }
 }
-
-private fun EmojiDataConnector.countReactionsForEmoji(messageId: String, emojiId: String): Int {
-  return transaction(database) {
-    EmojiDataTable.select {
-      (EmojiDataTable.messageId eq messageId) and (EmojiDataTable.emojiId eq emojiId)
-    }.count().toInt()
-  }
-}

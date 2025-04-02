@@ -15,7 +15,7 @@ class DependentDeleterEdgeCasesTest : BaseDependentDeleterCommandTest() {
   @Test
   fun `test dependent message in different channel`() {
     // Create another channel in the same guild
-    val otherChannel = env.createTextChannel(testGuild, "other-channel")
+    env.createTextChannel(testGuild, "other-channel")
 
     // Create target message in general channel
     val targetMessage = createAndStoreMessage(
@@ -70,7 +70,7 @@ class DependentDeleterEdgeCasesTest : BaseDependentDeleterCommandTest() {
 
     // Create another guild with a channel
     val otherGuild = env.createGuild("Other Guild")
-    val otherChannel = env.createTextChannel(otherGuild, "channel-in-other-guild")
+    env.createTextChannel(otherGuild, "channel-in-other-guild")
 
     // Create dependent message in other guild
     val dependentMessage = env.sendMessage(

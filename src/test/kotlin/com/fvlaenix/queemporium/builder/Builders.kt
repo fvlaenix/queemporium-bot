@@ -42,15 +42,12 @@ class GuildBuilder(
 ) {
   fun withChannel(name: String, block: ChannelBuilder.() -> Unit = {}): MessageChannelUnion {
     val channel = environment.createTextChannel(guild, name)
-    ChannelBuilder(environment, channel).apply(block)
+    ChannelBuilder().apply(block)
     return channel
   }
 }
 
-class ChannelBuilder(
-  private val environment: TestEnvironment,
-  private val channel: MessageChannelUnion
-)
+class ChannelBuilder()
 
 fun createEnvironment(autoStart: Boolean = true, block: TestBotBuilder.() -> Unit): TestEnvironment {
   val environment = TestEnvironment()

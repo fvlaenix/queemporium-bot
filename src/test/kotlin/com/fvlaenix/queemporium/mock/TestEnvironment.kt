@@ -66,7 +66,7 @@ class TestEnvironment {
     jda.addPrivateChannel(privateChannel)
 
     // Configure user to return this channel
-    val userOpenPrivateChannelAction = ImmediatelyTestRestAction.builder<PrivateChannel>(jda)
+    ImmediatelyTestRestAction.builder<PrivateChannel>(jda)
       .withResult(privateChannel)
       .build()
 
@@ -107,20 +107,6 @@ class TestEnvironment {
 
   fun addListener(listener: ListenerAdapter) {
     listeners.add(listener)
-  }
-
-  fun addReaction(message: TestMessage, user: User, emojiName: String): TestMessage {
-    val emoji = TestEmoji(emojiName)
-    message.addReaction(emoji, user)
-    return message
-  }
-
-  fun addReactions(message: TestMessage, emojiName: String, users: List<User>): TestMessage {
-    val emoji = TestEmoji(emojiName)
-    users.forEach { user ->
-      message.addReaction(emoji, user)
-    }
-    return message
   }
 
   fun start() {

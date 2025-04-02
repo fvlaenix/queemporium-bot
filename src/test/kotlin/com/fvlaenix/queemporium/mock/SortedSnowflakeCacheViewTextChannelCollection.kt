@@ -16,10 +16,6 @@ class SortedSnowflakeCacheViewTextChannelCollection(
     collection.add(element)
   }
 
-  fun addAll(elements: Collection<TextChannel>) {
-    collection.addAll(elements)
-  }
-
   override fun forEachUnordered(action: Consumer<in TextChannel>) {
     collection.forEach { action.accept(it) }
   }

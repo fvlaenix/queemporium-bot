@@ -209,7 +209,7 @@ class AuthorMappingCommandTest : BaseAuthorMappingCommandTest() {
     )
 
     // Send message with incorrect author name in complex text
-    val message = sendMessageWithAttachment(
+    sendMessageWithAttachment(
       messageText = "This is a complex text with many words and an incorrect author name Artist-X somewhere in the middle."
     )
 
