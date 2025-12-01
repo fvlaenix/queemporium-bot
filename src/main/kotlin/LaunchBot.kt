@@ -1,9 +1,9 @@
 import com.fvlaenix.queemporium.DiscordBot
-import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
+import com.fvlaenix.queemporium.configuration.BotConfiguration
 import com.fvlaenix.queemporium.di.applicationConfigModule
-import com.fvlaenix.queemporium.di.configurationModule
-import com.fvlaenix.queemporium.di.loadCoreModule
-import com.fvlaenix.queemporium.di.productionServiceModule
+import com.fvlaenix.queemporium.di.botConfigModule
+import com.fvlaenix.queemporium.di.coreServiceModule
+import com.fvlaenix.queemporium.features.FeatureLoader
 import org.koin.core.context.GlobalContext.startKoin
 import java.util.logging.Level
 import java.util.logging.LogManager
@@ -24,27 +24,19 @@ fun main() {
   launchBotLog.log(Level.INFO, "Starting Koin")
   val koin = startKoin {
     allowOverride(false)
+    modules(
+      applicationConfigModule,
+      botConfigModule,
+      coreServiceModule
+    )
   }.koin
 
-  launchBotLog.log(Level.INFO, "Loading application config module")
-  koin.loadModules(listOf(applicationConfigModule))
-
-  launchBotLog.log(Level.INFO, "Loading config module")
-  koin.loadModules(listOf(configurationModule))
-
-  launchBotLog.log(Level.INFO, "Loading services module")
-  koin.loadModules(listOf(productionServiceModule))
-
-  launchBotLog.log(Level.INFO, "Loading core module")
-  koin.loadCoreModule()
-
-  launchBotLog.log(Level.INFO, "Trying to get database configuration")
-  val databaseConfiguration = koin.get<DatabaseConfiguration>()
-
-  launchBotLog.log(Level.INFO, "Test database connection")
-  databaseConfiguration.toDatabase()
+  launchBotLog.log(Level.INFO, "Loading feature modules")
+  val botConfiguration = koin.get<BotConfiguration>()
+  FeatureLoader(koin).load(botConfiguration)
 
   launchBotLog.log(Level.INFO, "Create bot")
-  val bot = koin.get<DiscordBot>()
+  val listeners = koin.getAll<net.dv8tion.jda.api.hooks.ListenerAdapter>()
+  val bot = DiscordBot(botConfiguration.token, listeners)
   bot.run()
 }

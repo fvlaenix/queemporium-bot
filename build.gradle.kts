@@ -48,6 +48,7 @@ dependencies {
     // serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+  implementation("com.charleskorn.kaml:kaml:0.61.0")
     implementation("io.github.pdvrieze.xmlutil:serialization:0.90.3")
 
     // images

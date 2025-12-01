@@ -3,11 +3,11 @@ package com.fvlaenix.queemporium.koin
 import com.fvlaenix.queemporium.configuration.ApplicationConfig
 import com.fvlaenix.queemporium.configuration.BotConfiguration
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
-import com.fvlaenix.queemporium.configuration.MetadataConfiguration
 import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.coroutine.TestCoroutineProvider
+import com.fvlaenix.queemporium.features.FeatureLoader
+import com.fvlaenix.queemporium.features.FeatureRegistry
 import com.fvlaenix.queemporium.service.AnswerService
-import com.fvlaenix.queemporium.service.CommandsServiceImpl
 import org.junit.jupiter.api.AfterEach
 import org.koin.core.Koin
 import org.koin.core.context.GlobalContext.startKoin
@@ -25,15 +25,15 @@ abstract class BaseKoinTest {
       single<ApplicationConfig> { configBuilder.applicationConfig }
       single<DatabaseConfiguration> { configBuilder.databaseConfig }
       single<BotConfiguration> { configBuilder.botConfiguration }
-      single<MetadataConfiguration> { configBuilder.metadataConfiguration }
       single<AnswerService> { configBuilder.answerService }
     }
 
     val koin = startKoin {
+      allowOverride(true)
       modules(testConfigModule)
     }.koin
 
-    koin.declare(CommandsServiceImpl(koin, koin.get<MetadataConfiguration>()))
+    FeatureLoader(koin, FeatureRegistry).load(configBuilder.botConfiguration)
 
     return koin
   }
