@@ -1,8 +1,6 @@
 package com.fvlaenix.queemporium.builder
 
-import com.fvlaenix.queemporium.configuration.BotConfiguration
 import com.fvlaenix.queemporium.mock.TestEnvironment
-import com.fvlaenix.queemporium.service.CommandsServiceImpl
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion
 import net.dv8tion.jda.api.hooks.ListenerAdapter
@@ -22,16 +20,8 @@ class TestBotBuilder(private val environment: TestEnvironment) {
   fun addCommandsFromKoin() {
     val koinContext = GlobalContext.getOrNull() ?: return
 
-    if (koinContext.getAll<CommandsServiceImpl>().isNotEmpty()) {
-      val commandsService = koinContext.get<CommandsServiceImpl>()
-
-      if (koinContext.getAll<BotConfiguration>().isNotEmpty()) {
-        val botConfiguration = koinContext.get<BotConfiguration>()
-
-        commandsService.getCommands(botConfiguration).forEach { command ->
-          addListener(command)
-        }
-      }
+    koinContext.getAll<ListenerAdapter>().forEach { command ->
+      addListener(command)
     }
   }
 }

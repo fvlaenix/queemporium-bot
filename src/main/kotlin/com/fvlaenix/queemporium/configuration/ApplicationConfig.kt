@@ -12,7 +12,6 @@ private val LOG = Logger.getLogger(ApplicationConfig::class.java.simpleName)
 data class ApplicationConfig(
   val databasePropertiesPath: String?,
   val botPropertiesPath: String?,
-  val metadataPropertiesPath: String?,
   val searchPropertiesPath: String?,
   val duplicateImagePropertiesPath: String?
 ) {
@@ -45,7 +44,6 @@ data class ApplicationConfig(
         databasePropertiesPath = properties.getProperty("database.properties.path"),
         botPropertiesPath = properties.getProperty("bot.properties.path"),
         searchPropertiesPath = properties.getProperty("search.properties.path"),
-        metadataPropertiesPath = properties.getProperty("metadata.properties.path"),
         duplicateImagePropertiesPath = properties.getProperty("duplicate.image.properties.path")
       )
     }
