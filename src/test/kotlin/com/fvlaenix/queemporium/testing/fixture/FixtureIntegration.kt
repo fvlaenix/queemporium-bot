@@ -21,7 +21,7 @@ fun BaseKoinTest.setupWithFixture(
     TestCoroutineProvider()
   }
 
-  val koin = setupBotKoinWithProvider(testProvider) {
+  val koin = setupBotKoinWithProvider(testProvider, virtualClock) {
     enableFeatures(*fixture.enabledFeatures.toTypedArray())
     configureBuilder(this)
   }
@@ -35,6 +35,7 @@ fun BaseKoinTest.setupWithFixture(
 
 fun BaseKoinTest.setupBotKoinWithProvider(
   testProvider: TestCoroutineProvider,
+  virtualClock: VirtualClock? = null,
   configBlock: com.fvlaenix.queemporium.koin.BotConfigBuilder.() -> Unit
 ): org.koin.core.Koin {
   val configBuilder = com.fvlaenix.queemporium.koin.BotConfigBuilder()

@@ -44,6 +44,7 @@ class TestJDA : JDA {
   private val guildsMap = mutableMapOf<Long, Guild>()
   private val listeners = mutableListOf<ListenerAdapter>()
   private val privateChannelsMap = mutableMapOf<Long, PrivateChannel>()
+  private val usersMap = mutableMapOf<Long, User>()
 
   override fun getGuildById(id: Long): Guild? = guildsMap[id]
 
@@ -67,6 +68,10 @@ class TestJDA : JDA {
 
   internal fun addGuild(guild: Guild) {
     guildsMap[guild.idLong] = guild
+  }
+
+  internal fun addUser(user: User) {
+    usersMap[user.idLong] = user
   }
 
   fun notifyMessageSend(messageReceivedEvent: MessageReceivedEvent) {
@@ -198,7 +203,22 @@ class TestJDA : JDA {
   }
 
   override fun getUserCache(): SnowflakeCacheView<User?> {
-    TODO("Not yet implemented")
+    return object : SnowflakeCacheView<User?> {
+      override fun getElementById(id: Long): User? = usersMap[id]
+      override fun asList(): List<User?> = usersMap.values.toList()
+      override fun asSet(): @Unmodifiable Set<User?> = usersMap.values.toSet()
+      override fun lockedIterator(): ClosableIterator<User?> = TODO("Not yet implemented")
+      override fun size(): Long = usersMap.size.toLong()
+      override fun isEmpty(): Boolean = usersMap.isEmpty()
+      override fun getElementsByName(name: String, ignoreCase: Boolean): @Unmodifiable List<User?> =
+        usersMap.values.filter { it.name.equals(name, ignoreCase) }
+
+      override fun stream(): Stream<User?> = usersMap.values.map { it as User? }.stream()
+      override fun parallelStream(): Stream<User?> =
+        usersMap.values.map { it as User? }.parallelStream()
+
+      override fun iterator(): MutableIterator<User?> = usersMap.values.toMutableList().iterator()
+    }
   }
 
   override fun getMutualGuilds(vararg p0: User?): @Unmodifiable List<Guild?> {
@@ -210,7 +230,8 @@ class TestJDA : JDA {
   }
 
   override fun retrieveUserById(p0: Long): CacheRestAction<User?> {
-    TODO("Not yet implemented")
+    val user = usersMap[p0]
+    return ImmediatelyTestRestAction.builder<User?>(this).withResult(user).build() as CacheRestAction<User?>
   }
 
   override fun getUnavailableGuilds(): Set<String?> {

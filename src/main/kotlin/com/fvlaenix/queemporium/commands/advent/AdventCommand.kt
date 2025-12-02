@@ -30,12 +30,16 @@ class AdventCommand(
   var currentJob: Job? = null
 
   private suspend fun postMessage(jda: JDA, adventData: AdventData) {
-    val postChannel = jda.getTextChannelById(adventData.channelPostId)!!
+    val postGuild = jda.getGuildById(adventData.guildPostId)!!
+    val postChannel = postGuild.getTextChannelById(adventData.channelPostId)!!
 
     val messageData = messagesDataConnector.get(adventData.messageId)!!
 
-    val originalMessageChannelId = jda.getTextChannelById(messageData.channelId)!!
-    val originalMessage = originalMessageChannelId.retrieveMessageById(messageData.messageId).complete()!!
+    val originalGuild = messageData.guildId?.let { jda.getGuildById(it) }
+    val originalMessageChannel = originalGuild?.getTextChannelById(messageData.channelId)
+      ?: jda.getTextChannelById(messageData.channelId)!!
+
+    val originalMessage = originalMessageChannel.retrieveMessageById(messageData.messageId).complete()!!
 
     answerService.sendMessage(
       destination = postChannel,
@@ -55,7 +59,7 @@ class AdventCommand(
         val currentEpoch = Instant.now().toEpochMilli()
         if (data.isEmpty()) break
         val currentData = data.first()
-        if (currentData.epoch < currentEpoch) {
+        if (currentData.epoch <= currentEpoch) {
           postMessage(jda, currentData)
           adventDataConnector.markAsRevealed(currentData.guildPostId, currentData.messageId)
         } else {

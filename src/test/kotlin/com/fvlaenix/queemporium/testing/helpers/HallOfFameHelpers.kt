@@ -35,11 +35,19 @@ class HallOfFameTestContext(
     hallOfFameChannelId: String,
     threshold: Int = 5
   ) {
-    val guild = environment.jda.getGuildsByName(guildId, true).firstOrNull()
-      ?: throw IllegalStateException("Guild $guildId not found")
+    val guild = try {
+      environment.jda.getGuildById(guildId)
+    } catch (e: NumberFormatException) {
+      null
+    } ?: environment.jda.getGuildsByName(guildId, true).firstOrNull()
+    ?: throw IllegalStateException("Guild $guildId not found")
 
-    val channel = guild.getTextChannelsByName(hallOfFameChannelId, true).firstOrNull()
-      ?: throw IllegalStateException("Channel $hallOfFameChannelId not found in guild $guildId")
+    val channel = try {
+      guild.getTextChannelById(hallOfFameChannelId)
+    } catch (e: NumberFormatException) {
+      null
+    } ?: guild.getTextChannelsByName(hallOfFameChannelId, true).firstOrNull()
+    ?: throw IllegalStateException("Channel $hallOfFameChannelId not found in guild $guildId")
 
     hallOfFameConnector.setHallOfFameInfo(
       guildId = guild.id,
@@ -64,11 +72,19 @@ class HallOfFameTestContext(
     emoji: String,
     userIds: List<String>
   ) {
-    val guild = environment.jda.getGuildsByName(guildId, true).firstOrNull()
-      ?: throw IllegalStateException("Guild $guildId not found")
+    val guild = try {
+      environment.jda.getGuildById(guildId)
+    } catch (e: NumberFormatException) {
+      null
+    } ?: environment.jda.getGuildsByName(guildId, true).firstOrNull()
+    ?: throw IllegalStateException("Guild $guildId not found")
 
-    val channel = guild.getTextChannelsByName(channelId, true).firstOrNull()
-      ?: throw IllegalStateException("Channel $channelId not found")
+    val channel = try {
+      guild.getTextChannelById(channelId)
+    } catch (e: NumberFormatException) {
+      null
+    } ?: guild.getTextChannelsByName(channelId, true).firstOrNull()
+    ?: throw IllegalStateException("Channel $channelId not found")
 
     val messages = (channel as com.fvlaenix.queemporium.mock.TestTextChannel).messages
     if (messageIndex >= messages.size) {
@@ -79,6 +95,14 @@ class HallOfFameTestContext(
 
     userIds.forEach { userId ->
       val user = envWithTime.userMap[userId]
+        ?: run {
+          try {
+            environment.jda.getUserById(userId)
+          } catch (e: NumberFormatException) {
+            null
+          }
+        }
+        ?: environment.jda.users.find { it.name == userId }
         ?: environment.jda.guilds
           .flatMap { it.members }
           .map { it.user }
@@ -117,7 +141,19 @@ class HallOfFameTestContext(
     // Create users in environment if they don't exist
     userIds.forEach { userId ->
       if (!envWithTime.userMap.containsKey(userId)) {
-        environment.createUser(userId)
+        // Check if user already exists in JDA (created by previous call)
+        val existingUser = environment.jda.users.find { it.name == userId }
+        if (existingUser == null) {
+          val user = environment.createUser(userId)
+          // Add to guild so they can be found
+          val guild = try {
+            environment.jda.getGuildById(guildId)
+          } catch (e: NumberFormatException) {
+            null
+          } ?: environment.jda.getGuildsByName(guildId, true).firstOrNull()
+          ?: throw IllegalStateException("Guild $guildId not found")
+          environment.createMember(guild, user)
+        }
       }
     }
 

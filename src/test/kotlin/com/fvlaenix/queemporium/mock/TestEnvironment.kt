@@ -50,6 +50,7 @@ class TestEnvironment {
     val id = nextId()
     val user = TestUser(jda, id, name, isBot, discriminator)
     users[id] = user
+    jda.addUser(user)
     return user
   }
 

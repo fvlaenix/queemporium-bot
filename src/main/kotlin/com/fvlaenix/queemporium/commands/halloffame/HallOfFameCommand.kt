@@ -26,7 +26,8 @@ class HallOfFameCommand(
   private val dependencyConnector = MessageDependencyConnector(databaseConfiguration.toDatabase())
   private val emojiDataConnector = EmojiDataConnector(databaseConfiguration.toDatabase())
 
-  private var currentJob: Job? = null
+  private var sendJob: Job? = null
+  private var retrieveJob: Job? = null
 
   private fun updateHallOfFameMessages(hallOfFameInfo: HallOfFameInfo) {
     LOG.log(Level.INFO, "Updating Hall of Fame messages for guild ${hallOfFameInfo.guildId}")
@@ -101,8 +102,10 @@ class HallOfFameCommand(
   }
 
   private fun runHallOfFame(jda: JDA) {
-    currentJob?.cancel()
-    coroutineProvider.mainScope.launch(CoroutineName("Hall of Fame Send Part")) {
+    sendJob?.cancel()
+    retrieveJob?.cancel()
+
+    sendJob = coroutineProvider.mainScope.launch(CoroutineName("Hall of Fame Send Part")) {
       while (true) {
         jda.guilds.forEach { guild ->
           processGuild(jda, guild.id)
@@ -110,7 +113,7 @@ class HallOfFameCommand(
         coroutineProvider.safeDelay(4.hours)
       }
     }
-    coroutineProvider.mainScope.launch(CoroutineName("Hall of Fame Retrieve Part")) {
+    retrieveJob = coroutineProvider.mainScope.launch(CoroutineName("Hall of Fame Retrieve Part")) {
       while (true) {
         hallOfFameConnector.getAll().forEach { info ->
           updateHallOfFameMessages(info)
