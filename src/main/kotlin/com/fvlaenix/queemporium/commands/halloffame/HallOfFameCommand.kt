@@ -7,7 +7,6 @@ import com.fvlaenix.queemporium.database.*
 import com.fvlaenix.queemporium.service.AnswerService
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.session.ReadyEvent
@@ -108,7 +107,7 @@ class HallOfFameCommand(
         jda.guilds.forEach { guild ->
           processGuild(jda, guild.id)
         }
-        delay(4.hours)
+        coroutineProvider.safeDelay(4.hours)
       }
     }
     coroutineProvider.mainScope.launch(CoroutineName("Hall of Fame Retrieve Part")) {
@@ -116,7 +115,7 @@ class HallOfFameCommand(
         hallOfFameConnector.getAll().forEach { info ->
           updateHallOfFameMessages(info)
         }
-        delay(9.hours)
+        coroutineProvider.safeDelay(9.hours)
       }
     }
   }

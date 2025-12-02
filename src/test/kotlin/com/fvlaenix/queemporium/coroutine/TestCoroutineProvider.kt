@@ -1,24 +1,36 @@
 package com.fvlaenix.queemporium.coroutine
 
+import com.fvlaenix.queemporium.testing.time.VirtualClock
 import kotlinx.coroutines.*
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.coroutines.Continuation
 import kotlin.coroutines.coroutineContext
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration
 
-/**
- * Test implementation of BotCoroutineProvider.
- * Provides controlled coroutine execution for testing.
- */
-class TestCoroutineProvider : BotCoroutineProvider {
-  // Track first iterations of infinite loops
+private data class PendingDelay(
+  val targetTime: Instant,
+  val continuation: Continuation<Unit>
+) : Comparable<PendingDelay> {
+  override fun compareTo(other: PendingDelay): Int {
+    return targetTime.compareTo(other.targetTime)
+  }
+}
+
+class TestCoroutineProvider(
+  private val virtualClock: VirtualClock? = null
+) : BotCoroutineProvider {
   private val firstIterationCompletions = ConcurrentHashMap<String, CompletableDeferred<Unit>>()
   private val loopIterationCounts = ConcurrentHashMap<String, AtomicInteger>()
+  private val pendingDelays = PriorityBlockingQueue<PendingDelay>()
 
   @OptIn(DelicateCoroutinesApi::class)
   override val botPool = newFixedThreadPoolContext(2, "TestBotPool")
 
-  // Using a custom dispatcher to track job creation
   override val mainScope = CoroutineScope(Dispatchers.Default + CoroutineExceptionHandler { _, ex ->
     if (ex !is CancellationException || ex.message?.contains("after first iteration") == true) {
       println("Error in test coroutine: ${ex.message}")
@@ -26,45 +38,66 @@ class TestCoroutineProvider : BotCoroutineProvider {
     }
   })
 
-  /**
-   * Controls delay behavior to handle infinite loops.
-   * For long delays (>= 1 hour), likely part of infinite loops:
-   *   - First iteration: completes normally with minimal delay
-   *   - Subsequent iterations: cancels the coroutine
-   * For short delays: behaves normally
-   */
+  init {
+    virtualClock?.addListener { oldTime, newTime ->
+      processDelaysUntil(newTime)
+    }
+  }
+
   override suspend fun safeDelay(duration: Duration) {
-    // Get information about the current coroutine
+    if (virtualClock != null) {
+      delayWithVirtualClock(duration)
+    } else {
+      delayWithInfiniteLoopHandling(duration)
+    }
+  }
+
+  private suspend fun delayWithVirtualClock(duration: Duration) {
+    val targetTime = virtualClock!!.getCurrentTime().plusMillis(duration.inWholeMilliseconds)
+
+    suspendCoroutine<Unit> { continuation ->
+      pendingDelays.add(PendingDelay(targetTime, continuation))
+    }
+  }
+
+  private suspend fun delayWithInfiniteLoopHandling(duration: Duration) {
     val coroutineName = coroutineContext[CoroutineName]?.name ?: "unknown"
 
-    // For large delays (infinite loops typically use large delays)
     if (duration.inWholeHours >= 1) {
       val count = loopIterationCounts.computeIfAbsent(coroutineName) { AtomicInteger(0) }.incrementAndGet()
 
       if (count == 1) {
-        // First iteration - mark completion and add minimal delay
         firstIterationCompletions.computeIfAbsent(coroutineName) { CompletableDeferred() }.complete(Unit)
-        delay(10) // minimal delay for stability
+        delay(10)
       } else {
-        // Subsequent iterations - cancel the coroutine
         throw CancellationException("Test environment: stopping infinite loop after first iteration")
       }
     } else {
-      // For short delays - execute normally
       delay(duration.inWholeMilliseconds)
     }
   }
 
-  /**
-   * Wait for the first iterations of all infinite loops to complete.
-   */
+  private fun processDelaysUntil(newTime: Instant) {
+    val delaysToResume = mutableListOf<PendingDelay>()
+
+    while (true) {
+      val nextDelay = pendingDelays.peek()
+      if (nextDelay == null || nextDelay.targetTime.isAfter(newTime)) {
+        break
+      }
+      pendingDelays.poll()
+      delaysToResume.add(nextDelay)
+    }
+
+    delaysToResume.forEach { delay ->
+      delay.continuation.resume(Unit)
+    }
+  }
+
   suspend fun awaitFirstIterations() {
     firstIterationCompletions.values.forEach { it.await() }
   }
 
-  /**
-   * Wait for all tracked regular jobs to complete.
-   */
   suspend fun awaitRegularJobs() {
     var isReady = false
     while (!isReady) {
@@ -72,4 +105,8 @@ class TestCoroutineProvider : BotCoroutineProvider {
       mainScope.coroutineContext.job.children.forEach { isReady = false; it.join() }
     }
   }
+
+  fun getPendingDelaysCount(): Int = pendingDelays.size
+
+  fun getNextDelayTime(): Instant? = pendingDelays.peek()?.targetTime
 }

@@ -8,7 +8,6 @@ import com.fvlaenix.queemporium.database.MessageDataConnector
 import com.fvlaenix.queemporium.service.AnswerService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
@@ -17,6 +16,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import kotlin.time.Duration.Companion.milliseconds
 
 class AdventCommand(
   databaseConfiguration: DatabaseConfiguration,
@@ -59,7 +59,7 @@ class AdventCommand(
           postMessage(jda, currentData)
           adventDataConnector.markAsRevealed(currentData.guildPostId, currentData.messageId)
         } else {
-          delay((currentData.epoch - currentEpoch).toLong())
+          coroutineProvider.safeDelay((currentData.epoch - currentEpoch).milliseconds)
         }
       } while (true)
     }
