@@ -1,6 +1,9 @@
 package com.fvlaenix.queemporium.testing.fixture
 
+import com.fvlaenix.queemporium.coroutine.TestCoroutineProvider
 import com.fvlaenix.queemporium.mock.*
+import com.fvlaenix.queemporium.testing.scenario.ScenarioBuilder
+import com.fvlaenix.queemporium.testing.scenario.runScenario
 import com.fvlaenix.queemporium.testing.time.TimeController
 import com.fvlaenix.queemporium.testing.time.VirtualClock
 import com.fvlaenix.queemporium.testing.time.VirtualTimeController
@@ -97,6 +100,8 @@ class TestEnvironmentBuilder(
   fun getUser(id: String): User = userMap[id]
     ?: throw IllegalStateException("User $id not found in fixture")
 
+  fun getUserMap(): Map<String, User> = userMap.toMap()
+
   fun getGuild(id: String): Guild = guildMap[id]
     ?: throw IllegalStateException("Guild $id not found in fixture")
 
@@ -112,6 +117,19 @@ fun TestFixture.buildEnvironment(
   return TestEnvironmentBuilder(this, virtualClock, autoStart)
 }
 
+fun TestEnvironmentBuilder.toTestEnvironmentWithTime(
+  timeController: TimeController?,
+  testProvider: TestCoroutineProvider,
+  environment: TestEnvironment
+): TestEnvironmentWithTime {
+  return TestEnvironmentWithTime(
+    environment = environment,
+    timeController = timeController,
+    testProvider = testProvider,
+    userMap = getUserMap()
+  )
+}
+
 class TestEnvironmentScope(
   val environment: TestEnvironment,
   val timeController: TimeController?,
@@ -121,6 +139,19 @@ class TestEnvironmentScope(
   fun guild(id: String): Guild = builder.getGuild(id)
   fun channel(guildId: String, channelId: String): MessageChannelUnion =
     builder.getChannel(guildId, channelId)
+
+  suspend fun scenario(
+    answerService: com.fvlaenix.queemporium.service.AnswerService? = null,
+    block: ScenarioBuilder.() -> Unit
+  ) {
+    val testProvider = GlobalContext.get().get<TestCoroutineProvider>()
+    val envWithTime = builder.toTestEnvironmentWithTime(
+      timeController = timeController,
+      testProvider = testProvider,
+      environment = environment
+    )
+    envWithTime.runScenario(answerService, block)
+  }
 }
 
 fun withEnv(

@@ -30,7 +30,7 @@ fun BaseKoinTest.setupWithFixture(
   val environment = builder.build()
   val timeController = virtualClock?.let { VirtualTimeController(it) }
 
-  return TestEnvironmentWithTime(environment, timeController, testProvider)
+  return builder.toTestEnvironmentWithTime(timeController, testProvider, environment)
 }
 
 fun BaseKoinTest.setupBotKoinWithProvider(
@@ -62,7 +62,8 @@ fun BaseKoinTest.setupBotKoinWithProvider(
 data class TestEnvironmentWithTime(
   val environment: TestEnvironment,
   val timeController: TimeController?,
-  val testProvider: TestCoroutineProvider
+  val testProvider: TestCoroutineProvider,
+  val userMap: Map<String, net.dv8tion.jda.api.entities.User> = emptyMap()
 )
 
 suspend fun TestEnvironmentWithTime.awaitAll() {
