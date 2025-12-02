@@ -10,6 +10,7 @@ import com.fvlaenix.queemporium.testing.time.VirtualClock
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import java.time.Instant
+import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.hours
 
 class ScenarioDslExampleTest : BaseKoinTest() {
@@ -151,19 +152,17 @@ class ScenarioDslExampleTest : BaseKoinTest() {
         builder.answerService = answerService
       }
 
-    envWithTime.runScenario(answerService) {
-      // Verify starting time
-      val initialTime = envWithTime.timeController!!.getCurrentTime()
-      assert(initialTime == startTime) { "Time should start at $startTime" }
+    // Verify starting time before scenario
+    assertEquals(startTime, envWithTime.timeController!!.getCurrentTime())
 
+    envWithTime.runScenario(answerService) {
       // Advance time by 4 hours
       advanceTime(4.hours)
-
-      // Verify time advanced
-      val afterTime = envWithTime.timeController!!.getCurrentTime()
-      val expectedTime = startTime.plusMillis(4.hours.inWholeMilliseconds)
-      assert(afterTime == expectedTime) { "Time should be $expectedTime but was $afterTime" }
     }
+
+    // Verify time advanced after scenario
+    val expectedTime = startTime.plusMillis(4.hours.inWholeMilliseconds)
+    assertEquals(expectedTime, envWithTime.timeController!!.getCurrentTime())
   }
 
   @Test

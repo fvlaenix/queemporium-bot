@@ -22,6 +22,18 @@ class ScenarioRunner(
   private val userCache = testEnvWithTime.userMap.toMutableMap()
   private val guildCache = mutableMapOf<String, Guild>()
 
+  init {
+    // Pre-populate messagesByRef with fixture messages
+    environment.jda.guilds.forEach { guild ->
+      guild.channels.filterIsInstance<TestTextChannel>().forEach { channel ->
+        channel.messages.forEachIndexed { index, message ->
+          val ref = MessageRef(guild.name, channel.name, index)
+          context.messagesByRef[ref] = message
+        }
+      }
+    }
+  }
+
   suspend fun run(steps: List<ScenarioStep>) {
     for (step in steps) {
       executeStep(step)
