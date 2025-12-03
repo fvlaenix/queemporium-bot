@@ -89,10 +89,29 @@ dependencies {
 
     // logging
     implementation("ch.qos.logback:logback-classic:1.5.6")
+  implementation("org.slf4j:jul-to-slf4j:2.0.13")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.6.4")
 }
 
 tasks.test {
     useJUnitPlatform()
+  systemProperty("logback.configurationFile", "src/test/resources/logback-test.xml")
+  finalizedBy("collectLogs")
+}
+
+tasks.register<Zip>("collectLogs") {
+  description = "Collects logs and reports for CI artifacts"
+  group = "verification"
+
+  from(layout.buildDirectory.dir("logs")) {
+    into("logs")
+  }
+  from(layout.buildDirectory.dir("reports/scenarios")) {
+    into("scenarios")
+  }
+
+  archiveFileName.set("diagnostics.zip")
+  destinationDirectory.set(layout.buildDirectory)
 }
 
 kotlin {

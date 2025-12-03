@@ -4,15 +4,14 @@ import com.fvlaenix.queemporium.configuration.ApplicationConfig
 import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.service.AnswerService
 import com.fvlaenix.queemporium.service.SearchService
+import com.fvlaenix.queemporium.utils.Logging
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import java.io.InputStream
 import java.util.*
-import java.util.logging.Level
-import java.util.logging.Logger
 import kotlin.io.path.Path
 import kotlin.io.path.inputStream
 
-private val LOG = Logger.getLogger(SearchCommand::class.java.simpleName)
+private val LOG = Logging.getLogger(SearchCommand::class.java)
 
 data class SearchConfiguration(
   val apiKey: String
@@ -21,7 +20,7 @@ data class SearchConfiguration(
     private fun getResourceStream(applicationConfig: ApplicationConfig): InputStream? {
       val applicationConfigPropertyPath = applicationConfig.searchPropertiesPath
       if (applicationConfigPropertyPath != null) {
-        LOG.log(Level.INFO, "Using search path from application config: $applicationConfigPropertyPath")
+        LOG.info("Using search path from application config: $applicationConfigPropertyPath")
         try {
           return Path(applicationConfigPropertyPath).inputStream()
         } catch (e: Exception) {
@@ -30,10 +29,10 @@ data class SearchConfiguration(
       }
       val defaultStream = SearchCommand::class.java.getResourceAsStream("/search.properties")
       if (defaultStream != null) {
-        LOG.log(Level.INFO, "Using default search config file")
+        LOG.info("Using default search config file")
         return defaultStream
       }
-      LOG.log(Level.WARNING, "No search config file found")
+      LOG.warn("No search config file found")
       return null
     }
 
@@ -71,7 +70,7 @@ class SearchCommand(
       val parts = try {
         searchService.search(url)
       } catch (e: Exception) {
-        LOG.log(Level.SEVERE, "Couldn't search '$url'", e)
+        LOG.error("Couldn't search '$url'", e)
         answerService.sendReply(message, "No sources found: Internal error")
         return
       }

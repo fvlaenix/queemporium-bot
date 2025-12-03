@@ -5,16 +5,15 @@ import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.database.*
 import com.fvlaenix.queemporium.service.AnswerService
+import com.fvlaenix.queemporium.utils.Logging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.session.ReadyEvent
-import java.util.logging.Level
-import java.util.logging.Logger
 import kotlin.time.Duration.Companion.hours
 
-private val LOG = Logger.getLogger(HallOfFameCommand::class.java.name)
+private val LOG = Logging.getLogger(HallOfFameCommand::class.java)
 
 class HallOfFameCommand(
   databaseConfiguration: DatabaseConfiguration,
@@ -30,7 +29,7 @@ class HallOfFameCommand(
   private var retrieveJob: Job? = null
 
   private fun updateHallOfFameMessages(hallOfFameInfo: HallOfFameInfo) {
-    LOG.log(Level.INFO, "Updating Hall of Fame messages for guild ${hallOfFameInfo.guildId}")
+    LOG.info("Updating Hall of Fame messages for guild ${hallOfFameInfo.guildId}")
     val messages = emojiDataConnector.getMessagesAboveThreshold(
       guildId = hallOfFameInfo.guildId,
       threshold = hallOfFameInfo.threshold,
@@ -75,7 +74,7 @@ class HallOfFameCommand(
         message = sourceMessage,
         destination = targetChannel,
         failedCallback = {
-          LOG.log(Level.SEVERE, "Failed to forward message: $it")
+          LOG.error("Failed to forward message: $it")
         }
       ).await()
 
@@ -97,7 +96,7 @@ class HallOfFameCommand(
         )
       }
     } catch (e: Exception) {
-      LOG.log(Level.SEVERE, "Failed to process Hall of Fame message ${message.messageId}", e)
+      LOG.error("Failed to process Hall of Fame message ${message.messageId}", e)
     }
   }
 

@@ -1,0 +1,33 @@
+<configuration>
+  <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+    <resetJUL>true</resetJUL>
+  </contextListener>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg | %mdc%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <file>build/logs/test-run.log</file>
+    <append>false</append>
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg | %mdc%n</pattern>
+    </encoder>
+  </appender>
+
+  <!-- Set root level to DEBUG for tests to capture everything -->
+  <root level="DEBUG">
+    <appender-ref ref="STDOUT"/>
+    <appender-ref ref="FILE"/>
+  </root>
+
+  <!-- Reduce noise from external libraries -->
+  <logger name="org.koin" level="INFO"/>
+  <logger name="net.dv8tion.jda" level="INFO"/>
+  <logger name="org.apache.http" level="INFO"/>
+  <logger name="io.grpc" level="INFO"/>
+  <logger name="io.netty" level="INFO"/>
+  <logger name="Exposed" level="INFO"/>
+</configuration>

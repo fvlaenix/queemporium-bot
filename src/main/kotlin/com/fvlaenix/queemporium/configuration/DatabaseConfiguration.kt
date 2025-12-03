@@ -1,11 +1,10 @@
 package com.fvlaenix.queemporium.configuration
 
+import com.fvlaenix.queemporium.utils.Logging
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.InputStream
 import java.util.*
-import java.util.logging.Level
-import java.util.logging.Logger
 import kotlin.io.path.Path
 import kotlin.io.path.inputStream
 
@@ -16,7 +15,7 @@ data class DatabaseConfiguration(
   val password: String,
 ) {
   companion object {
-    private val LOG = Logger.getLogger(DatabaseConfiguration::class.java.name)
+    private val LOG = Logging.getLogger(DatabaseConfiguration::class.java)
 
     private fun Properties.getSafeProperty(name: String): String =
       getProperty(name) ?: throw IllegalArgumentException("Property $name not found")
@@ -24,7 +23,7 @@ data class DatabaseConfiguration(
     private fun getResourceStream(applicationConfig: ApplicationConfig): InputStream {
       val applicationConfigPropertyPath = applicationConfig.databasePropertiesPath
       if (applicationConfigPropertyPath != null) {
-        LOG.log(Level.INFO, "Using database path from application config: $applicationConfigPropertyPath")
+        LOG.info("Using database path from application config: $applicationConfigPropertyPath")
         try {
           return Path(applicationConfigPropertyPath).inputStream()
         } catch (e: Exception) {
@@ -34,7 +33,7 @@ data class DatabaseConfiguration(
 
       val defaultStream = DatabaseConfiguration::class.java.getResourceAsStream("/database.properties")
       if (defaultStream != null) {
-        LOG.log(Level.INFO, "Using default database config file")
+        LOG.info("Using default database config file")
         return defaultStream
       }
 

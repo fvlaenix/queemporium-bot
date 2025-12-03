@@ -1,5 +1,6 @@
 package com.fvlaenix.queemporium.service
 
+import com.fvlaenix.queemporium.utils.Logging
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import net.dv8tion.jda.api.entities.Message
@@ -7,13 +8,11 @@ import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
 import net.dv8tion.jda.api.utils.FileUpload
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
-import java.util.logging.Level
-import java.util.logging.Logger
 import javax.imageio.ImageIO
 import kotlin.io.path.Path
 import kotlin.io.path.extension
 
-private val LOG = Logger.getLogger(AnswerServiceImpl::class.java.name)
+private val LOG = Logging.getLogger(AnswerServiceImpl::class.java)
 
 class AnswerServiceImpl : AnswerService() {
   private fun toFileUpload(byteArray: ByteArray, name: String): FileUpload {
@@ -46,8 +45,7 @@ class AnswerServiceImpl : AnswerService() {
     val deferred = CompletableDeferred<String?>()
     val callback: (Throwable) -> Unit = {
       deferred.complete(null)
-      LOG.log(
-        Level.SEVERE,
+      LOG.error(
         "Can't send message with ${text.take(200)}, length: ${text.length}, fileUploadsCount: ${fileUploads.size}",
         it
       )

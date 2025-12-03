@@ -1,13 +1,12 @@
 package com.fvlaenix.queemporium.configuration
 
+import com.fvlaenix.queemporium.utils.Logging
 import java.io.InputStream
 import java.util.*
-import java.util.logging.Level
-import java.util.logging.Logger
 import kotlin.io.path.Path
 import kotlin.io.path.inputStream
 
-private val LOG = Logger.getLogger(ApplicationConfig::class.java.simpleName)
+private val LOG = Logging.getLogger(ApplicationConfig::class.java)
 
 data class ApplicationConfig(
   val databasePropertiesPath: String?,
@@ -21,7 +20,7 @@ data class ApplicationConfig(
     private fun getResourceStream(): InputStream {
       val configPath = System.getenv(CONFIG_PATH_ENV)
       if (configPath != null) {
-        LOG.log(Level.INFO, "Using config path from env: $configPath")
+        LOG.info("Using config path from env: $configPath")
         try {
           return Path(configPath).inputStream()
         } catch (e: Exception) {
@@ -30,10 +29,10 @@ data class ApplicationConfig(
       }
       val standardResourceStream = ApplicationConfig::class.java.getResourceAsStream("/application.properties")
       if (standardResourceStream != null) {
-        LOG.log(Level.INFO, "Using standard config file")
+        LOG.info("Using standard config file")
         return standardResourceStream
       }
-      LOG.log(Level.INFO, "Using default config file")
+      LOG.info("Using default config file")
       return "".byteInputStream()
     }
 

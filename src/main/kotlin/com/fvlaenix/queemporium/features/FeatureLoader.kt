@@ -7,17 +7,16 @@ import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.service.AnswerService
 import com.fvlaenix.queemporium.service.DuplicateImageService
 import com.fvlaenix.queemporium.service.SearchService
+import com.fvlaenix.queemporium.utils.Logging
 import org.koin.core.Koin
 import org.koin.core.context.loadKoinModules
 import org.koin.core.module.Module
-import java.util.logging.Level
-import java.util.logging.Logger
 
 class FeatureLoader(
   private val koin: Koin,
   private val registry: FeatureRegistry = FeatureRegistry
 ) {
-  private val log = Logger.getLogger(FeatureLoader::class.java.name)
+  private val log = Logging.getLogger(FeatureLoader::class.java)
 
   fun load(botConfiguration: BotConfiguration): LoadedFeatures {
     val modulesToLoad = LinkedHashSet<Module>()
@@ -26,7 +25,7 @@ class FeatureLoader(
     botConfiguration.features.forEach { (key, toggle) ->
       val definition = registry.definitions[key]
       if (definition == null) {
-        log.log(Level.WARNING, "Unknown feature key: $key")
+        log.warn("Unknown feature key: $key")
         return@forEach
       }
       if (!toggle.enabled) return@forEach
@@ -38,10 +37,10 @@ class FeatureLoader(
     }
 
     if (modulesToLoad.isNotEmpty()) {
-      log.log(Level.INFO, "Loading modules for features: $enabledKeys")
+      log.info("Loading modules for features: $enabledKeys")
       loadKoinModules(modulesToLoad.toList())
     } else {
-      log.log(Level.INFO, "No feature modules to load")
+      log.info("No feature modules to load")
     }
     return LoadedFeatures(enabledKeys)
   }

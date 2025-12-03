@@ -249,7 +249,7 @@ object FeatureRegistry {
     ) { _ ->
       listOf(
         module {
-          single { AdventCommand(get(), get(), get()) } bind net.dv8tion.jda.api.hooks.ListenerAdapter::class
+          single { AdventCommand(get(), get(), get(), get()) } bind net.dv8tion.jda.api.hooks.ListenerAdapter::class
         }
       )
     },

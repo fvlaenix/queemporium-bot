@@ -1,10 +1,14 @@
 package com.fvlaenix.queemporium.service
 
 import com.fvlaenix.queemporium.service.AnswerService.ImageUploadInfo
+import com.fvlaenix.queemporium.testing.trace.BotMessageEvent
+import com.fvlaenix.queemporium.testing.trace.ScenarioTraceCollector
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
+import java.time.Instant
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
 data class MockAnswer(
@@ -16,13 +20,21 @@ data class MockAnswer(
 
 class MockAnswerService : AnswerService() {
   val currentAnswer = AtomicInteger()
-  val answers: MutableList<MockAnswer> = mutableListOf()
+  val answers: MutableList<MockAnswer> = CopyOnWriteArrayList()
 
   override suspend fun sendMessage(
     destination: MessageChannel,
     text: String,
     imageWithFileNames: List<ImageUploadInfo>
   ): Deferred<String?> {
+    ScenarioTraceCollector.addEvent(
+      BotMessageEvent(
+        timestamp = Instant.now(),
+        channelId = destination.id,
+        text = text,
+        images = imageWithFileNames
+      )
+    )
     answers.add(
       MockAnswer(
         channelId = destination.id,
@@ -40,6 +52,15 @@ class MockAnswerService : AnswerService() {
     successCallback: (Message) -> Unit,
     failedCallback: (Throwable) -> Unit
   ): Deferred<String?> {
+    ScenarioTraceCollector.addEvent(
+      BotMessageEvent(
+        timestamp = Instant.now(),
+        channelId = destination.id,
+        text = "",
+        images = emptyList(),
+        forwardFrom = message.id
+      )
+    )
     answers.add(
       MockAnswer(
         channelId = destination.id,

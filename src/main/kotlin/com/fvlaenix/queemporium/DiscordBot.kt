@@ -1,5 +1,6 @@
 package com.fvlaenix.queemporium
 
+import com.fvlaenix.queemporium.utils.Logging
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.hooks.ListenerAdapter
@@ -7,10 +8,8 @@ import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.utils.ChunkingFilter
 import net.dv8tion.jda.api.utils.MemberCachePolicy
 import net.dv8tion.jda.api.utils.cache.CacheFlag
-import java.util.logging.Level
-import java.util.logging.Logger
 
-private val LOG = Logger.getLogger(DiscordBot::class.java.name)
+private val LOG = Logging.getLogger(DiscordBot::class.java)
 
 class DiscordBot(
   token: String,
@@ -30,9 +29,9 @@ class DiscordBot(
     .setActivity(Activity.customStatus("Dominates Emporium"))
 
   fun run() {
-    LOG.log(Level.INFO, "Build bot")
+    LOG.info("Build bot")
     val bot = jda.build()
-    LOG.log(Level.INFO, "Staring bot")
+    LOG.info("Staring bot")
     bot.awaitReady()
   }
 }

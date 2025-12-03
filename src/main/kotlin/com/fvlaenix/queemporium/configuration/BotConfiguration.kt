@@ -2,11 +2,10 @@ package com.fvlaenix.queemporium.configuration
 
 import com.charleskorn.kaml.Yaml
 import com.charleskorn.kaml.decodeFromStream
+import com.fvlaenix.queemporium.utils.Logging
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
-import java.util.logging.Level
-import java.util.logging.Logger
 import kotlin.io.path.Path
 import kotlin.io.path.inputStream
 
@@ -16,13 +15,13 @@ data class BotConfiguration(
   val features: Map<String, FeatureToggle> = emptyMap()
 ) {
   companion object {
-    private val LOG = Logger.getLogger(BotConfiguration::class.java.name)
+    private val LOG = Logging.getLogger(BotConfiguration::class.java)
 
     fun load(applicationConfig: ApplicationConfig): BotConfiguration {
       val botPropertiesPath = applicationConfig.botPropertiesPath
         ?: throw IllegalStateException("bot.properties.path is not set")
 
-      LOG.log(Level.INFO, "Using bot configuration path from application config: $botPropertiesPath")
+      LOG.info("Using bot configuration path from application config: $botPropertiesPath")
       val inputStream = try {
         Path(botPropertiesPath).inputStream()
       } catch (e: Exception) {

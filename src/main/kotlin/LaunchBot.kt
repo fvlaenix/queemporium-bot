@@ -4,24 +4,20 @@ import com.fvlaenix.queemporium.di.applicationConfigModule
 import com.fvlaenix.queemporium.di.botConfigModule
 import com.fvlaenix.queemporium.di.coreServiceModule
 import com.fvlaenix.queemporium.features.FeatureLoader
+import com.fvlaenix.queemporium.utils.Logging
 import org.koin.core.context.GlobalContext.startKoin
-import java.util.logging.Level
-import java.util.logging.LogManager
-import java.util.logging.Logger
-
-const val LOGGING_PATH: String = "/logging.properties"
+import org.slf4j.bridge.SLF4JBridgeHandler
 
 class LaunchBot
 
 fun main() {
-  try {
-    LogManager.getLogManager().readConfiguration(LaunchBot::class.java.getResourceAsStream(LOGGING_PATH))
-  } catch (e: Exception) {
-    throw IllegalStateException("Failed while trying to read logs", e)
-  }
-  val launchBotLog = Logger.getLogger(LaunchBot::class.java.name)
+  // Bridge java.util.logging to SLF4J
+  SLF4JBridgeHandler.removeHandlersForRootLogger()
+  SLF4JBridgeHandler.install()
 
-  launchBotLog.log(Level.INFO, "Starting Koin")
+  val launchBotLog = Logging.getLogger(LaunchBot::class.java)
+
+  launchBotLog.info("Starting Koin")
   val koin = startKoin {
     allowOverride(false)
     modules(
@@ -31,11 +27,11 @@ fun main() {
     )
   }.koin
 
-  launchBotLog.log(Level.INFO, "Loading feature modules")
+  launchBotLog.info("Loading feature modules")
   val botConfiguration = koin.get<BotConfiguration>()
   FeatureLoader(koin).load(botConfiguration)
 
-  launchBotLog.log(Level.INFO, "Create bot")
+  launchBotLog.info("Create bot")
   val listeners = koin.getAll<net.dv8tion.jda.api.hooks.ListenerAdapter>()
   val bot = DiscordBot(botConfiguration.token, listeners)
   bot.run()

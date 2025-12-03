@@ -1,15 +1,16 @@
 package com.fvlaenix.queemporium.commands.logging
 
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
 import com.fvlaenix.queemporium.builder.createEnvironment
 import com.fvlaenix.queemporium.commands.LoggerMessageCommand
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.mock.TestEnvironment
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.koin.core.Koin
-import java.util.logging.Handler
-import java.util.logging.Level
-import java.util.logging.LogRecord
-import java.util.logging.Logger
+import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
 /**
@@ -22,8 +23,7 @@ abstract class BaseLoggerMessageCommandTest : BaseKoinTest() {
   protected lateinit var koin: Koin
 
   // Custom log handler to capture log messages
-  protected val logRecords = mutableListOf<LogRecord>()
-  protected lateinit var logHandler: TestLogHandler
+  protected lateinit var listAppender: ListAppender<ILoggingEvent>
   protected lateinit var logger: Logger
 
   // Flag for automatic environment start
@@ -40,10 +40,10 @@ abstract class BaseLoggerMessageCommandTest : BaseKoinTest() {
     }
 
     // Setup logger and handler
-    logHandler = TestLogHandler()
-    logger = Logger.getLogger(LoggerMessageCommand::class.java.name)
-    logger.addHandler(logHandler)
-    logger.level = Level.ALL
+    logger = LoggerFactory.getLogger(LoggerMessageCommand::class.java) as Logger
+    listAppender = ListAppender()
+    listAppender.start()
+    logger.addAppender(listAppender)
 
     // Create test environment
     env = createEnvironment(autoStart = autoStartEnvironment) {
@@ -54,6 +54,12 @@ abstract class BaseLoggerMessageCommandTest : BaseKoinTest() {
 
     // Additional setup specific to concrete test
     additionalSetUp()
+  }
+
+  @AfterEach
+  fun tearDown() {
+    logger.detachAppender(listAppender)
+    listAppender.stop()
   }
 
   /**
@@ -76,33 +82,16 @@ abstract class BaseLoggerMessageCommandTest : BaseKoinTest() {
   protected abstract fun getCommandsForTest(): Array<KClass<*>>
 
   /**
-   * Custom log handler to capture log messages
-   */
-  protected inner class TestLogHandler : Handler() {
-    override fun publish(record: LogRecord) {
-      logRecords.add(record)
-    }
-
-    override fun flush() {
-      // No-op
-    }
-
-    override fun close() {
-      // No-op
-    }
-  }
-
-  /**
    * Clears captured log records
    */
   protected fun clearLogs() {
-    logRecords.clear()
+    listAppender.list.clear()
   }
 
   /**
    * Gets logs containing the specified text
    */
-  protected fun getLogsContaining(text: String): List<LogRecord> {
-    return logRecords.filter { it.message.contains(text) }
+  protected fun getLogsContaining(text: String): List<ILoggingEvent> {
+    return listAppender.list.filter { it.formattedMessage.contains(text) }
   }
 }

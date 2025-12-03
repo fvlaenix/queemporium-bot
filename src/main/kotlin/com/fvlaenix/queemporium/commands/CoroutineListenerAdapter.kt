@@ -5,6 +5,9 @@ import com.fvlaenix.queemporium.exception.EXCEPTION_HANDLER
 import com.fvlaenix.queemporium.utils.CoroutineUtils
 import com.fvlaenix.queemporium.utils.CoroutineUtils.channelTransform
 import com.fvlaenix.queemporium.utils.CoroutineUtils.flatChannelTransform
+import com.fvlaenix.queemporium.utils.LogContextKeys
+import com.fvlaenix.queemporium.utils.Logging
+import com.fvlaenix.queemporium.utils.mdcCoroutineContext
 import kotlinx.coroutines.*
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.Permission
@@ -18,10 +21,8 @@ import net.dv8tion.jda.api.events.session.ReadyEvent
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import org.jetbrains.annotations.TestOnly
-import java.util.logging.Level
-import java.util.logging.Logger
 
-private val LOG: Logger = Logger.getLogger(CoroutineListenerAdapter::class.java.name)
+private val LOG = Logging.getLogger(CoroutineListenerAdapter::class.java)
 
 open class CoroutineListenerAdapter(val coroutineProvider: BotCoroutineProvider) : ListenerAdapter() {
   private fun getCoroutinePool(): ExecutorCoroutineDispatcher = coroutineProvider.botPool
@@ -42,12 +43,12 @@ open class CoroutineListenerAdapter(val coroutineProvider: BotCoroutineProvider)
   open suspend fun onReadySuspend(event: ReadyEvent) {}
 
   override fun onReady(event: ReadyEvent) {
-    getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER) {
+    getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER + mdcCoroutineContext()) {
       try {
         onReadySuspend(event)
       } catch (e: Exception) {
         if (e !is CancellationException) {
-          LOG.log(Level.SEVERE, "Global Panic: Can't finish ready event", e)
+          LOG.error("Global Panic: Can't finish ready event", e)
         }
       }
     }
@@ -59,11 +60,19 @@ open class CoroutineListenerAdapter(val coroutineProvider: BotCoroutineProvider)
 
   override fun onMessageReceived(event: MessageReceivedEvent) {
     if (!receiveMessageFilter(event)) return
-    getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER) {
+
+    val contextMap = mutableMapOf<String, String>()
+    if (event.isFromGuild) {
+      contextMap[LogContextKeys.GUILD_ID] = event.guild.id
+    }
+    contextMap[LogContextKeys.CHANNEL_ID] = event.channel.id
+    contextMap[LogContextKeys.USER_ID] = event.author.id
+
+    getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER + mdcCoroutineContext(contextMap)) {
       try {
         onMessageReceivedSuspend(event)
       } catch (e: Exception) {
-        LOG.log(Level.SEVERE, "Global Panic: Received ${messageInfo(event.message)}", e)
+        LOG.error("Global Panic: Received ${messageInfo(event.message)}", e)
       }
     }
   }
@@ -71,11 +80,18 @@ open class CoroutineListenerAdapter(val coroutineProvider: BotCoroutineProvider)
   open suspend fun onMessageUpdateSuspend(event: MessageUpdateEvent) {}
 
   override fun onMessageUpdate(event: MessageUpdateEvent) {
-    getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER) {
+    val contextMap = mutableMapOf<String, String>()
+    if (event.isFromGuild) {
+      contextMap[LogContextKeys.GUILD_ID] = event.guild.id
+    }
+    contextMap[LogContextKeys.CHANNEL_ID] = event.channel.id
+    contextMap[LogContextKeys.USER_ID] = event.author.id
+
+    getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER + mdcCoroutineContext(contextMap)) {
       try {
         onMessageUpdateSuspend(event)
       } catch (e: Exception) {
-        LOG.log(Level.SEVERE, "Global Panic: Updated ${messageInfo(event.message)}", e)
+        LOG.error("Global Panic: Updated ${messageInfo(event.message)}", e)
       }
     }
   }
@@ -83,11 +99,17 @@ open class CoroutineListenerAdapter(val coroutineProvider: BotCoroutineProvider)
   open suspend fun onMessageDeleteSuspend(event: MessageDeleteEvent) {}
 
   override fun onMessageDelete(event: MessageDeleteEvent) {
-    getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER) {
+    val contextMap = mutableMapOf<String, String>()
+    if (event.isFromGuild) {
+      contextMap[LogContextKeys.GUILD_ID] = event.guild.id
+    }
+    contextMap[LogContextKeys.CHANNEL_ID] = event.channel.id
+
+    getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER + mdcCoroutineContext(contextMap)) {
       try {
         onMessageDeleteSuspend(event)
       } catch (e: Exception) {
-        LOG.log(Level.SEVERE, "Global Panic: Deleted message with id ${event.messageId}", e)
+        LOG.error("Global Panic: Deleted message with id ${event.messageId}", e)
       }
     }
   }
@@ -114,14 +136,14 @@ open class CoroutineListenerAdapter(val coroutineProvider: BotCoroutineProvider)
         jda.guilds
       }
       val channelsChannel = flatChannelTransform(guilds, guildThreshold) { guild ->
-        LOG.log(Level.INFO, "$jobName: Guild processing ${guildCounter.status()}: ${guild.name}")
+        LOG.info("$jobName: Guild processing ${guildCounter.status()}: ${guild.name}")
         val channels = computeGuild(guild)
         channelCounter.totalIncrease(channels.size)
         guildCounter.doneIncrement()
         channels
       }
       val messagesChannel = flatChannelTransform(channelsChannel, channelThreshold) { channel ->
-        LOG.log(Level.INFO, "$jobName: Channel processing ${channelCounter.status()}: ${channel.getName()}")
+        LOG.info("$jobName: Channel processing ${channelCounter.status()}: ${channel.getName()}")
         val messages = computeChannel(channel)
         messageCounter.totalIncrease(messages.size)
         channelCounter.doneIncrement()
@@ -130,12 +152,12 @@ open class CoroutineListenerAdapter(val coroutineProvider: BotCoroutineProvider)
       channelTransform(messagesChannel, messageThreshold) { message ->
         val messageNumber = messageCounter.doneIncrement()
         if (messageNumber % 100 == 0) {
-          LOG.log(Level.INFO, "$jobName: Message processing ${messageCounter.status()}")
+          LOG.info("$jobName: Message processing ${messageCounter.status()}")
         }
         computeMessage(message)
       }
     }
-    LOG.log(Level.INFO, "$jobName: Finish onReady")
+    LOG.info("$jobName: Finish onReady")
   }
 
   protected suspend fun runOverOld(
@@ -161,13 +183,13 @@ open class CoroutineListenerAdapter(val coroutineProvider: BotCoroutineProvider)
             messages
           }
         } catch (_: InsufficientPermissionException) {
-          LOG.log(Level.INFO, "$jobName: Insufficient permissions for channel ${channel.getName()}")
+          LOG.info("$jobName: Insufficient permissions for channel ${channel.getName()}")
           return@channel emptyList()
         } catch (e: InterruptedException) {
-          LOG.log(Level.WARNING, "$jobName: Interrupted exception while take messages", e)
+          LOG.warn("$jobName: Interrupted exception while take messages", e)
         }
       }
-      LOG.log(Level.SEVERE, "$jobName: Can't take channel ${channel.getName()} in few attempts")
+      LOG.error("$jobName: Can't take channel ${channel.getName()} in few attempts")
       emptyList()
     }
     runOverOld(

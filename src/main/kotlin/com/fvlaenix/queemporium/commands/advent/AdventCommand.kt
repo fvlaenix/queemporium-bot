@@ -21,7 +21,8 @@ import kotlin.time.Duration.Companion.milliseconds
 class AdventCommand(
   databaseConfiguration: DatabaseConfiguration,
   val answerService: AnswerService,
-  coroutineProvider: BotCoroutineProvider
+  coroutineProvider: BotCoroutineProvider,
+  private val clock: java.time.Clock = java.time.Clock.systemUTC()
 ) : CoroutineListenerAdapter(coroutineProvider) {
   val emojiDataConnector = EmojiDataConnector(databaseConfiguration.toDatabase())
   val adventDataConnector = AdventDataConnector(databaseConfiguration.toDatabase())
@@ -56,7 +57,7 @@ class AdventCommand(
     currentJob = coroutineProvider.mainScope.launch(Dispatchers.IO) {
       do {
         val data = adventDataConnector.getAdvents().filter { data -> !data.isRevealed }.sortedBy { it.epoch }
-        val currentEpoch = Instant.now().toEpochMilli()
+        val currentEpoch = Instant.now(clock).toEpochMilli()
         if (data.isEmpty()) break
         val currentData = data.first()
         if (currentData.epoch <= currentEpoch) {

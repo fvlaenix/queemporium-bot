@@ -1,8 +1,8 @@
 package com.fvlaenix.queemporium.commands.logging
 
+import ch.qos.logback.classic.Level
 import com.fvlaenix.queemporium.commands.LoggerMessageCommand
 import org.junit.jupiter.api.Test
-import java.util.logging.Level
 import kotlin.reflect.KClass
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -52,7 +52,7 @@ class LoggerMessageCommandTest : BaseLoggerMessageCommandTest() {
     assertTrue(receivedLogs.isNotEmpty(), "Message received event should be logged")
 
     // Verify log contains message details
-    val logMessage = receivedLogs.first().message
+    val logMessage = receivedLogs.first().formattedMessage
     assertTrue(logMessage.contains("Test User"), "Log should contain user name")
     assertTrue(logMessage.contains(message.jumpUrl), "Log should contain message URL")
   }
@@ -97,7 +97,7 @@ class LoggerMessageCommandTest : BaseLoggerMessageCommandTest() {
     assertTrue(updateLogs.isNotEmpty(), "Message update event should be logged")
 
     // Verify log contains message details
-    val logMessage = updateLogs.first().message
+    val logMessage = updateLogs.first().formattedMessage
     assertTrue(logMessage.contains("Test User"), "Log should contain user name")
     assertTrue(logMessage.contains(message.jumpUrl), "Log should contain message URL")
   }
@@ -131,7 +131,7 @@ class LoggerMessageCommandTest : BaseLoggerMessageCommandTest() {
     assertTrue(deleteLogs.isNotEmpty(), "Message delete event should be logged")
 
     // Verify log contains message ID
-    val logMessage = deleteLogs.first().message
+    val logMessage = deleteLogs.first().formattedMessage
     assertTrue(logMessage.contains(message.id), "Log should contain message ID")
   }
 }

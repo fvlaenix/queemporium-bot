@@ -9,7 +9,10 @@ import com.fvlaenix.queemporium.service.SearchServiceImpl
 import org.koin.dsl.module
 
 object SharedModules {
-  val coreModule = coreServiceModule
+  val coreModule = module {
+    includes(coreServiceModule)
+    single<java.time.Clock> { java.time.Clock.systemUTC() }
+  }
 
   val databaseModule = module {
     single { DatabaseConfiguration.load(get()) }
