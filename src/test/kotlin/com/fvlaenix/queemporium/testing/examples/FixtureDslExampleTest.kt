@@ -40,7 +40,7 @@ class FixtureDslExampleTest : BaseKoinTest() {
 
     val answerService = MockAnswerService()
 
-    val envWithTime = setupWithFixture(testFixture, virtualClock, autoStart = true) { builder ->
+    val envWithTime = setupWithFixture(testFixture, virtualClock) { builder ->
       builder.answerService = answerService
     }
 
@@ -125,7 +125,7 @@ class FixtureDslExampleTest : BaseKoinTest() {
       }
     }
 
-    val envWithTime = setupWithFixture(testFixture, virtualClock, autoStart = true)
+    val envWithTime = setupWithFixture(testFixture, virtualClock)
     val timeController = envWithTime.timeController!!
 
     assertEquals(startTime, timeController.getCurrentTime())
