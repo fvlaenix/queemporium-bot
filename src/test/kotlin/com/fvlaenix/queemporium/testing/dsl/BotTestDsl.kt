@@ -73,6 +73,9 @@ class BotTestScenarioContext(private val setupContext: BotTestSetupContext) {
   val answerService: MockAnswerService?
     get() = setupContext.answerService
 
+  val envWithTime: TestEnvironmentWithTime
+    get() = setupContext.envWithTime
+
   fun sendMessage(guildId: String, channelId: String, userId: String, text: String) {
     scenarioBuilder.sendMessage(guildId, channelId, userId, text)
   }
