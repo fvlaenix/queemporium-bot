@@ -6,7 +6,6 @@ import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.service.MockAnswerService
 import com.fvlaenix.queemporium.testing.fixture.TestEnvironmentWithTime
 import com.fvlaenix.queemporium.testing.fixture.awaitAll
-import com.fvlaenix.queemporium.testing.scenario.ExpectContext
 import java.time.Instant
 import kotlin.time.Duration
 
@@ -17,8 +16,7 @@ import kotlin.time.Duration
 class AdventTestContext(
   private val environment: TestEnvironment,
   private val envWithTime: TestEnvironmentWithTime,
-  private val adventDataConnector: AdventDataConnector,
-  private val answerService: MockAnswerService?
+  private val adventDataConnector: AdventDataConnector
 ) {
 
   /**
@@ -28,11 +26,13 @@ class AdventTestContext(
    * @param guildId The guild ID where entries will be posted
    * @param postChannelId The channel ID where entries will be revealed
    * @param entries List of (messageId, description, revealTime) tuples
+   * @param restartLoop Whether to restart the Advent loop after scheduling (default: true)
    */
   fun scheduleEntries(
     guildId: String,
     postChannelId: String,
-    entries: List<Triple<String, String, Instant>>
+    entries: List<Triple<String, String, Instant>>,
+    restartLoop: Boolean = true
   ) {
     val guild = environment.jda.getGuildsByName(guildId, true).firstOrNull()
       ?: throw IllegalStateException("Guild $guildId not found")
@@ -52,6 +52,25 @@ class AdventTestContext(
     }
 
     adventDataConnector.initializeAdvent(adventDataList)
+
+    if (restartLoop) {
+      restartAdventLoop()
+    }
+  }
+
+  /**
+   * Restarts the Advent loop to pick up new or modified entries.
+   */
+  fun restartAdventLoop() {
+    try {
+      val adventCommand =
+        org.koin.core.context.GlobalContext.get().get<com.fvlaenix.queemporium.commands.advent.AdventCommand>()
+      val readyEvent = io.mockk.mockk<net.dv8tion.jda.api.events.session.ReadyEvent>()
+      io.mockk.every { readyEvent.jda } returns environment.jda
+      adventCommand.onEvent(readyEvent)
+    } catch (e: Exception) {
+      throw IllegalStateException("Failed to restart Advent loop. Make sure ADVENT feature is enabled.", e)
+    }
   }
 
   /**
@@ -62,19 +81,21 @@ class AdventTestContext(
    * @param entries List of (messageId, description) pairs
    * @param startTime The time of the first reveal
    * @param interval The duration between each reveal
+   * @param restartLoop Whether to restart the Advent loop after scheduling (default: true)
    */
   fun scheduleMultipleEntries(
     guildId: String,
     postChannelId: String,
     entries: List<Pair<String, String>>,
     startTime: Instant,
-    interval: Duration
+    interval: Duration,
+    restartLoop: Boolean = true
   ) {
     val triples = entries.mapIndexed { index, (messageId, description) ->
       val revealTime = startTime.plusMillis(interval.inWholeMilliseconds * index)
       Triple(messageId, description, revealTime)
     }
-    scheduleEntries(guildId, postChannelId, triples)
+    scheduleEntries(guildId, postChannelId, triples, restartLoop)
   }
 
   /**
@@ -151,26 +172,6 @@ class AdventTestContext(
 }
 
 /**
- * Extension function to verify an Advent message was revealed.
- */
-fun ExpectContext.adventMessageRevealed(
-  channelId: String,
-  descriptionContains: String
-) {
-  messageSent(channelId, descriptionContains)
-}
-
-/**
- * Extension function to verify multiple Advent messages were revealed.
- */
-fun ExpectContext.adventMessagesRevealed(
-  channelId: String,
-  count: Int
-) {
-  messageSentCount(count * 2) // Each entry sends description + forward
-}
-
-/**
  * Creates an Advent test context for use in tests.
  */
 fun TestEnvironmentWithTime.adventContext(
@@ -180,7 +181,6 @@ fun TestEnvironmentWithTime.adventContext(
   return AdventTestContext(
     environment = environment,
     envWithTime = this,
-    adventDataConnector = adventDataConnector,
-    answerService = answerService
+    adventDataConnector = adventDataConnector
   )
 }
