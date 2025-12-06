@@ -1,36 +1,37 @@
 package com.fvlaenix.queemporium
 
-import com.fvlaenix.queemporium.builder.createEnvironment
-import com.fvlaenix.queemporium.commands.PingCommand
+import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.koin.BaseKoinTest
-import com.fvlaenix.queemporium.service.MockAnswerService
-import com.fvlaenix.queemporium.verification.verify
+import com.fvlaenix.queemporium.testing.dsl.testBot
 import org.junit.jupiter.api.Test
 
 class BasicKoinPingTest : BaseKoinTest() {
   @Test
-  fun `test ping command with direct koin setup`() {
-    val answerService = MockAnswerService()
+  fun `test ping command with direct koin setup`() = testBot {
+    before {
+      enableFeature(FeatureKeys.PING)
 
-    setupBotKoin {
-      this.answerService = answerService
-      enableCommands(PingCommand::class)
-    }
+      user("testUser")
 
-    val env = createEnvironment {
-      createGuild("Test Guild") {
-        withChannel("general")
+      guild("testGuild") {
+        channel("general")
       }
     }
 
-    val user = env.createUser("Test User", false)
-    env.sendMessage("Test Guild", "general", user, "/shogun-sama ping").queue()
+    scenario {
+      sendMessage(
+        guildId = "testGuild",
+        channelId = "general",
+        userId = "testUser",
+        text = "/shogun-sama ping"
+      )
 
-    env.awaitAll()
+      awaitAll()
 
-    answerService.verify {
-      messageCount(1)
-      lastMessageContains("Pong!")
+      expect("bot should respond with Pong") {
+        messageSentCount(1)
+        lastMessageContains("Pong!")
+      }
     }
   }
 }
