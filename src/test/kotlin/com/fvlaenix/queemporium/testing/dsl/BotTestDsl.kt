@@ -12,10 +12,7 @@ import com.fvlaenix.queemporium.service.MockAnswerService
 import com.fvlaenix.queemporium.testing.fixture.FixtureBuilder
 import com.fvlaenix.queemporium.testing.fixture.TestEnvironmentWithTime
 import com.fvlaenix.queemporium.testing.fixture.setupWithFixture
-import com.fvlaenix.queemporium.testing.helpers.AdventTestContext
-import com.fvlaenix.queemporium.testing.helpers.HallOfFameTestContext
-import com.fvlaenix.queemporium.testing.helpers.adventContext
-import com.fvlaenix.queemporium.testing.helpers.hallOfFameContext
+import com.fvlaenix.queemporium.testing.helpers.*
 import com.fvlaenix.queemporium.testing.scenario.ScenarioBuilder
 import com.fvlaenix.queemporium.testing.time.VirtualClock
 import kotlinx.coroutines.runBlocking
@@ -38,6 +35,7 @@ class BotTestContext {
 
   internal var _hallOfFameContext: HallOfFameTestContext? = null
   internal var _adventContext: AdventTestContext? = null
+  internal var _loggerContext: LoggerTestContext? = null
 
   fun before(block: FixtureBuilder.() -> Unit) {
     fixtureBuilder.block()
@@ -69,6 +67,9 @@ class BotTestScenarioContext(private val setupContext: BotTestSetupContext) {
 
   val advent: AdventTestContext
     get() = setupContext.advent
+
+  val logger: LoggerTestContext
+    get() = setupContext.logger
 
   val answerService: MockAnswerService?
     get() = setupContext.answerService
@@ -144,6 +145,14 @@ class BotTestSetupContext(
     }
   }
 
+  val logger: LoggerTestContext by lazy {
+    parentContext._loggerContext ?: run {
+      val context = LoggerTestContext()
+      parentContext._loggerContext = context
+      context
+    }
+  }
+
   fun getMessage(guildId: String, channelId: String, messageIndex: Int): String {
     val guild = envWithTime.environment.jda.getGuildsByName(guildId, true).firstOrNull()
       ?: throw IllegalStateException("Guild $guildId not found")
@@ -206,18 +215,92 @@ fun BaseKoinTest.testBot(block: BotTestContext.() -> Unit) = runBlocking {
     setupContext.action()
   }
 
-  for (scenarioBlock in context.scenarioSteps) {
-    val scenarioContext = BotTestScenarioContext(setupContext)
-    scenarioContext.scenarioBlock()
+  try {
+    for (scenarioBlock in context.scenarioSteps) {
+      val scenarioContext = BotTestScenarioContext(setupContext)
+      scenarioContext.scenarioBlock()
+      val steps = scenarioContext.build()
+      val runner = com.fvlaenix.queemporium.testing.scenario.ScenarioRunner(
+        envWithTime.environment,
+        envWithTime.timeController,
+        envWithTime,
+        context.answerService
+      )
+      runner.run(steps)
+    }
+  } finally {
+    context._loggerContext?.cleanup()
+  }
+}
+
+class BotTestFixture(private val context: BotTestContext) {
+  private var setupContext: BotTestSetupContext? = null
+  var autoStart: Boolean = true
+
+  suspend fun initialize(koinTest: BaseKoinTest) {
+    if (context.answerService == null) {
+      context.withAnswerService()
+    }
+
+    if (context._loggerContext == null) {
+      context._loggerContext = LoggerTestContext()
+    }
+
+    val testFixture = context.fixtureBuilder.build()
+
+    val envWithTime = setupWithFixture(testFixture, context.virtualClock, autoStart) { builder ->
+      builder.answerService = context.answerService!!
+    }
+
+    context.envWithTime = envWithTime
+
+    val databaseConfig: DatabaseConfiguration = org.koin.core.context.GlobalContext.get().get()
+    context.databaseConfig = databaseConfig
+
+    val messageDataConnector = MessageDataConnector(databaseConfig.toDatabase())
+    context.messageDataConnector = messageDataConnector
+
+    autoPopulateMessageData(envWithTime, messageDataConnector)
+
+    val setupCtx = BotTestSetupContext(
+      envWithTime = envWithTime,
+      answerService = context.answerService,
+      databaseConfig = databaseConfig,
+      messageDataConnector = messageDataConnector,
+      parentContext = context
+    )
+
+    context.setupActions.forEach { action ->
+      setupCtx.action()
+    }
+
+    setupContext = setupCtx
+  }
+
+  suspend fun runScenario(block: suspend BotTestScenarioContext.() -> Unit) {
+    val setupCtx = setupContext ?: throw IllegalStateException("Fixture not initialized. Call initialize() first.")
+
+    val scenarioContext = BotTestScenarioContext(setupCtx)
+    scenarioContext.block()
     val steps = scenarioContext.build()
     val runner = com.fvlaenix.queemporium.testing.scenario.ScenarioRunner(
-      envWithTime.environment,
-      envWithTime.timeController,
-      envWithTime,
+      setupCtx.envWithTime.environment,
+      setupCtx.envWithTime.timeController,
+      setupCtx.envWithTime,
       context.answerService
     )
     runner.run(steps)
   }
+
+  fun cleanup() {
+    context._loggerContext?.cleanup()
+  }
+}
+
+fun testBotFixture(block: BotTestContext.() -> Unit): BotTestFixture {
+  val context = BotTestContext()
+  context.block()
+  return BotTestFixture(context)
 }
 
 private fun autoPopulateMessageData(

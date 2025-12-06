@@ -1,97 +1,78 @@
 package com.fvlaenix.queemporium.commands.logging
 
-import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
-import ch.qos.logback.core.read.ListAppender
-import com.fvlaenix.queemporium.builder.createEnvironment
-import com.fvlaenix.queemporium.commands.LoggerMessageCommand
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.mock.TestEnvironment
+import com.fvlaenix.queemporium.testing.dsl.BotTestFixture
+import com.fvlaenix.queemporium.testing.dsl.BotTestScenarioContext
+import com.fvlaenix.queemporium.testing.dsl.testBotFixture
+import kotlinx.coroutines.runBlocking
+import net.dv8tion.jda.api.JDA
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.koin.core.Koin
-import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
-/**
- * Base test class for LoggerMessageCommand tests.
- * Provides common setup and utilities for testing message logging functionality.
- */
 abstract class BaseLoggerMessageCommandTest : BaseKoinTest() {
-  // Core components for testing
-  protected lateinit var env: TestEnvironment
-  protected lateinit var koin: Koin
+  protected lateinit var fixture: BotTestFixture
 
-  // Custom log handler to capture log messages
-  protected lateinit var listAppender: ListAppender<ILoggingEvent>
-  protected lateinit var logger: Logger
-
-  // Flag for automatic environment start
   protected open var autoStartEnvironment: Boolean = true
 
-  /**
-   * Standard test environment setup
-   */
   @BeforeEach
-  fun baseSetUp() {
-    // Setup Koin with the commands for this test
-    koin = setupBotKoin {
-      enableCommands(*getCommandsForTest())
-    }
+  fun baseSetUp() = runBlocking {
+    fixture = testBotFixture {
+      before {
+        enableCommands(*getCommandsForTest())
 
-    // Setup logger and handler
-    logger = LoggerFactory.getLogger(LoggerMessageCommand::class.java) as Logger
-    listAppender = ListAppender()
-    listAppender.start()
-    logger.addAppender(listAppender)
+        user("Test User")
 
-    // Create test environment
-    env = createEnvironment(autoStart = autoStartEnvironment) {
-      createGuild("Test Guild") {
-        withChannel("general")
+        guild("Test Guild") {
+          channel("general")
+        }
       }
     }
 
-    // Additional setup specific to concrete test
+    fixture.autoStart = autoStartEnvironment
+    fixture.initialize(this@BaseLoggerMessageCommandTest)
+
     additionalSetUp()
   }
 
   @AfterEach
   fun tearDown() {
-    logger.detachAppender(listAppender)
-    listAppender.stop()
+    fixture.cleanup()
   }
 
-  /**
-   * Method to be overridden in subclasses for additional setup
-   */
   protected open fun additionalSetUp() {
-    // Does nothing by default, can be overridden in specific tests
   }
 
-  /**
-   * Starts the test environment if not already started
-   */
-  protected fun startEnvironment() {
-    env.start()
-  }
-
-  /**
-   * Returns a list of command classes to be activated for the test
-   */
   protected abstract fun getCommandsForTest(): Array<KClass<*>>
 
-  /**
-   * Clears captured log records
-   */
-  protected fun clearLogs() {
-    listAppender.list.clear()
+  protected fun clearLogs() = runBlocking {
+    fixture.runScenario {
+      logger.clearLogs()
+    }
   }
 
-  /**
-   * Gets logs containing the specified text
-   */
-  protected fun getLogsContaining(text: String): List<ILoggingEvent> {
-    return listAppender.list.filter { it.formattedMessage.contains(text) }
+  protected fun getLogsContaining(text: String): List<ILoggingEvent> = runBlocking {
+    var result: List<ILoggingEvent> = emptyList()
+    fixture.runScenario {
+      result = logger.getLogsContaining(text)
+    }
+    result
   }
+
+  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T = runBlocking {
+    var result: T? = null
+    fixture.runScenario {
+      result = block()
+    }
+    @Suppress("UNCHECKED_CAST")
+    result as T
+  }
+
+  protected val env: TestEnvironment
+    get() = runWithScenario { envWithTime.environment }
+
+  protected val jda: JDA
+    get() = env.jda
 }
