@@ -85,3 +85,56 @@ suspend fun TestEnvironmentWithTime.awaitAll() {
     testProvider.awaitRegularJobs()
   }
 }
+
+fun setupWithFixtureAndModules(
+  fixture: TestFixture,
+  virtualClock: VirtualClock? = null,
+  autoStart: Boolean = true,
+  additionalModules: List<org.koin.core.module.Module> = emptyList(),
+  configureBuilder: (BotConfigBuilder) -> Unit = {}
+): TestEnvironmentWithTime {
+  ScenarioTraceCollector.setFixtureSnapshot(fixture.toString())
+
+  val testProvider = if (virtualClock != null) {
+    TestCoroutineProvider(virtualClock)
+  } else {
+    TestCoroutineProvider()
+  }
+
+  val configBuilder = com.fvlaenix.queemporium.koin.BotConfigBuilder()
+  configBuilder.enableFeatures(*fixture.enabledFeatures.toTypedArray())
+  configureBuilder(configBuilder)
+
+  println("DEBUG: setupWithFixtureAndModules registering AnswerService: ${System.identityHashCode(configBuilder.answerService)}")
+
+  val testConfigModule = org.koin.dsl.module {
+    single<BotCoroutineProvider> { testProvider }
+    single<com.fvlaenix.queemporium.configuration.ApplicationConfig> { configBuilder.applicationConfig }
+    single<com.fvlaenix.queemporium.configuration.DatabaseConfiguration> { configBuilder.databaseConfig }
+    single<com.fvlaenix.queemporium.configuration.BotConfiguration> { configBuilder.botConfiguration }
+    single<com.fvlaenix.queemporium.service.AnswerService> { configBuilder.answerService }
+    if (virtualClock != null) {
+      single<java.time.Clock> { virtualClock }
+    } else {
+      single<java.time.Clock> { java.time.Clock.systemUTC() }
+    }
+  }
+
+  val koin = org.koin.core.context.GlobalContext.startKoin {
+    allowOverride(true)
+    modules(testConfigModule)
+  }.koin
+
+  if (additionalModules.isNotEmpty()) {
+    koin.loadModules(additionalModules)
+  }
+
+  com.fvlaenix.queemporium.features.FeatureLoader(koin, com.fvlaenix.queemporium.features.FeatureRegistry)
+    .load(configBuilder.botConfiguration)
+
+  val builder = fixture.buildEnvironment(virtualClock, autoStart)
+  val environment = builder.build()
+  val timeController = virtualClock?.let { VirtualTimeController(it) }
+
+  return builder.toTestEnvironmentWithTime(timeController, testProvider, environment)
+}

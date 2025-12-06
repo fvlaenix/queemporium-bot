@@ -12,6 +12,7 @@ import com.fvlaenix.queemporium.service.MockAnswerService
 import com.fvlaenix.queemporium.testing.fixture.FixtureBuilder
 import com.fvlaenix.queemporium.testing.fixture.TestEnvironmentWithTime
 import com.fvlaenix.queemporium.testing.fixture.setupWithFixture
+import com.fvlaenix.queemporium.testing.fixture.setupWithFixtureAndModules
 import com.fvlaenix.queemporium.testing.helpers.*
 import com.fvlaenix.queemporium.testing.scenario.ScenarioBuilder
 import com.fvlaenix.queemporium.testing.time.VirtualClock
@@ -28,6 +29,7 @@ class BotTestContext {
   internal var answerService: MockAnswerService? = null
   internal val setupActions = mutableListOf<BotTestSetupContext.() -> Unit>()
   internal val scenarioSteps = mutableListOf<suspend BotTestScenarioContext.() -> Unit>()
+  internal val beforeFeatureLoadModules = mutableListOf<org.koin.core.module.Module>()
 
   internal var envWithTime: TestEnvironmentWithTime? = null
   internal var databaseConfig: DatabaseConfiguration? = null
@@ -55,6 +57,10 @@ class BotTestContext {
 
   fun scenario(block: suspend BotTestScenarioContext.() -> Unit) {
     scenarioSteps.add(block)
+  }
+
+  fun registerModuleBeforeFeatureLoad(module: org.koin.core.module.Module) {
+    beforeFeatureLoadModules.add(module)
   }
 }
 
@@ -248,7 +254,12 @@ class BotTestFixture(private val context: BotTestContext) {
 
     val testFixture = context.fixtureBuilder.build()
 
-    val envWithTime = setupWithFixture(testFixture, context.virtualClock, autoStart) { builder ->
+    val envWithTime = setupWithFixtureAndModules(
+      testFixture,
+      context.virtualClock,
+      autoStart,
+      context.beforeFeatureLoadModules
+    ) { builder ->
       builder.answerService = context.answerService!!
     }
 
