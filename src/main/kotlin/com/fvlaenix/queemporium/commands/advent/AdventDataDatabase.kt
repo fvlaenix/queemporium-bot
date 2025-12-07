@@ -29,6 +29,8 @@ class AdventDataConnector(val database: Database) {
   }
 
   fun initializeAdvent(adventsData: List<AdventData>) = transaction(database) {
+    if (adventsData.isEmpty()) return@transaction
+
     assert(adventsData.map { it.guildPostId }.distinct().size == 1)
     AdventDataTable.deleteWhere { AdventDataTable.guildPostId eq adventsData.first().guildPostId }
     adventsData.forEach { adventData ->
