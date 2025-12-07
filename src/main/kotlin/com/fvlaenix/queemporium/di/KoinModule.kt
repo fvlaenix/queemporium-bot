@@ -25,6 +25,7 @@ val botConfigModule = module {
 val coreServiceModule = module {
   single<BotCoroutineProvider> { ProductionCoroutineProvider() }
   single<AnswerService> { AnswerServiceImpl() }
+  single<java.time.Clock> { java.time.Clock.systemUTC() }
 }
 
 val duplicateImageServiceModule = module {
