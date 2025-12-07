@@ -6,6 +6,7 @@ import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.database.EmojiDataConnector
 import com.fvlaenix.queemporium.database.MessageDataConnector
 import com.fvlaenix.queemporium.service.AnswerService
+import com.fvlaenix.queemporium.utils.Logging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -19,6 +20,8 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import kotlin.time.Duration.Companion.milliseconds
+
+private val LOG = Logging.getLogger(AdventCommand::class.java)
 
 class AdventCommand(
   databaseConfiguration: DatabaseConfiguration,
@@ -109,7 +112,10 @@ class AdventCommand(
     event.message.contentRaw.startsWith(COMMAND_PREFIX)
 
   override suspend fun onMessageReceivedSuspend(event: MessageReceivedEvent) {
+    LOG.info("Received advent command from user ${event.author.name} in guild ${event.guild?.name}")
+
     if (!event.isFromGuild) {
+      LOG.warn("Command received outside of guild context")
       answerService.sendReply(event.message, MESSAGE_GUILD_ONLY)
       return
     }
@@ -117,23 +123,27 @@ class AdventCommand(
     val postGuildId = event.message.guildId!!
     val postChannelId = event.message.channelId
     if (!postMessage.isFromAdmin() && !postMessage.isFromRoleAdmin()) {
+      LOG.warn("Command received from non-admin user ${event.author.name}")
       answerService.sendReply(postMessage, MESSAGE_ADMIN_ONLY)
       return
     }
     val jda = event.jda
 
+    LOG.info("Parsing advent command for guild $postGuildId, channel $postChannelId")
     val (allCommandsEvents, debugData, errors) = getEventsFromCommand(
       postMessage.contentRaw,
       jda, postGuildId, postChannelId
     )
 
     if (errors.isEmpty()) {
+      LOG.info("Successfully parsed ${allCommandsEvents.size} advent entries")
       if (debugData.isNotBlank()) {
         answerService.sendReply(postMessage, debugData)
       }
       adventDataConnector.initializeAdvent(allCommandsEvents)
       runAdvent(event.jda)
     } else {
+      LOG.warn("Command parsing failed with ${errors.size} errors")
       answerService.sendReply(
         destination = postMessage,
         text = errors.joinToString("\n")
