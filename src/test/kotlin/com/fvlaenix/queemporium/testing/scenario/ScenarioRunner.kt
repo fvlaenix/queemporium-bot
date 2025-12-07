@@ -62,7 +62,7 @@ class ScenarioRunner(
       channelName = channel.name,
       user = user,
       message = step.text,
-      attachments = emptyList()
+      attachments = step.attachments
     ).complete(true) as? Message
 
     if (message != null) {

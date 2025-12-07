@@ -16,6 +16,10 @@ import org.junit.jupiter.api.Test
 
 /**
  * Test for verifying the bot correctly handles excluded channels.
+ *
+ * NOTE: This test uses the legacy `createEnvironment` builder because gRPC tests
+ * require special Koin setup handled by BaseGrpcTest. However, attachment support
+ * is now available in the modern `testBot` DSL for non-gRPC tests (see AttachmentSupportTest).
  */
 class DuplicateServiceExcludedChannelsTest : BaseGrpcTest() {
 

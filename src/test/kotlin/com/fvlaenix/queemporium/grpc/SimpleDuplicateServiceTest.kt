@@ -18,6 +18,9 @@ import kotlin.test.Ignore
 /**
  * Simple test of the bot's interaction with DuplicateImagesService.
  * Following the style of existing OnlineCompareTest.
+ *
+ * NOTE: This test uses the legacy `createEnvironment` builder because it requires
+ * attachment support in messages, which the modern testBot DSL doesn't yet support.
  */
 class SimpleDuplicateServiceTest : BaseGrpcTest() {
 

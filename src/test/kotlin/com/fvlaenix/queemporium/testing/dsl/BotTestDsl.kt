@@ -86,8 +86,14 @@ class BotTestScenarioContext(private val setupContext: BotTestSetupContext) {
   val koin: org.koin.core.Koin
     get() = org.koin.core.context.GlobalContext.get()
 
-  fun sendMessage(guildId: String, channelId: String, userId: String, text: String) {
-    scenarioBuilder.sendMessage(guildId, channelId, userId, text)
+  fun sendMessage(
+    guildId: String,
+    channelId: String,
+    userId: String,
+    text: String,
+    attachments: List<net.dv8tion.jda.api.entities.Message.Attachment> = emptyList()
+  ) {
+    scenarioBuilder.sendMessage(guildId, channelId, userId, text, attachments)
   }
 
   fun addReaction(messageRef: com.fvlaenix.queemporium.testing.scenario.MessageRef, emoji: String, userId: String) {

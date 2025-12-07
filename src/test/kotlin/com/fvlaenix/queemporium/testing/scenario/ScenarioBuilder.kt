@@ -1,5 +1,6 @@
 package com.fvlaenix.queemporium.testing.scenario
 
+import net.dv8tion.jda.api.entities.Message
 import kotlin.time.Duration
 
 @DslMarker
@@ -13,9 +14,10 @@ class ScenarioBuilder {
     guildId: String,
     channelId: String,
     userId: String,
-    text: String
+    text: String,
+    attachments: List<Message.Attachment> = emptyList()
   ) {
-    steps.add(SendMessageStep(guildId, channelId, userId, text))
+    steps.add(SendMessageStep(guildId, channelId, userId, text, attachments))
   }
 
   fun addReaction(

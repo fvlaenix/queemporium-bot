@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package com.fvlaenix.queemporium.builder
 
 import com.fvlaenix.queemporium.mock.TestEnvironment
@@ -8,6 +6,15 @@ import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import org.koin.core.context.GlobalContext
 
+/**
+ * Legacy environment builder for gRPC integration tests.
+ *
+ * New tests should use the modern DSL (testBot/testBotFixture) instead.
+ * This builder is retained for:
+ * - Existing gRPC tests that require attachment support
+ * - Tests that need direct JDA API access for advanced scenarios
+ * - Backward compatibility with legacy test code
+ */
 class TestBotBuilder(private val environment: TestEnvironment) {
   fun createGuild(name: String, block: GuildBuilder.() -> Unit = {}): Guild {
     val guild = environment.createGuild(name)
@@ -42,24 +49,15 @@ class GuildBuilder(
 class ChannelBuilder()
 
 /**
- * Old-style environment builder.
+ * Creates a test environment for gRPC integration tests.
  *
- * @deprecated Use the new DSL instead:
- * - For inline tests: Use `testBot { }` from BotTestDsl.kt
- * - For @BeforeEach pattern: Use `testBotFixture { }` from BotTestDsl.kt
- * - For fixture-based tests: Use `fixture { }` and `setupWithFixture()` from FixtureBuilder.kt
+ * LEGACY API: New tests should use testBot {} or testBotFixture {} instead.
+ * This builder is retained for tests requiring attachment support or direct JDA access.
  *
- * See docs/testing-dsl.md for migration guide.
- *
- * This function is retained only for gRPC integration tests.
+ * @param autoStart Whether to automatically start the environment (default: true)
+ * @param block Builder configuration lambda
+ * @return Configured test environment
  */
-@Deprecated(
-  message = "Use testBot/testBotFixture DSL instead. See docs/testing-dsl.md",
-  replaceWith = ReplaceWith(
-    "testBot { before { /* setup */ }; scenario { /* test */ } }",
-    "com.fvlaenix.queemporium.testing.dsl.testBot"
-  )
-)
 fun createEnvironment(autoStart: Boolean = true, block: TestBotBuilder.() -> Unit): TestEnvironment {
   val environment = TestEnvironment()
   val builder = TestBotBuilder(environment)
