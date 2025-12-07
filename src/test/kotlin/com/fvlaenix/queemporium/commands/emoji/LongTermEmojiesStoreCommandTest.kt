@@ -1,6 +1,7 @@
 package com.fvlaenix.queemporium.commands.emoji
 
 import com.fvlaenix.queemporium.configuration.commands.LongTermEmojiesStoreCommandConfig
+import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.mock.TestEmoji
 import com.fvlaenix.queemporium.mock.TestMessage
 import net.dv8tion.jda.api.entities.Message
@@ -8,7 +9,6 @@ import org.junit.jupiter.api.Test
 import org.koin.dsl.module
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
-import kotlin.reflect.KClass
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -17,8 +17,8 @@ import kotlin.test.assertNotNull
  */
 class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
 
-  override fun getCommandsForTest(): Array<KClass<*>> {
-    return arrayOf(LongTermEmojiesStoreCommand::class)
+  override fun getFeatureKeysForTest(): Array<String> {
+    return arrayOf(FeatureKeys.LONG_TERM_EMOJI)
   }
 
   override var autoStartEnvironment: Boolean = false
@@ -130,7 +130,9 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
       }
     }
 
-    koin.loadModules(listOf(shuffleConfigModule), allowOverride = true)
+    runWithScenario {
+      koin.loadModules(listOf(shuffleConfigModule), allowOverride = true)
+    }
 
     // Create messages with reactions within the time window
     val now = OffsetDateTime.now()

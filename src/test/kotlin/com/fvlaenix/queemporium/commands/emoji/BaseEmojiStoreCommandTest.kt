@@ -1,6 +1,5 @@
 package com.fvlaenix.queemporium.commands.emoji
 
-import com.fvlaenix.queemporium.builder.createEnvironment
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.configuration.commands.LongTermEmojiesStoreCommandConfig
 import com.fvlaenix.queemporium.configuration.commands.OnlineEmojiesStoreCommandConfig
@@ -11,147 +10,130 @@ import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.mock.TestEmoji
 import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.mock.TestMessage
+import com.fvlaenix.queemporium.testing.dsl.BotTestFixture
+import com.fvlaenix.queemporium.testing.dsl.BotTestScenarioContext
+import com.fvlaenix.queemporium.testing.dsl.testBotFixture
+import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.koin.core.Koin
 import org.koin.dsl.module
-import kotlin.reflect.KClass
 
-/**
- * Base test class for emoji store commands.
- * Provides common setup and utilities for testing OnlineEmojiesStoreCommand and LongTermEmojiesStoreCommand
- */
 abstract class BaseEmojiStoreCommandTest : BaseKoinTest() {
-  // Core components for testing
-  protected lateinit var env: TestEnvironment
-  protected lateinit var koin: Koin
+  protected lateinit var fixture: BotTestFixture
   protected lateinit var messageDataConnector: MessageDataConnector
   protected lateinit var messageEmojiDataConnector: MessageEmojiDataConnector
   protected lateinit var emojiDataConnector: EmojiDataConnector
 
-  // Default settings for test environment
   protected val defaultGuildName = "Test Guild"
   protected val defaultGeneralChannelName = "general"
 
-  // References to frequently used objects
   protected lateinit var testGuild: Guild
   protected lateinit var generalChannel: TextChannel
   protected lateinit var testUsers: List<User>
 
-  // Flag for automatic environment start
   protected open var autoStartEnvironment: Boolean = true
 
-  /**
-   * Standard test environment setup
-   */
   @BeforeEach
-  fun baseSetUp() {
-    // Setup Koin with the commands for this test
-    koin = setupBotKoin {
-      enableCommands(*getCommandsForTest())
+  fun baseSetUp() = runBlocking {
+    fixture = testBotFixture {
+      before {
+        enableFeatures(*getFeatureKeysForTest())
+
+        user("TestUser1")
+        user("TestUser2")
+        user("TestUser3")
+        user("TestUser4")
+        user("TestUser5")
+
+        guild(defaultGuildName) {
+          channel(defaultGeneralChannelName)
+        }
+      }
+
+      registerModuleBeforeFeatureLoad(module {
+        single {
+          OnlineEmojiesStoreCommandConfig(
+            distanceInDays = 7,
+            guildThreshold = 2,
+            channelThreshold = 2,
+            messageThreshold = 4,
+            emojisThreshold = 4
+          )
+        }
+        single {
+          LongTermEmojiesStoreCommandConfig(
+            distanceInDays = 30,
+            guildThreshold = 2,
+            channelThreshold = 2,
+            messageThreshold = 4,
+            emojisThreshold = 4,
+            isShuffle = false
+          )
+        }
+      })
     }
 
-    // Register configs for emoji commands
-    registerEmojiCommandConfigs(koin)
+    fixture.autoStart = autoStartEnvironment
+    fixture.initialize(this@BaseEmojiStoreCommandTest)
 
-    // Setup database
-    val databaseConfig = koin.get<DatabaseConfiguration>()
+    val databaseConfig = org.koin.core.context.GlobalContext.get().get<DatabaseConfiguration>()
     val database = databaseConfig.toDatabase()
     messageDataConnector = MessageDataConnector(database)
     messageEmojiDataConnector = MessageEmojiDataConnector(database)
     emojiDataConnector = EmojiDataConnector(database)
 
-    // Create test environment
-    env = createEnvironment(autoStart = autoStartEnvironment) {
-      createGuild(defaultGuildName) {
-        withChannel(defaultGeneralChannelName)
-      }
-    }
-
-    // Get references to frequently used objects
     testGuild = env.jda.getGuildsByName(defaultGuildName, false).first()
     generalChannel = testGuild.getTextChannelsByName(defaultGeneralChannelName, false).first()
 
-    // Create test users
     testUsers = (1..5).map { i -> env.createUser("TestUser$i", false) }
 
-    // Additional setup specific to concrete test
     additionalSetUp()
   }
 
-  /**
-   * Method to be overridden in subclasses for additional setup
-   */
+  @AfterEach
+  fun tearDown() {
+    fixture.cleanup()
+  }
+
   protected open fun additionalSetUp() {
-    // Does nothing by default, should be overridden in specific tests
   }
 
-  /**
-   * Starts the test environment if not already started
-   */
   protected fun startEnvironment() {
-    env.start()
+    runWithScenario {
+      envWithTime.environment.start()
+    }
   }
 
-  /**
-   * Returns a list of command classes to be activated for the test
-   */
-  protected abstract fun getCommandsForTest(): Array<KClass<*>>
+  protected abstract fun getFeatureKeysForTest(): Array<String>
 
-  /**
-   * Registers emoji command configurations in Koin
-   */
-  private fun registerEmojiCommandConfigs(koin: Koin) {
-    // Create configuration modules for both emoji commands
-    val onlineEmojiConfigModule = module {
-      single {
-        OnlineEmojiesStoreCommandConfig(
-          distanceInDays = 7,
-          guildThreshold = 2,
-          channelThreshold = 2,
-          messageThreshold = 4,
-          emojisThreshold = 4
-        )
-      }
+  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T = runBlocking {
+    var result: T? = null
+    fixture.runScenario {
+      result = block()
     }
-
-    val longTermEmojiConfigModule = module {
-      single {
-        LongTermEmojiesStoreCommandConfig(
-          distanceInDays = 30,
-          guildThreshold = 2,
-          channelThreshold = 2,
-          messageThreshold = 4,
-          emojisThreshold = 4,
-          isShuffle = false
-        )
-      }
-    }
-
-    // Load the modules into Koin
-    koin.loadModules(listOf(onlineEmojiConfigModule, longTermEmojiConfigModule))
+    @Suppress("UNCHECKED_CAST")
+    result as T
   }
 
-  /**
-   * Creates a message with reactions and waits for processing
-   */
+  protected val env: TestEnvironment
+    get() = runWithScenario { envWithTime.environment }
+
   protected fun createMessageWithReactions(
     channelName: String = defaultGeneralChannelName,
     messageText: String = "Test message with reactions",
     reactionConfig: List<ReactionConfig> = emptyList()
   ): Message {
-    // Send the message
     val message = env.sendMessage(
       defaultGuildName,
       channelName,
-      testUsers[0], // Author is the first test user
+      testUsers[0],
       messageText
     ).complete(true)!! as TestMessage
 
-    // Add reactions according to configuration
     reactionConfig.forEach { config ->
       val emoji = TestEmoji(config.emojiName)
       config.userIndices.forEach { userIndex ->
@@ -161,21 +143,17 @@ abstract class BaseEmojiStoreCommandTest : BaseKoinTest() {
       }
     }
 
-    // Wait for processing to complete
     env.awaitAll()
 
     return message
   }
 
-  /**
-   * Creates multiple messages with reactions for testing bulk behavior
-   */
   protected fun createMultipleMessagesWithReactions(
     count: Int = 5,
     channelName: String = defaultGeneralChannelName,
     baseMessageText: String = "Test message",
     reactionConfigs: List<ReactionConfig> = listOf(
-      ReactionConfig("👍", listOf(1, 2)), // Basic default reactions
+      ReactionConfig("👍", listOf(1, 2)),
       ReactionConfig("❤️", listOf(3, 4))
     )
   ): List<Message> {
@@ -188,11 +166,8 @@ abstract class BaseEmojiStoreCommandTest : BaseKoinTest() {
     }
   }
 
-  /**
-   * Configuration class for adding reactions
-   */
   protected data class ReactionConfig(
     val emojiName: String,
-    val userIndices: List<Int> // Indices of users from testUsers list
+    val userIndices: List<Int>
   )
 }
