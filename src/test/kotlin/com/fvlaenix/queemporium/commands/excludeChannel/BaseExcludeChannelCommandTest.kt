@@ -1,18 +1,21 @@
 package com.fvlaenix.queemporium.commands.excludeChannel
 
-import com.fvlaenix.queemporium.builder.createEnvironment
-import com.fvlaenix.queemporium.commands.ExcludeChannelCommand
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.database.GuildInfoConnector
+import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.service.MockAnswerService
+import com.fvlaenix.queemporium.testing.dsl.BotTestFixture
+import com.fvlaenix.queemporium.testing.dsl.BotTestScenarioContext
+import com.fvlaenix.queemporium.testing.dsl.testBotFixture
+import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.koin.core.Koin
 
 /**
  * Base test class for ExcludeChannelCommand tests.
@@ -20,9 +23,8 @@ import org.koin.core.Koin
  */
 abstract class BaseExcludeChannelCommandTest : BaseKoinTest() {
   // Core components for testing
-  protected lateinit var env: TestEnvironment
+  protected lateinit var fixture: BotTestFixture
   protected lateinit var answerService: MockAnswerService
-  protected lateinit var koin: Koin
   protected lateinit var guildInfoConnector: GuildInfoConnector
 
   // Default settings for test environment
@@ -39,39 +41,53 @@ abstract class BaseExcludeChannelCommandTest : BaseKoinTest() {
    * Standard test environment setup that runs before each test
    */
   @BeforeEach
-  fun baseSetUp() {
-    // Initialize services
+  fun baseSetUp(): Unit = runBlocking {
     answerService = MockAnswerService()
 
-    // Setup Koin with ExcludeChannelCommand
-    koin = setupBotKoin {
-      this.answerService = this@BaseExcludeChannelCommandTest.answerService
-      enableCommands(ExcludeChannelCommand::class)
-    }
+    fixture = testBotFixture {
+      withAnswerService(this@BaseExcludeChannelCommandTest.answerService)
 
-    // Setup database
-    val databaseConfig = koin.get<DatabaseConfiguration>()
-    val database = databaseConfig.toDatabase()
-    guildInfoConnector = GuildInfoConnector(database)
+      before {
+        enableFeatures(FeatureKeys.EXCLUDE_CHANNEL)
 
-    // Create test environment
-    env = createEnvironment {
-      createGuild(defaultGuildName) {
-        withChannel(defaultGeneralChannelName)
+        guild(defaultGuildName) {
+          channel(defaultGeneralChannelName)
+        }
       }
     }
 
-    // Get references to frequently used objects
+    fixture.initialize(this@BaseExcludeChannelCommandTest)
+
+    val databaseConfig = org.koin.core.context.GlobalContext.get().get<DatabaseConfiguration>()
+    val database = databaseConfig.toDatabase()
+    guildInfoConnector = GuildInfoConnector(database)
+
     testGuild = env.jda.getGuildsByName(defaultGuildName, false).first()
     generalChannel = testGuild.getTextChannelsByName(defaultGeneralChannelName, false).first()
 
-    // Create users (admin and regular)
     adminUser = env.createUser("Admin User", false)
     regularUser = env.createUser("Regular User", false)
 
     env.createMember(testGuild, adminUser, isAdmin = true)
     env.createMember(testGuild, regularUser, isAdmin = false)
   }
+
+  @AfterEach
+  fun tearDown() {
+    fixture.cleanup()
+  }
+
+  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T = runBlocking {
+    var result: T? = null
+    fixture.runScenario {
+      result = block()
+    }
+    @Suppress("UNCHECKED_CAST")
+    result as T
+  }
+
+  protected val env: TestEnvironment
+    get() = runWithScenario { envWithTime.environment }
 
   /**
    * Helper method to send a command message with admin or non-admin privileges
