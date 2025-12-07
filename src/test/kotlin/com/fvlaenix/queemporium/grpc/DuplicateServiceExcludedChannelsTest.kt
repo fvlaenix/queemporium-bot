@@ -6,22 +6,21 @@ import com.fvlaenix.duplicate.protobuf.addImageResponse
 import com.fvlaenix.duplicate.protobuf.addImageResponseOk
 import com.fvlaenix.duplicate.protobuf.checkImageResponseImagesInfo
 import com.fvlaenix.queemporium.builder.createEnvironment
-import com.fvlaenix.queemporium.commands.duplicate.OnlinePictureCompare
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
+import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.mock.createTestAttachment
 import com.fvlaenix.queemporium.verification.verify
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Test
-import kotlin.reflect.KClass
 
 /**
  * Test for verifying the bot correctly handles excluded channels.
  */
 class DuplicateServiceExcludedChannelsTest : BaseGrpcTest() {
 
-  override fun getCommandsForTest(): Array<KClass<*>> {
-    return arrayOf(OnlinePictureCompare::class)
+  override fun getFeaturesForTest(): Array<String> {
+    return arrayOf(FeatureKeys.ONLINE_COMPARE)
   }
 
   @Test

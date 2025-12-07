@@ -1,19 +1,6 @@
-@file:Suppress("DEPRECATION")
-
 package com.fvlaenix.queemporium.testing.fixture
 
-import com.fvlaenix.queemporium.commands.*
-import com.fvlaenix.queemporium.commands.advent.AdventCommand
-import com.fvlaenix.queemporium.commands.duplicate.OnlinePictureCompare
-import com.fvlaenix.queemporium.commands.duplicate.RevengePicturesCommand
-import com.fvlaenix.queemporium.commands.duplicate.UploadPicturesCommand
-import com.fvlaenix.queemporium.commands.emoji.LongTermEmojiesStoreCommand
-import com.fvlaenix.queemporium.commands.emoji.OnlineEmojiesStoreCommand
-import com.fvlaenix.queemporium.commands.halloffame.HallOfFameCommand
-import com.fvlaenix.queemporium.commands.halloffame.SetHallOfFameCommand
-import com.fvlaenix.queemporium.features.FeatureKeys
 import java.time.OffsetDateTime
-import kotlin.reflect.KClass
 
 @DslMarker
 annotation class FixtureDsl
@@ -30,40 +17,6 @@ class FixtureBuilder {
 
   fun enableFeatures(vararg featureKeys: String) {
     enabledFeatures.addAll(featureKeys)
-  }
-
-  /**
-   * @deprecated Use enableFeatures() with FeatureKeys instead
-   */
-  @Deprecated(
-    "Use enableFeatures() with FeatureKeys constants",
-    ReplaceWith("enableFeatures(FeatureKeys.FEATURE_NAME)")
-  )
-  fun enableCommands(vararg commandClasses: KClass<*>) {
-    val featureKeys = commandClasses.map { commandClass ->
-      when (commandClass) {
-        PingCommand::class -> FeatureKeys.PING
-        SearchCommand::class -> FeatureKeys.SEARCH
-        OnlinePictureCompare::class -> FeatureKeys.ONLINE_COMPARE
-        RevengePicturesCommand::class -> FeatureKeys.REVENGE_PICTURES
-        UploadPicturesCommand::class -> FeatureKeys.UPLOAD_PICTURES
-        PixivCompressedDetectorCommand::class -> FeatureKeys.PIXIV_DETECTOR
-        SetDuplicateChannelCommand::class -> FeatureKeys.SET_DUPLICATE_CHANNEL
-        LongTermEmojiesStoreCommand::class -> FeatureKeys.LONG_TERM_EMOJI
-        OnlineEmojiesStoreCommand::class -> FeatureKeys.ONLINE_EMOJI
-        HallOfFameCommand::class -> FeatureKeys.HALL_OF_FAME
-        SetHallOfFameCommand::class -> FeatureKeys.SET_HALL_OF_FAME
-        AdventCommand::class -> FeatureKeys.ADVENT
-        DependentDeleterCommand::class -> FeatureKeys.DEPENDENT_DELETER
-        MessagesStoreCommand::class -> FeatureKeys.MESSAGES_STORE
-        LoggerMessageCommand::class -> FeatureKeys.LOGGER
-        AuthorCollectCommand::class -> FeatureKeys.AUTHOR_COLLECT
-        AuthorMappingCommand::class -> FeatureKeys.AUTHOR_MAPPING
-        ExcludeChannelCommand::class -> FeatureKeys.EXCLUDE_CHANNEL
-        else -> throw IllegalArgumentException("Unknown command class: $commandClass")
-      }
-    }.toTypedArray()
-    enableFeatures(*featureKeys)
   }
 
   fun user(id: String, block: UserFixtureBuilder.() -> Unit = {}): String {

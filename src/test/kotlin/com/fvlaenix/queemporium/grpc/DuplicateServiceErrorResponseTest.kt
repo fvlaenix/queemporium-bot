@@ -3,11 +3,10 @@ package com.fvlaenix.queemporium.grpc
 import com.fvlaenix.duplicate.protobuf.GetCompressionSizeResponse
 import com.fvlaenix.duplicate.protobuf.addImageResponse
 import com.fvlaenix.queemporium.builder.createEnvironment
-import com.fvlaenix.queemporium.commands.duplicate.OnlinePictureCompare
+import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.mock.createTestAttachment
 import com.fvlaenix.queemporium.verification.verify
 import org.junit.jupiter.api.Test
-import kotlin.reflect.KClass
 import kotlin.test.assertTrue
 
 /**
@@ -15,8 +14,8 @@ import kotlin.test.assertTrue
  */
 class DuplicateServiceErrorResponseTest : BaseGrpcTest() {
 
-  override fun getCommandsForTest(): Array<KClass<*>> {
-    return arrayOf(OnlinePictureCompare::class)
+  override fun getFeaturesForTest(): Array<String> {
+    return arrayOf(FeatureKeys.ONLINE_COMPARE)
   }
 
   @Test

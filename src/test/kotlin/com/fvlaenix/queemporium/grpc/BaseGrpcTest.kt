@@ -16,7 +16,6 @@ import org.koin.core.Koin
 import org.koin.dsl.module
 import java.util.logging.Level
 import java.util.logging.Logger
-import kotlin.reflect.KClass
 
 /**
  * Base abstract class for gRPC services integration testing.
@@ -45,10 +44,10 @@ abstract class BaseGrpcTest : BaseKoinTest() {
   protected lateinit var answerService: MockAnswerService
 
   /**
-   * Returns the list of command classes to be enabled for testing.
-   * Should be overridden by subclasses to specify which commands to test.
+   * Returns the list of feature keys to be enabled for testing.
+   * Should be overridden by subclasses to specify which features to test.
    */
-  protected open fun getCommandsForTest(): Array<KClass<*>> {
+  protected open fun getFeaturesForTest(): Array<String> {
     return emptyArray()
   }
 
@@ -120,12 +119,12 @@ abstract class BaseGrpcTest : BaseKoinTest() {
       port = port
     )
 
-    // Setup Koin with bot configuration and enable commands for this test
+    // Setup Koin with bot configuration and enable features for this test
     val botKoin = setupBotKoin {
       this.answerService = this@BaseGrpcTest.answerService
 
-      // Enable the commands specified by the test
-      enableCommands(*getCommandsForTest())
+      // Enable the features specified by the test
+      enableFeatures(*getFeaturesForTest())
 
       // Other settings if needed
     }
