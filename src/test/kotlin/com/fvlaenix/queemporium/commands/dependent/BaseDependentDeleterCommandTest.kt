@@ -1,21 +1,22 @@
 package com.fvlaenix.queemporium.commands.dependent
 
-import com.fvlaenix.queemporium.builder.createEnvironment
-import com.fvlaenix.queemporium.commands.DependentDeleterCommand
-import com.fvlaenix.queemporium.commands.MessagesStoreCommand
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.database.MessageDataConnector
 import com.fvlaenix.queemporium.database.MessageDependency
 import com.fvlaenix.queemporium.database.MessageDependencyConnector
+import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.mock.TestEnvironment
-import com.fvlaenix.queemporium.service.MockAnswerService
+import com.fvlaenix.queemporium.testing.dsl.BotTestFixture
+import com.fvlaenix.queemporium.testing.dsl.BotTestScenarioContext
+import com.fvlaenix.queemporium.testing.dsl.testBotFixture
+import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.koin.core.Koin
 
 /**
  * Base test class for DependentDeleterCommand tests.
@@ -23,9 +24,7 @@ import org.koin.core.Koin
  */
 abstract class BaseDependentDeleterCommandTest : BaseKoinTest() {
   // Core components for testing
-  protected lateinit var env: TestEnvironment
-  protected lateinit var answerService: MockAnswerService
-  protected lateinit var koin: Koin
+  protected lateinit var fixture: BotTestFixture
   protected lateinit var messageDataConnector: MessageDataConnector
   protected lateinit var messageDependencyConnector: MessageDependencyConnector
 
@@ -42,38 +41,36 @@ abstract class BaseDependentDeleterCommandTest : BaseKoinTest() {
    * Standard test environment setup that runs before each test
    */
   @BeforeEach
-  fun baseSetUp() {
-    // Initialize services
-    answerService = MockAnswerService()
+  fun baseSetUp() = runBlocking {
+    fixture = testBotFixture {
+      before {
+        enableFeatures(FeatureKeys.DEPENDENT_DELETER, FeatureKeys.MESSAGES_STORE)
 
-    // Setup Koin with DependentDeleterCommand
-    koin = setupBotKoin {
-      this.answerService = this@BaseDependentDeleterCommandTest.answerService
-      enableCommands(DependentDeleterCommand::class, MessagesStoreCommand::class)
+        user("Test User")
+
+        guild(defaultGuildName) {
+          channel(defaultGeneralChannelName)
+        }
+      }
     }
 
-    // Setup database and connectors
-    val databaseConfig = koin.get<DatabaseConfiguration>()
+    fixture.initialize(this@BaseDependentDeleterCommandTest)
+
+    val databaseConfig = org.koin.core.context.GlobalContext.get().get<DatabaseConfiguration>()
     val database = databaseConfig.toDatabase()
     messageDataConnector = MessageDataConnector(database)
     messageDependencyConnector = MessageDependencyConnector(database)
 
-    // Create test environment
-    env = createEnvironment {
-      createGuild(defaultGuildName) {
-        withChannel(defaultGeneralChannelName)
-      }
-    }
-
-    // Get references to frequently used objects
     testGuild = env.jda.getGuildsByName(defaultGuildName, false).first()
     generalChannel = testGuild.getTextChannelsByName(defaultGeneralChannelName, false).first()
-
-    // Create test user
     testUser = env.createUser("Test User", false)
 
-    // Additional setup specific to concrete test
     additionalSetUp()
+  }
+
+  @AfterEach
+  fun tearDown() {
+    fixture.cleanup()
   }
 
   /**
@@ -82,6 +79,18 @@ abstract class BaseDependentDeleterCommandTest : BaseKoinTest() {
   protected open fun additionalSetUp() {
     // Does nothing by default, can be overridden in specific tests
   }
+
+  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T = runBlocking {
+    var result: T? = null
+    fixture.runScenario {
+      result = block()
+    }
+    @Suppress("UNCHECKED_CAST")
+    result as T
+  }
+
+  protected val env: TestEnvironment
+    get() = runWithScenario { envWithTime.environment }
 
   /**
    * Helper method to create a message and store it in the database
