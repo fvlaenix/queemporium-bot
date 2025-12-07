@@ -3,11 +3,11 @@ package com.fvlaenix.queemporium.commands.emoji
 import com.fvlaenix.queemporium.database.EmojiData
 import com.fvlaenix.queemporium.database.EmojiDataConnector
 import com.fvlaenix.queemporium.database.EmojiDataTable
+import com.fvlaenix.queemporium.features.FeatureKeys
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Test
-import kotlin.reflect.KClass
 import kotlin.test.Ignore
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -18,8 +18,8 @@ import kotlin.test.assertTrue
  */
 class OnlineEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
 
-  override fun getCommandsForTest(): Array<KClass<*>> {
-    return arrayOf(OnlineEmojiesStoreCommand::class)
+  override fun getFeatureKeysForTest(): Array<String> {
+    return arrayOf(FeatureKeys.ONLINE_EMOJI)
   }
 
   override var autoStartEnvironment: Boolean = false
