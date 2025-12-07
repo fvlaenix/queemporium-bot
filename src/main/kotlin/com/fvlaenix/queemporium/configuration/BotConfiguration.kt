@@ -41,5 +41,6 @@ data class BotConfiguration(
 data class FeatureToggle(
   val enabled: Boolean = false,
   @SerialName("params")
+  @Serializable(with = YamlJsonObjectSerializer::class)
   val params: JsonObject = JsonObject(emptyMap())
 )
