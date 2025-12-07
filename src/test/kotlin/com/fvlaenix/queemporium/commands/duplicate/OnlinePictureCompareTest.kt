@@ -1,15 +1,15 @@
 package com.fvlaenix.queemporium.commands.duplicate
 
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
+import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.service.DuplicateImageService
 import com.fvlaenix.queemporium.verification.verify
 import org.junit.jupiter.api.Test
-import kotlin.reflect.KClass
 
 class OnlinePictureCompareTest : BaseDuplicateCommandTest() {
 
-  override fun getCommandsForTest(): Array<KClass<*>> {
-    return arrayOf(OnlinePictureCompare::class)
+  override fun getFeaturesForTest(): Array<String> {
+    return arrayOf(FeatureKeys.ONLINE_COMPARE)
   }
 
   @Test

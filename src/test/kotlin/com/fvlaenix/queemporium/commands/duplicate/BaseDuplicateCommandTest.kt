@@ -20,7 +20,6 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.koin.dsl.module
-import kotlin.reflect.KClass
 
 abstract class BaseDuplicateCommandTest : BaseKoinTest() {
   protected lateinit var fixture: BotTestFixture
@@ -45,7 +44,7 @@ abstract class BaseDuplicateCommandTest : BaseKoinTest() {
 
     fixture = testBotFixture {
       before {
-        enableCommands(*getCommandsForTest())
+        enableFeatures(*getFeaturesForTest())
 
         user("Test User")
 
@@ -95,7 +94,7 @@ abstract class BaseDuplicateCommandTest : BaseKoinTest() {
     }
   }
 
-  protected abstract fun getCommandsForTest(): Array<KClass<*>>
+  protected abstract fun getFeaturesForTest(): Array<String>
 
   protected fun createMockDuplicateService(
     configure: MockDuplicateImageService.() -> Unit = {}

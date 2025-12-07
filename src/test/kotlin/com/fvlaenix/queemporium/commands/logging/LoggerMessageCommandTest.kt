@@ -2,15 +2,15 @@ package com.fvlaenix.queemporium.commands.logging
 
 import ch.qos.logback.classic.Level
 import com.fvlaenix.queemporium.commands.LoggerMessageCommand
+import com.fvlaenix.queemporium.features.FeatureKeys
 import org.junit.jupiter.api.Test
-import kotlin.reflect.KClass
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class LoggerMessageCommandTest : BaseLoggerMessageCommandTest() {
 
-  override fun getCommandsForTest(): Array<KClass<*>> {
-    return arrayOf(LoggerMessageCommand::class)
+  override fun getFeaturesForTest(): Array<String> {
+    return arrayOf(FeatureKeys.LOGGER)
   }
 
   @Test

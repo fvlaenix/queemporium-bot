@@ -1,9 +1,8 @@
 package com.fvlaenix.queemporium.commands.search
 
-import com.fvlaenix.queemporium.commands.SearchCommand
+import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.verification.verify
 import org.junit.jupiter.api.Test
-import kotlin.reflect.KClass
 
 /**
  * Tests focused specifically on error handling and edge cases
@@ -11,8 +10,8 @@ import kotlin.reflect.KClass
  */
 class SearchErrorHandlingTest : BaseSearchCommandTest() {
 
-  override fun getCommandsForTest(): Array<KClass<*>> {
-    return arrayOf(SearchCommand::class)
+  override fun getFeaturesForTest(): Array<String> {
+    return arrayOf(FeatureKeys.SEARCH)
   }
 
   override fun additionalSetUp() {

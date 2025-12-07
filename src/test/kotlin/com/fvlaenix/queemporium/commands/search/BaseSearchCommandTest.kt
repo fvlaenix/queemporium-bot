@@ -17,7 +17,6 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.koin.dsl.module
-import kotlin.reflect.KClass
 
 abstract class BaseSearchCommandTest : BaseKoinTest() {
   protected lateinit var fixture: BotTestFixture
@@ -33,7 +32,7 @@ abstract class BaseSearchCommandTest : BaseKoinTest() {
 
     fixture = testBotFixture {
       before {
-        enableCommands(*getCommandsForTest())
+        enableFeatures(*getFeaturesForTest())
 
         user("Test User")
 
@@ -62,7 +61,7 @@ abstract class BaseSearchCommandTest : BaseKoinTest() {
   protected open fun additionalSetUp() {
   }
 
-  protected abstract fun getCommandsForTest(): Array<KClass<*>>
+  protected abstract fun getFeaturesForTest(): Array<String>
 
   protected fun createMockSearchService(
     configure: MockSearchService.() -> Unit = {}

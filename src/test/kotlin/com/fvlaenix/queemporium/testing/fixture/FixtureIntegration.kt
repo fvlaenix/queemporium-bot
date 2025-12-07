@@ -45,8 +45,6 @@ fun setupBotKoinWithProvider(
   val configBuilder = com.fvlaenix.queemporium.koin.BotConfigBuilder()
   configBuilder.configBlock()
 
-  println("DEBUG: setupBotKoinWithProvider registering AnswerService: ${System.identityHashCode(configBuilder.answerService)}")
-
   val testConfigModule = module {
     single<BotCoroutineProvider> { testProvider }
     single<com.fvlaenix.queemporium.configuration.ApplicationConfig> { configBuilder.applicationConfig }
@@ -104,8 +102,6 @@ fun setupWithFixtureAndModules(
   val configBuilder = com.fvlaenix.queemporium.koin.BotConfigBuilder()
   configBuilder.enableFeatures(*fixture.enabledFeatures.toTypedArray())
   configureBuilder(configBuilder)
-
-  println("DEBUG: setupWithFixtureAndModules registering AnswerService: ${System.identityHashCode(configBuilder.answerService)}")
 
   val testConfigModule = org.koin.dsl.module {
     single<BotCoroutineProvider> { testProvider }

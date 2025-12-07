@@ -10,7 +10,6 @@ import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.JDA
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import kotlin.reflect.KClass
 
 abstract class BaseLoggerMessageCommandTest : BaseKoinTest() {
   protected lateinit var fixture: BotTestFixture
@@ -21,7 +20,7 @@ abstract class BaseLoggerMessageCommandTest : BaseKoinTest() {
   fun baseSetUp() = runBlocking {
     fixture = testBotFixture {
       before {
-        enableCommands(*getCommandsForTest())
+        enableFeatures(*getFeaturesForTest())
 
         user("Test User")
 
@@ -45,7 +44,7 @@ abstract class BaseLoggerMessageCommandTest : BaseKoinTest() {
   protected open fun additionalSetUp() {
   }
 
-  protected abstract fun getCommandsForTest(): Array<KClass<*>>
+  protected abstract fun getFeaturesForTest(): Array<String>
 
   protected fun clearLogs() = runBlocking {
     fixture.runScenario {

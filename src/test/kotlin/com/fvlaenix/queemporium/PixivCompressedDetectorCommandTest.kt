@@ -1,7 +1,7 @@
 package com.fvlaenix.queemporium
 
-import com.fvlaenix.queemporium.commands.PixivCompressedDetectorCommand
 import com.fvlaenix.queemporium.database.GuildInfoConnector
+import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.mock.createTestAttachment
 import com.fvlaenix.queemporium.testing.dsl.testBot
@@ -11,7 +11,7 @@ class PixivCompressedDetectorCommandTest : BaseKoinTest() {
   @Test
   fun `test pixiv compressed image detection with fake database`() = testBot {
     before {
-      enableCommands(PixivCompressedDetectorCommand::class)
+      enableFeatures(FeatureKeys.PIXIV_DETECTOR)
 
       user("Test User")
 

@@ -1,17 +1,16 @@
 package com.fvlaenix.queemporium.commands.duplicate
 
-import com.fvlaenix.queemporium.commands.MessagesStoreCommand
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
+import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.service.DuplicateImageService
 import com.fvlaenix.queemporium.verification.verify
-import kotlin.reflect.KClass
 import kotlin.test.Ignore
 import kotlin.test.Test
 
 class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
 
-  override fun getCommandsForTest(): Array<KClass<*>> {
-    return arrayOf(MessagesStoreCommand::class, RevengePicturesCommand::class)
+  override fun getFeaturesForTest(): Array<String> {
+    return arrayOf(FeatureKeys.MESSAGES_STORE, FeatureKeys.REVENGE_PICTURES)
   }
 
   override var autoStartEnvironment: Boolean = false

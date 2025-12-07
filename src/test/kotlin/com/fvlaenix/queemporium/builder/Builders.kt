@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.fvlaenix.queemporium.builder
 
 import com.fvlaenix.queemporium.mock.TestEnvironment
@@ -39,6 +41,25 @@ class GuildBuilder(
 
 class ChannelBuilder()
 
+/**
+ * Old-style environment builder.
+ *
+ * @deprecated Use the new DSL instead:
+ * - For inline tests: Use `testBot { }` from BotTestDsl.kt
+ * - For @BeforeEach pattern: Use `testBotFixture { }` from BotTestDsl.kt
+ * - For fixture-based tests: Use `fixture { }` and `setupWithFixture()` from FixtureBuilder.kt
+ *
+ * See docs/testing-dsl.md for migration guide.
+ *
+ * This function is retained only for gRPC integration tests.
+ */
+@Deprecated(
+  message = "Use testBot/testBotFixture DSL instead. See docs/testing-dsl.md",
+  replaceWith = ReplaceWith(
+    "testBot { before { /* setup */ }; scenario { /* test */ } }",
+    "com.fvlaenix.queemporium.testing.dsl.testBot"
+  )
+)
 fun createEnvironment(autoStart: Boolean = true, block: TestBotBuilder.() -> Unit): TestEnvironment {
   val environment = TestEnvironment()
   val builder = TestBotBuilder(environment)

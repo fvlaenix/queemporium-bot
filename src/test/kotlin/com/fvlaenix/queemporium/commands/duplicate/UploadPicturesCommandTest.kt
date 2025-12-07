@@ -1,14 +1,14 @@
 package com.fvlaenix.queemporium.commands.duplicate
 
+import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.verification.verify
 import org.junit.jupiter.api.Test
-import kotlin.reflect.KClass
 import kotlin.test.assertEquals
 
 class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
 
-  override fun getCommandsForTest(): Array<KClass<*>> {
-    return arrayOf(UploadPicturesCommand::class)
+  override fun getFeaturesForTest(): Array<String> {
+    return arrayOf(FeatureKeys.UPLOAD_PICTURES)
   }
 
   override var autoStartEnvironment: Boolean = false
