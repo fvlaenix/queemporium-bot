@@ -83,6 +83,9 @@ class BotTestScenarioContext(private val setupContext: BotTestSetupContext) {
   val envWithTime: TestEnvironmentWithTime
     get() = setupContext.envWithTime
 
+  val koin: org.koin.core.Koin
+    get() = org.koin.core.context.GlobalContext.get()
+
   fun sendMessage(guildId: String, channelId: String, userId: String, text: String) {
     scenarioBuilder.sendMessage(guildId, channelId, userId, text)
   }
