@@ -11,7 +11,8 @@ data class TestFixture(
 data class GuildFixture(
   val name: String,
   val id: String = name,
-  val channels: List<ChannelFixture> = emptyList()
+  val channels: List<ChannelFixture> = emptyList(),
+  val members: List<MemberFixture> = emptyList()
 )
 
 data class ChannelFixture(
@@ -31,6 +32,11 @@ data class MessageFixture(
 data class ReactionFixture(
   val emoji: String,
   val users: List<String>
+)
+
+data class MemberFixture(
+  val userId: String,
+  val isAdmin: Boolean = false
 )
 
 data class UserFixture(

@@ -261,7 +261,8 @@ class AdventExampleTest : BaseKoinTest() {
       }
 
       guild("main-guild") {
-        // Alice will be the admin for this test
+        member("alice", isAdmin = true)
+
         channel("popular-channel") {
           // Create 35 messages with varying reaction counts
           // Messages 0-19: will have 20-1 reactions (top 20)
@@ -379,17 +380,13 @@ class AdventExampleTest : BaseKoinTest() {
     }
 
     scenario {
-      // Send command via text message from alice (who will be granted admin permissions)
-      // Note: Alice needs admin permissions to run this command
-      // The test framework should grant alice admin permission as the guild owner or admin
       val command = "/shogun-sama start-advent\ncount:20 start:01-12-2024-00:00 finish:20-12-2024-00:00 year:2024"
 
       sendMessage(
         guildId = "main-guild",
         channelId = "advent-calendar",
         userId = "alice",
-        text = command,
-        isAdmin = true
+        text = command
       )
       awaitAll()
 

@@ -10,8 +10,7 @@ data class SendMessageStep(
   val channelId: String,
   val userId: String,
   val text: String,
-  val attachments: List<Message.Attachment> = emptyList(),
-  val isAdmin: Boolean = false
+  val attachments: List<Message.Attachment> = emptyList()
 ) : ScenarioStep()
 
 data class AddReactionStep(

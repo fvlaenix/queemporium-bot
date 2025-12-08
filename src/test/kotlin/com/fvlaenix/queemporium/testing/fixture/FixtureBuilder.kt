@@ -46,9 +46,14 @@ class FixtureBuilder {
 class GuildFixtureBuilder(private val name: String) {
   private var id: String = name
   private val channels = mutableListOf<ChannelFixture>()
+  private val members = mutableListOf<MemberFixture>()
 
   fun id(value: String) {
     id = value
+  }
+
+  fun member(userId: String, isAdmin: Boolean = false) {
+    members.add(MemberFixture(userId, isAdmin))
   }
 
   fun channel(name: String, block: ChannelFixtureBuilder.() -> Unit = {}): ChannelFixture {
@@ -62,7 +67,8 @@ class GuildFixtureBuilder(private val name: String) {
   fun build(): GuildFixture = GuildFixture(
     name = name,
     id = id,
-    channels = channels
+    channels = channels,
+    members = members
   )
 }
 

@@ -15,10 +15,9 @@ class ScenarioBuilder {
     channelId: String,
     userId: String,
     text: String,
-    attachments: List<Message.Attachment> = emptyList(),
-    isAdmin: Boolean = false
+    attachments: List<Message.Attachment> = emptyList()
   ) {
-    steps.add(SendMessageStep(guildId, channelId, userId, text, attachments, isAdmin))
+    steps.add(SendMessageStep(guildId, channelId, userId, text, attachments))
   }
 
   fun addReaction(

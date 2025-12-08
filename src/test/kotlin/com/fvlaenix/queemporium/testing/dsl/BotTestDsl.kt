@@ -91,10 +91,9 @@ class BotTestScenarioContext(private val setupContext: BotTestSetupContext) {
     channelId: String,
     userId: String,
     text: String,
-    attachments: List<net.dv8tion.jda.api.entities.Message.Attachment> = emptyList(),
-    isAdmin: Boolean = false
+    attachments: List<net.dv8tion.jda.api.entities.Message.Attachment> = emptyList()
   ) {
-    scenarioBuilder.sendMessage(guildId, channelId, userId, text, attachments, isAdmin)
+    scenarioBuilder.sendMessage(guildId, channelId, userId, text, attachments)
   }
 
   fun addReaction(messageRef: com.fvlaenix.queemporium.testing.scenario.MessageRef, emoji: String, userId: String) {

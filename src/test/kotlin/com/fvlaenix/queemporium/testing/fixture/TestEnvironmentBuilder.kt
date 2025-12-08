@@ -52,6 +52,12 @@ class TestEnvironmentBuilder(
       val guild = environment.createGuild(guildFixture.name)
       guildMap[guildFixture.id] = guild
 
+      guildFixture.members.forEach { memberFixture ->
+        val user = userMap[memberFixture.userId]
+          ?: throw IllegalStateException("User ${memberFixture.userId} not found. Define users before guilds.")
+        environment.createMember(guild, user, isAdmin = memberFixture.isAdmin)
+      }
+
       guildFixture.channels.forEach { channelFixture ->
         val channel = environment.createTextChannel(guild, channelFixture.name)
         channelMap[guildFixture.id to channelFixture.id] = channel
@@ -60,7 +66,9 @@ class TestEnvironmentBuilder(
           val author = userMap[messageFixture.author]
             ?: throw IllegalStateException("User ${messageFixture.author} not found. Define users before guilds.")
 
-          val member = environment.createMember(guild, author)
+          if (guild.getMember(author) == null) {
+            environment.createMember(guild, author)
+          }
 
           val message = TestMessage(
             testJda = environment.jda,
