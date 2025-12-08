@@ -17,6 +17,8 @@ import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
+import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent
 import net.dv8tion.jda.api.events.session.ReadyEvent
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException
 import net.dv8tion.jda.api.hooks.ListenerAdapter
@@ -110,6 +112,44 @@ open class CoroutineListenerAdapter(val coroutineProvider: BotCoroutineProvider)
         onMessageDeleteSuspend(event)
       } catch (e: Exception) {
         LOG.error("Global Panic: Deleted message with id ${event.messageId}", e)
+      }
+    }
+  }
+
+  open suspend fun onMessageReactionAddSuspend(event: MessageReactionAddEvent) {}
+
+  override fun onMessageReactionAdd(event: MessageReactionAddEvent) {
+    val contextMap = mutableMapOf<String, String>()
+    if (event.isFromGuild) {
+      contextMap[LogContextKeys.GUILD_ID] = event.guild.id
+    }
+    contextMap[LogContextKeys.CHANNEL_ID] = event.channel.id
+    contextMap[LogContextKeys.USER_ID] = event.userId
+
+    getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER + mdcCoroutineContext(contextMap)) {
+      try {
+        onMessageReactionAddSuspend(event)
+      } catch (e: Exception) {
+        LOG.error("Global Panic: Reaction add event for message ${event.messageId}", e)
+      }
+    }
+  }
+
+  open suspend fun onMessageReactionRemoveSuspend(event: MessageReactionRemoveEvent) {}
+
+  override fun onMessageReactionRemove(event: MessageReactionRemoveEvent) {
+    val contextMap = mutableMapOf<String, String>()
+    if (event.isFromGuild) {
+      contextMap[LogContextKeys.GUILD_ID] = event.guild.id
+    }
+    contextMap[LogContextKeys.CHANNEL_ID] = event.channel.id
+    contextMap[LogContextKeys.USER_ID] = event.userId
+
+    getCoroutineScope().launch(getCoroutinePool() + EXCEPTION_HANDLER + mdcCoroutineContext(contextMap)) {
+      try {
+        onMessageReactionRemoveSuspend(event)
+      } catch (e: Exception) {
+        LOG.error("Global Panic: Reaction remove event for message ${event.messageId}", e)
       }
     }
   }

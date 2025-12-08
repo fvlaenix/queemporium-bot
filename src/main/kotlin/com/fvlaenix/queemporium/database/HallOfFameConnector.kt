@@ -106,6 +106,20 @@ class HallOfFameConnector(private val database: Database) {
       .firstOrNull()
   }
 
+  fun getMessage(messageId: String): HallOfFameMessage? = transaction(database) {
+    HallOfFameMessagesTable
+      .select { HallOfFameMessagesTable.messageId eq messageId }
+      .map {
+        HallOfFameMessage(
+          messageId = it[HallOfFameMessagesTable.messageId],
+          guildId = it[HallOfFameMessagesTable.guildId],
+          timestamp = it[HallOfFameMessagesTable.timestamp],
+          isSent = it[HallOfFameMessagesTable.isSent]
+        )
+      }
+      .singleOrNull()
+  }
+
   fun getAll(): List<HallOfFameInfo> = transaction(database) {
     HallOfFameInfoTable.selectAll().map { resultRow ->
       HallOfFameInfo(
