@@ -97,6 +97,21 @@ class TestEnvironment {
     jda.notifyMessageDeleted(messageDeletedEvent)
   }
 
+  fun addReactionWithEvent(message: Message, emoji: TestEmoji, user: User) {
+    val reaction = (message as TestMessage).addReaction(emoji, user)
+    val member = message.guild.getMember(user)
+    val messageReactionAddEvent = net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent(
+      jda,
+      0,
+      user,
+      member,
+      reaction,
+      user.idLong,
+      message.idLong
+    )
+    jda.notifyReactionAdd(messageReactionAddEvent)
+  }
+
   fun createMember(
     guild: Guild,
     user: User,

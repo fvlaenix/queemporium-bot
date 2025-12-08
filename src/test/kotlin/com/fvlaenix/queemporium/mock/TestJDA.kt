@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.entities.sticker.StickerUnion
 import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
 import net.dv8tion.jda.api.hooks.IEventManager
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.interactions.commands.Command
@@ -80,6 +81,10 @@ class TestJDA : JDA {
 
   fun notifyMessageDeleted(messageDeleteEvent: MessageDeleteEvent) {
     listeners.forEach { listenersAdapter -> listenersAdapter.onMessageDelete(messageDeleteEvent) }
+  }
+
+  fun notifyReactionAdd(messageReactionAddEvent: MessageReactionAddEvent) {
+    listeners.forEach { listenerAdapter -> listenerAdapter.onMessageReactionAdd(messageReactionAddEvent) }
   }
 
   override fun getStatus(): JDA.Status = JDA.Status.CONNECTED

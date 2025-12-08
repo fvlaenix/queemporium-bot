@@ -2,7 +2,6 @@ package com.fvlaenix.queemporium.testing.scenario
 
 import com.fvlaenix.queemporium.mock.TestEmoji
 import com.fvlaenix.queemporium.mock.TestEnvironment
-import com.fvlaenix.queemporium.mock.TestMessage
 import com.fvlaenix.queemporium.mock.TestTextChannel
 import com.fvlaenix.queemporium.testing.fixture.TestEnvironmentWithTime
 import com.fvlaenix.queemporium.testing.fixture.awaitAll
@@ -84,7 +83,7 @@ class ScenarioRunner(
     val user = getUser(step.userId)
     val emoji = TestEmoji(step.emoji)
 
-    (message as TestMessage).addReaction(emoji, user)
+    environment.addReactionWithEvent(message, emoji, user)
   }
 
   private suspend fun executeAdvanceTime(step: AdvanceTimeStep) {
