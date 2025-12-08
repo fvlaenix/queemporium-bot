@@ -14,14 +14,7 @@ data class EmojiTopMessageData(
   val authorName: String,
   val url: String,
   val emojiesCount: Int
-) {
-  constructor(resultRow: ResultRow) : this(
-    resultRow[EmojiDataTable.messageId],
-    resultRow[AuthorDataTable.authorName],
-    resultRow[MessageDataTable.url],
-    resultRow[EmojiDataTable.messageId.count()]
-  )
-}
+)
 
 object EmojiDataTable : Table() {
   val messageId = varchar("messageId", 400)
@@ -78,14 +71,14 @@ class EmojiDataConnector(val database: Database) {
       select {
         (MessageDataTable.epoch greater startEpoch / 1000) and
             (MessageDataTable.epoch lessEq endEpoch / 1000) and
-            (AuthorDataTable.guildId eq guildId) and
+            (MessageDataTable.guildId eq guildId) and
             (MessageDataTable.channelId eq channelId)
       }
     } else {
       select {
         (MessageDataTable.epoch greater startEpoch / 1000) and
             (MessageDataTable.epoch lessEq endEpoch / 1000) and
-            (AuthorDataTable.guildId eq guildId)
+            (MessageDataTable.guildId eq guildId)
       }
     }
 
@@ -96,26 +89,44 @@ class EmojiDataConnector(val database: Database) {
     endEpoch: Long,
     count: Int
   ): List<EmojiTopMessageData> = transaction(database) {
+    val countEmojis = EmojiDataTable.messageId.count().alias("count_emojis")
+
     MessageDataTable
       .join(
         EmojiDataTable,
         JoinType.LEFT,
-        additionalConstraint = { MessageDataTable.messageId eq EmojiDataTable.messageId })
+        additionalConstraint = { MessageDataTable.messageId eq EmojiDataTable.messageId }
+      )
       .join(
         AuthorDataTable,
         JoinType.INNER,
-        additionalConstraint = { MessageDataTable.authorId eq AuthorDataTable.authorId })
+        additionalConstraint = {
+          (MessageDataTable.authorId eq AuthorDataTable.authorId) and
+              (AuthorDataTable.guildId eq guildId)
+        }
+      )
       .slice(
+        MessageDataTable.messageId,
         AuthorDataTable.authorName,
         MessageDataTable.url,
-        EmojiDataTable.messageId.count(),
-        EmojiDataTable.messageId
+        countEmojis
       )
       .selectByTimeAndGuildChannel(guildId, channelId, startEpoch, endEpoch)
-      .groupBy(MessageDataTable.messageId, AuthorDataTable.authorName)
-      .orderBy(EmojiDataTable.messageId.count(), SortOrder.DESC)
+      .groupBy(
+        MessageDataTable.messageId,
+        AuthorDataTable.authorName,
+        MessageDataTable.url
+      )
+      .orderBy(countEmojis, SortOrder.DESC)
       .limit(count)
-      .map { EmojiTopMessageData(it) }
+      .map { row ->
+        EmojiTopMessageData(
+          messageId = row[MessageDataTable.messageId],
+          authorName = row[AuthorDataTable.authorName],
+          url = row[MessageDataTable.url],
+          emojiesCount = row[countEmojis]
+        )
+      }
   }
 
   fun getMessagesAboveThreshold(
