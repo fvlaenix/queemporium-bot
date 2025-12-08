@@ -167,7 +167,13 @@ class AdventCommand(
     currentYear: Int
   ): Pair<AdventParameters, List<String>> {
     val errors = mutableListOf<String>()
-    val arguments = commandLine.split(" ").drop(2)
+    // Only drop first 2 elements if line starts with command prefix
+    val parts = commandLine.split(" ")
+    val arguments = if (parts.size >= 2 && parts[0] == "/shogun-sama" && parts[1] == "start-advent") {
+      parts.drop(2)
+    } else {
+      parts
+    }
 
     val defaultFinishYear = currentYear + 1
     val defaultStart = "$DEFAULT_START_MONTH_DAY-$currentYear-$DEFAULT_START_TIME"
@@ -279,10 +285,14 @@ class AdventCommand(
     var debugData: String = ""
     val errors = mutableListOf<String>()
 
+    LOG.info("Commands after split: ${commands.size} lines, dropped first: ${commands.drop(1).size} lines")
     val allCommandsEvents = commands.drop(1).flatMap { fullCommand ->
+      LOG.info("Processing command line: $fullCommand")
       val (params, parseErrors) = parseCommandArguments(fullCommand, postGuildId, currentYear)
+      LOG.info("Parse result: params=$params, parseErrors=$parseErrors")
       errors.addAll(parseErrors)
       if (parseErrors.isNotEmpty()) {
+        LOG.warn("Parse errors, returning empty")
         return@flatMap emptyList()
       }
 
@@ -308,17 +318,27 @@ class AdventCommand(
         return@flatMap emptyList()
       }
 
+      LOG.info("Resolving channel: guildId=${params.guildId}, channelId=${params.channelId}, channelName=${params.channelName}")
       val channel = resolveChannel(jda, params.guildId, params.channelId, params.channelName, errors)
+      LOG.info("Channel resolution result: channel=${channel?.name}, errors=$errors")
       if (errors.isNotEmpty()) {
+        LOG.warn("Errors during channel resolution: $errors")
         return@flatMap emptyList()
       }
 
       val startOfYear = toEpochMillis(parseDateTime("01-01-${params.year}-00:00"))
       val endOfYear = toEpochMillis(parseDateTime("01-01-${params.year + 1}-00:00"))
 
+      // Use the resolved channel ID if a channel was resolved, otherwise use the params channelId (which may be null for all-channels query)
+      val queryChannelId = channel?.id ?: params.channelId
+
+      LOG.info("Querying top messages: guildId=${params.guildId}, channelId=$queryChannelId, startOfYear=$startOfYear, endOfYear=$endOfYear, count=${params.count}")
+
       val messages =
-        emojiDataConnector.getTopMessages(params.guildId, params.channelId, startOfYear, endOfYear, params.count)
+        emojiDataConnector.getTopMessages(params.guildId, queryChannelId, startOfYear, endOfYear, params.count)
           .reversed()
+
+      LOG.info("Query returned ${messages.size} messages")
 
       if (messages.size != params.count) {
         errors.add("Requested ${params.count} messages but only found ${messages.size} messages with reactions")

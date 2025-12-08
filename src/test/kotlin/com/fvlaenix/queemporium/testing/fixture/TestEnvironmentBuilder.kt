@@ -71,7 +71,13 @@ class TestEnvironmentBuilder(
             author = author,
             attachments = emptyList(),
             reactions = mutableListOf(),
-            timeCreated = messageFixture.timeCreated ?: java.time.OffsetDateTime.now()
+            timeCreated = messageFixture.timeCreated ?: run {
+              if (virtualClock != null) {
+                java.time.OffsetDateTime.ofInstant(virtualClock.instant(), java.time.ZoneOffset.UTC)
+              } else {
+                java.time.OffsetDateTime.now()
+              }
+            }
           )
 
           (channel as TestTextChannel).addMessage(message)

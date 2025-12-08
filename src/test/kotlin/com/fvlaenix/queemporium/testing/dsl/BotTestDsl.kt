@@ -91,9 +91,10 @@ class BotTestScenarioContext(private val setupContext: BotTestSetupContext) {
     channelId: String,
     userId: String,
     text: String,
-    attachments: List<net.dv8tion.jda.api.entities.Message.Attachment> = emptyList()
+    attachments: List<net.dv8tion.jda.api.entities.Message.Attachment> = emptyList(),
+    isAdmin: Boolean = false
   ) {
-    scenarioBuilder.sendMessage(guildId, channelId, userId, text, attachments)
+    scenarioBuilder.sendMessage(guildId, channelId, userId, text, attachments, isAdmin)
   }
 
   fun addReaction(messageRef: com.fvlaenix.queemporium.testing.scenario.MessageRef, emoji: String, userId: String) {
@@ -218,6 +219,14 @@ fun BaseKoinTest.testBot(block: BotTestContext.() -> Unit) = runBlocking {
 
   autoPopulateMessageData(envWithTime, messageDataConnector)
 
+  // Automatically populate author data into the database
+  val authorDataConnector = com.fvlaenix.queemporium.database.AuthorDataConnector(databaseConfig.toDatabase())
+  autoPopulateAuthorData(envWithTime, authorDataConnector)
+
+  // Automatically populate emoji/reaction data into the database
+  val emojiDataConnector = EmojiDataConnector(databaseConfig.toDatabase())
+  autoPopulateEmojiData(envWithTime, emojiDataConnector)
+
   val setupContext = BotTestSetupContext(
     envWithTime = envWithTime,
     answerService = context.answerService,
@@ -282,6 +291,14 @@ class BotTestFixture(private val context: BotTestContext) {
 
     autoPopulateMessageData(envWithTime, messageDataConnector)
 
+    // Automatically populate author data into the database
+    val authorDataConnector = com.fvlaenix.queemporium.database.AuthorDataConnector(databaseConfig.toDatabase())
+    autoPopulateAuthorData(envWithTime, authorDataConnector)
+
+    // Automatically populate emoji/reaction data into the database
+    val emojiDataConnector = EmojiDataConnector(databaseConfig.toDatabase())
+    autoPopulateEmojiData(envWithTime, emojiDataConnector)
+
     val setupCtx = BotTestSetupContext(
       envWithTime = envWithTime,
       answerService = context.answerService,
@@ -327,9 +344,15 @@ private fun autoPopulateMessageData(
   envWithTime: TestEnvironmentWithTime,
   messageDataConnector: MessageDataConnector
 ) {
+  var firstMsg = true
   envWithTime.environment.jda.guilds.forEach { guild ->
     guild.channels.filterIsInstance<TestTextChannel>().forEach { channel ->
       channel.messages.forEach { msg ->
+        val epochMillis = msg.timeCreated.toEpochSecond() * 1000
+        if (firstMsg) {
+          println("DEBUG autoPopulateMessageData: first message timeCreated=${msg.timeCreated}, toEpochSecond=${msg.timeCreated.toEpochSecond()}, epochMillis=$epochMillis")
+          firstMsg = false
+        }
         messageDataConnector.add(
           MessageData(
             messageId = msg.id,
@@ -338,10 +361,66 @@ private fun autoPopulateMessageData(
             text = msg.contentRaw,
             url = msg.jumpUrl,
             authorId = msg.author.id,
-            epoch = msg.timeCreated.toEpochSecond() * 1000
+            epoch = epochMillis
           )
         )
       }
     }
+  }
+}
+
+private fun autoPopulateAuthorData(
+  envWithTime: TestEnvironmentWithTime,
+  authorDataConnector: com.fvlaenix.queemporium.database.AuthorDataConnector
+) {
+  envWithTime.environment.jda.guilds.forEach { guild ->
+    val authors = mutableSetOf<com.fvlaenix.queemporium.database.AuthorData>()
+
+    // Collect authors from all messages in the guild
+    guild.channels.filterIsInstance<TestTextChannel>().forEach { channel ->
+      channel.messages.forEach { msg ->
+        authors.add(
+          com.fvlaenix.queemporium.database.AuthorData(
+            authorId = msg.author.id,
+            guildId = guild.id,
+            authorName = msg.author.name
+          )
+        )
+      }
+    }
+
+    // Use replaceAuthors to populate the database
+    if (authors.isNotEmpty()) {
+      authorDataConnector.replaceAuthors(authors.toList(), guild.id)
+    }
+  }
+}
+
+private fun autoPopulateEmojiData(
+  envWithTime: TestEnvironmentWithTime,
+  emojiDataConnector: EmojiDataConnector
+) {
+  val emojiDataList = mutableListOf<com.fvlaenix.queemporium.database.EmojiData>()
+
+  envWithTime.environment.jda.guilds.forEach { guild ->
+    guild.channels.filterIsInstance<TestTextChannel>().forEach { channel ->
+      channel.messages.forEach { msg ->
+        msg.reactions.forEach { reaction ->
+          reaction.retrieveUsers().complete().forEach { user ->
+            emojiDataList.add(
+              com.fvlaenix.queemporium.database.EmojiData(
+                messageId = msg.id,
+                emojiId = reaction.emoji.name,
+                authorId = user.id
+              )
+            )
+          }
+        }
+      }
+    }
+  }
+
+  if (emojiDataList.isNotEmpty()) {
+    emojiDataConnector.insert(emojiDataList)
   }
 }

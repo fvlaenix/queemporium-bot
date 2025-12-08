@@ -57,6 +57,11 @@ class ScenarioRunner(
 
     val user = getUser(step.userId)
 
+    // Create member with admin permissions if specified
+    if (step.isAdmin) {
+      environment.createMember(guild, user, isAdmin = true)
+    }
+
     val message = environment.sendMessage(
       guildName = guild.name,
       channelName = channel.name,
