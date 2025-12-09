@@ -19,10 +19,12 @@ class HallOfFameExampleTest : BaseKoinTest() {
       enableFeature(FeatureKeys.HALL_OF_FAME)
       enableFeature(FeatureKeys.SET_HALL_OF_FAME)
 
+      user("admin")
       user("alice") { name("Alice") }
       user("bob") { name("Bob") }
 
       guild("test-guild") {
+        member("admin", isAdmin = true)
         channel("general") {
           message(author = "alice", text = "This is an amazing post!")
         }
@@ -31,7 +33,7 @@ class HallOfFameExampleTest : BaseKoinTest() {
     }
 
     setup {
-      hallOfFame.configureHallOfFame("test-guild", "hall-of-fame", threshold = 5)
+      hallOfFame.configureHallOfFameBlocking("test-guild", "hall-of-fame", threshold = 5, adminUserId = "admin")
       hallOfFame.seedMessageToCount("test-guild", "general", messageIndex = 0, count = 5)
     }
 
@@ -55,11 +57,14 @@ class HallOfFameExampleTest : BaseKoinTest() {
 
     before {
       enableFeature(FeatureKeys.HALL_OF_FAME)
+      enableFeature(FeatureKeys.SET_HALL_OF_FAME)
 
+      user("admin")
       user("alice")
       user("bob")
 
       guild("my-guild") {
+        member("admin", isAdmin = true)
         channel("general") {
           message(author = "alice", text = "First great post!")
           message(author = "bob", text = "Second great post!")
@@ -69,7 +74,7 @@ class HallOfFameExampleTest : BaseKoinTest() {
     }
 
     setup {
-      hallOfFame.configureHallOfFame("my-guild", "hall-of-fame", threshold = 3)
+      hallOfFame.configureHallOfFameBlocking("my-guild", "hall-of-fame", threshold = 3, adminUserId = "admin")
       hallOfFame.seedMessageToCount("my-guild", "general", messageIndex = 0, count = 3)
       hallOfFame.seedMessageToCount("my-guild", "general", messageIndex = 1, count = 4)
     }
@@ -97,12 +102,15 @@ class HallOfFameExampleTest : BaseKoinTest() {
 
     before {
       enableFeature(FeatureKeys.HALL_OF_FAME)
+      enableFeature(FeatureKeys.SET_HALL_OF_FAME)
 
+      user("admin")
       user("alice")
       user("bob")
       user("charlie")
 
       guild("emoji-guild") {
+        member("admin", isAdmin = true)
         channel("general") {
           message(author = "alice", text = "Amazing content!")
         }
@@ -111,7 +119,7 @@ class HallOfFameExampleTest : BaseKoinTest() {
     }
 
     setup {
-      hallOfFame.configureHallOfFame("emoji-guild", "hall-of-fame", threshold = 3)
+      hallOfFame.configureHallOfFameBlocking("emoji-guild", "hall-of-fame", threshold = 3, adminUserId = "admin")
 
       hallOfFame.seedEmojiReactions(
         guildId = "emoji-guild",

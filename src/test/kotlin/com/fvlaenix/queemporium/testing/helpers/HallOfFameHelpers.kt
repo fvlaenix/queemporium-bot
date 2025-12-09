@@ -24,16 +24,19 @@ class HallOfFameTestContext(
 ) {
 
   /**
-   * Configures Hall of Fame for a guild.
+   * Configures Hall of Fame for a guild by sending a command message.
+   * Use this from the `scenario` block (supports suspend).
    *
    * @param guildId The guild ID (or guild name)
    * @param hallOfFameChannelId The channel ID (or channel name) where messages should be forwarded
    * @param threshold The minimum number of reactions required
+   * @param adminUserId The user ID (or username) who will send the config command (must be admin)
    */
-  fun configureHallOfFame(
+  suspend fun configureHallOfFame(
     guildId: String,
     hallOfFameChannelId: String,
-    threshold: Int = 5
+    threshold: Int = 5,
+    adminUserId: String = "admin"
   ) {
     val guild = try {
       environment.jda.getGuildById(guildId)
@@ -49,11 +52,52 @@ class HallOfFameTestContext(
     } ?: guild.getTextChannelsByName(hallOfFameChannelId, true).firstOrNull()
     ?: throw IllegalStateException("Channel $hallOfFameChannelId not found in guild $guildId")
 
-    hallOfFameConnector.setHallOfFameInfo(
-      guildId = guild.id,
-      channelId = channel.id,
-      threshold = threshold
-    )
+    val user = envWithTime.userMap[adminUserId]
+      ?: run {
+        try {
+          environment.jda.getUserById(adminUserId)
+        } catch (e: NumberFormatException) {
+          null
+        }
+      }
+      ?: environment.jda.users.find { it.name == adminUserId }
+      ?: environment.jda.guilds
+        .flatMap { it.members }
+        .map { it.user }
+        .find { it.name == adminUserId || it.id == adminUserId }
+      ?: throw IllegalStateException("User $adminUserId not found")
+
+    // Send the command message to configure Hall of Fame
+    val commandMessage = "/shogun-sama set-hall-of-fame $threshold this-channel"
+    environment.sendMessage(
+      guildName = guild.name,
+      channelName = channel.name,
+      user = user,
+      message = commandMessage
+    ).complete(true)
+
+    // Wait for command to be processed
+    envWithTime.awaitAll()
+  }
+
+  /**
+   * Configures Hall of Fame for a guild by sending a command message.
+   * Use this from the `setup` block (non-suspend, blocking).
+   *
+   * @param guildId The guild ID (or guild name)
+   * @param hallOfFameChannelId The channel ID (or channel name) where messages should be forwarded
+   * @param threshold The minimum number of reactions required
+   * @param adminUserId The user ID (or username) who will send the config command (must be admin)
+   */
+  fun configureHallOfFameBlocking(
+    guildId: String,
+    hallOfFameChannelId: String,
+    threshold: Int = 5,
+    adminUserId: String = "admin"
+  ) {
+    kotlinx.coroutines.runBlocking {
+      configureHallOfFame(guildId, hallOfFameChannelId, threshold, adminUserId)
+    }
   }
 
   /**
