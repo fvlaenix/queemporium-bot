@@ -7,6 +7,7 @@ import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.testing.dsl.BotTestFixture
 import com.fvlaenix.queemporium.testing.dsl.BotTestScenarioContext
+import com.fvlaenix.queemporium.testing.dsl.GuildResolver
 import com.fvlaenix.queemporium.testing.dsl.testBotFixture
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.entities.Guild
@@ -50,7 +51,7 @@ abstract class BaseAuthorCollectCommandTest : BaseKoinTest() {
     val database = databaseConfig.toDatabase()
     authorDataConnector = AuthorDataConnector(database)
 
-    testGuild = env.jda.getGuildsByName(defaultGuildName, false).first()
+    testGuild = GuildResolver.resolve(env.jda, defaultGuildName)
 
     testUsers = (1..5).map { i -> env.createUser("TestUser$i", false) }
 

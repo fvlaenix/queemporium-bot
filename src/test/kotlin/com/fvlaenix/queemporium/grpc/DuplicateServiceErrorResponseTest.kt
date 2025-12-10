@@ -5,6 +5,8 @@ import com.fvlaenix.duplicate.protobuf.addImageResponse
 import com.fvlaenix.queemporium.builder.createEnvironment
 import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.mock.createTestAttachment
+import com.fvlaenix.queemporium.testing.dsl.ChannelResolver
+import com.fvlaenix.queemporium.testing.dsl.GuildResolver
 import com.fvlaenix.queemporium.verification.verify
 import org.junit.jupiter.api.Test
 import kotlin.test.assertTrue
@@ -40,8 +42,8 @@ class DuplicateServiceErrorResponseTest : BaseGrpcTest() {
 
     // Configure duplicate detection channel
     val guildInfoConnector = getGuildInfoConnector()
-    val testGuild = env.jda.getGuildsByName("Test Guild", false).first()
-    val duplicateChannel = testGuild.getTextChannelsByName("duplicate-channel", false).first()
+    val testGuild = GuildResolver.resolve(env.jda, "Test Guild")
+    val duplicateChannel = ChannelResolver.resolve(testGuild, "duplicate-channel")
     guildInfoConnector.setDuplicateInfo(testGuild.id, duplicateChannel.id)
 
     // Create a user
@@ -89,8 +91,8 @@ class DuplicateServiceErrorResponseTest : BaseGrpcTest() {
 
     // Configure duplicate detection channel
     val guildInfoConnector = getGuildInfoConnector()
-    val testGuild = env.jda.getGuildsByName("Test Guild", false).first()
-    val duplicateChannel = testGuild.getTextChannelsByName("duplicate-channel", false).first()
+    val testGuild = GuildResolver.resolve(env.jda, "Test Guild")
+    val duplicateChannel = ChannelResolver.resolve(testGuild, "duplicate-channel")
     guildInfoConnector.setDuplicateInfo(testGuild.id, duplicateChannel.id)
 
     // Create a user

@@ -3,6 +3,8 @@ package com.fvlaenix.queemporium.testing.scenario
 import com.fvlaenix.queemporium.mock.TestEmoji
 import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.mock.TestTextChannel
+import com.fvlaenix.queemporium.testing.dsl.ChannelResolver
+import com.fvlaenix.queemporium.testing.dsl.GuildResolver
 import com.fvlaenix.queemporium.testing.fixture.TestEnvironmentWithTime
 import com.fvlaenix.queemporium.testing.fixture.awaitAll
 import com.fvlaenix.queemporium.testing.time.TimeController
@@ -51,8 +53,7 @@ class ScenarioRunner(
 
   private fun executeSendMessage(step: SendMessageStep) {
     val guild = getGuild(step.guildId)
-    val channel = guild.getTextChannelsByName(step.channelId, true).firstOrNull()
-      ?: throw IllegalStateException("Channel ${step.channelId} not found in guild ${step.guildId}")
+    val channel = ChannelResolver.resolve(guild, step.channelId)
 
     val user = getUser(step.userId)
 
@@ -115,8 +116,7 @@ class ScenarioRunner(
 
   private fun getGuild(guildId: String): Guild {
     return guildCache.getOrPut(guildId) {
-      environment.jda.getGuildsByName(guildId, true).firstOrNull()
-        ?: throw IllegalStateException("Guild $guildId not found")
+      GuildResolver.resolve(environment.jda, guildId)
     }
   }
 }

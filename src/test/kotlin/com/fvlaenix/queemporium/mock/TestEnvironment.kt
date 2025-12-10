@@ -2,6 +2,8 @@ package com.fvlaenix.queemporium.mock
 
 import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.coroutine.TestCoroutineProvider
+import com.fvlaenix.queemporium.testing.dsl.ChannelResolver
+import com.fvlaenix.queemporium.testing.dsl.GuildResolver
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
@@ -179,9 +181,8 @@ class TestEnvironment {
     attachments: List<Message.Attachment> = emptyList(),
     timeCreated: OffsetDateTime = OffsetDateTime.now()
   ): MessageCreateAction {
-    val guild = jda.getGuildsByName(guildName, true).firstOrNull()
-      ?: throw Exception("Guild with name $guildName doesn't exist")
-    val channel = guild.getTextChannelsByName(channelName, true).firstOrNull() as? TestTextChannel
+    val guild = GuildResolver.resolve(jda, guildName)
+    val channel = ChannelResolver.resolve(guild, channelName) as? TestTextChannel
       ?: throw Exception("Channel with name $channelName doesn't exist in guild $guildName")
 
     val message = TestMessage(

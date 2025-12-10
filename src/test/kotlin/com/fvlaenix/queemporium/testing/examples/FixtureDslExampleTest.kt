@@ -3,6 +3,10 @@ package com.fvlaenix.queemporium.testing.examples
 import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.service.MockAnswerService
+import com.fvlaenix.queemporium.testing.dsl.ChannelResolver
+import com.fvlaenix.queemporium.testing.dsl.GuildResolver
+import com.fvlaenix.queemporium.testing.dsl.MessageOrder
+import com.fvlaenix.queemporium.testing.dsl.MessageResolver
 import com.fvlaenix.queemporium.testing.fixture.awaitAll
 import com.fvlaenix.queemporium.testing.fixture.fixture
 import com.fvlaenix.queemporium.testing.fixture.setupWithFixture
@@ -94,13 +98,14 @@ class FixtureDslExampleTest : BaseKoinTest() {
     env.start()
     envWithTime.awaitAll()
 
-    val guild = env.jda.getGuildsByName("test-guild", true).first()
-    val channel = guild.getTextChannelsByName("general", true).first()
-    val messages = (channel as com.fvlaenix.queemporium.mock.TestTextChannel).messages
+    val guild = GuildResolver.resolve(env.jda, "test-guild")
+    val channel = ChannelResolver.resolve(guild, "general")
+    val testChannel = channel as? com.fvlaenix.queemporium.mock.TestTextChannel
+    if (testChannel != null) {
+      assertEquals(1, testChannel.messages.size, "Should have 1 message")
+    }
 
-    assertEquals(1, messages.size, "Should have 1 message")
-
-    val message = messages.first()
+    val message = MessageResolver.resolve(channel, 0, MessageOrder.OLDEST_FIRST)
     val reactions = message.reactions
 
     assertEquals(2, reactions.size, "Should have 2 different reactions")

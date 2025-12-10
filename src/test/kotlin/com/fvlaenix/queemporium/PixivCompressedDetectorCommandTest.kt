@@ -27,8 +27,8 @@ class PixivCompressedDetectorCommandTest : BaseKoinTest() {
       val database = databaseConfig.toDatabase()
       val guildInfoConnector = GuildInfoConnector(database)
 
-      val testGuild = envWithTime.environment.jda.getGuildsByName("Test Guild", false).first()
-      val duplicateChannel = testGuild.getTextChannelsByName("duplicate-channel", false).first()
+      val testGuild = guild("Test Guild")
+      val duplicateChannel = channel(testGuild, "duplicate-channel")
 
       guildInfoConnector.setDuplicateInfo(testGuild.id, duplicateChannel.id)
     }

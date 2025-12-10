@@ -1,5 +1,6 @@
 package com.fvlaenix.queemporium.commands.duplicate
 
+import com.fvlaenix.queemporium.testing.dsl.ChannelResolver
 import com.fvlaenix.queemporium.verification.verify
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -111,7 +112,7 @@ class SetDuplicateChannelCommandTest : BaseSetDuplicateChannelCommandTest() {
 
     // Verify new channel was set
     val newDuplicateChannel = guildInfoConnector.getDuplicateInfoChannel(testGuild.id)
-    val actualNewChannel = testGuild.getTextChannelsByName(newChannelName, false).first()
+    val actualNewChannel = ChannelResolver.resolve(testGuild, newChannelName)
     assertEquals(actualNewChannel.id, newDuplicateChannel, "New channel should be set as duplicate channel")
 
     // Verify we got two success messages

@@ -4,6 +4,8 @@ import com.fvlaenix.queemporium.commands.advent.AdventData
 import com.fvlaenix.queemporium.commands.advent.AdventDataConnector
 import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.service.MockAnswerService
+import com.fvlaenix.queemporium.testing.dsl.ChannelResolver
+import com.fvlaenix.queemporium.testing.dsl.GuildResolver
 import com.fvlaenix.queemporium.testing.fixture.TestEnvironmentWithTime
 import com.fvlaenix.queemporium.testing.fixture.awaitAll
 import java.time.Instant
@@ -34,11 +36,8 @@ class AdventTestContext(
     entries: List<Triple<String, String, Instant>>,
     restartLoop: Boolean = true
   ) {
-    val guild = environment.jda.getGuildsByName(guildId, true).firstOrNull()
-      ?: throw IllegalStateException("Guild $guildId not found")
-
-    val postChannel = guild.getTextChannelsByName(postChannelId, true).firstOrNull()
-      ?: throw IllegalStateException("Channel $postChannelId not found in guild $guildId")
+    val guild = GuildResolver.resolve(environment.jda, guildId)
+    val postChannel = ChannelResolver.resolve(guild, postChannelId)
 
     val adventDataList = entries.map { (messageId, description, revealTime) ->
       AdventData(

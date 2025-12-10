@@ -9,6 +9,8 @@ import com.fvlaenix.queemporium.builder.createEnvironment
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.mock.createTestAttachment
+import com.fvlaenix.queemporium.testing.dsl.ChannelResolver
+import com.fvlaenix.queemporium.testing.dsl.GuildResolver
 import com.fvlaenix.queemporium.verification.verify
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -45,9 +47,9 @@ class DuplicateServiceExcludedChannelsTest : BaseGrpcTest() {
 
     // Configure test environment
     val guildInfoConnector = getGuildInfoConnector()
-    val testGuild = env.jda.getGuildsByName("Test Guild", false).first()
-    val duplicateChannel = testGuild.getTextChannelsByName("duplicate-channel", false).first()
-    val excludedChannel = testGuild.getTextChannelsByName("excluded-channel", false).first()
+    val testGuild = GuildResolver.resolve(env.jda, "Test Guild")
+    val duplicateChannel = ChannelResolver.resolve(testGuild, "duplicate-channel")
+    val excludedChannel = ChannelResolver.resolve(testGuild, "excluded-channel")
 
     // Set duplicate channel
     guildInfoConnector.setDuplicateInfo(testGuild.id, duplicateChannel.id)

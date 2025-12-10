@@ -5,9 +5,7 @@ import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.mock.createTestAttachment
 import com.fvlaenix.queemporium.service.MockAnswerService
 import com.fvlaenix.queemporium.service.SearchService
-import com.fvlaenix.queemporium.testing.dsl.BotTestFixture
-import com.fvlaenix.queemporium.testing.dsl.BotTestScenarioContext
-import com.fvlaenix.queemporium.testing.dsl.testBotFixture
+import com.fvlaenix.queemporium.testing.dsl.*
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.Guild
@@ -87,10 +85,10 @@ abstract class BaseSearchCommandTest : BaseKoinTest() {
     get() = env.jda
 
   protected val testGuild: Guild
-    get() = jda.getGuildsByName(defaultGuildName, false).first()
+    get() = GuildResolver.resolve(jda, defaultGuildName)
 
   protected val generalChannel: TextChannel
-    get() = testGuild.getTextChannelsByName(defaultGeneralChannelName, false).first()
+    get() = ChannelResolver.resolve(testGuild, defaultGeneralChannelName)
 
   protected val testUser: User
     get() = jda.getUsersByName("Test User", false).firstOrNull() ?: env.createUser("Test User", false)

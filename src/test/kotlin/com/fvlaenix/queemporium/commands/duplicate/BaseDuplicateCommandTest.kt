@@ -9,9 +9,7 @@ import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.mock.createTestAttachment
 import com.fvlaenix.queemporium.service.DuplicateImageService
 import com.fvlaenix.queemporium.service.MockAnswerService
-import com.fvlaenix.queemporium.testing.dsl.BotTestFixture
-import com.fvlaenix.queemporium.testing.dsl.BotTestScenarioContext
-import com.fvlaenix.queemporium.testing.dsl.testBotFixture
+import com.fvlaenix.queemporium.testing.dsl.*
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
@@ -69,9 +67,9 @@ abstract class BaseDuplicateCommandTest : BaseKoinTest() {
     val database = databaseConfig.toDatabase()
     guildInfoConnector = GuildInfoConnector(database)
 
-    testGuild = env.jda.getGuildsByName(defaultGuildName, false).first()
-    generalChannel = testGuild.getTextChannelsByName(defaultGeneralChannelName, false).first()
-    duplicateChannel = testGuild.getTextChannelsByName(defaultDuplicateChannelName, false).first()
+    testGuild = GuildResolver.resolve(env.jda, defaultGuildName)
+    generalChannel = ChannelResolver.resolve(testGuild, defaultGeneralChannelName)
+    duplicateChannel = ChannelResolver.resolve(testGuild, defaultDuplicateChannelName)
 
     guildInfoConnector.setDuplicateInfo(testGuild.id, duplicateChannel.id)
 

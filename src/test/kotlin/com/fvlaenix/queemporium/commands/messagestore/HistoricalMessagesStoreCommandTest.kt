@@ -1,5 +1,6 @@
 package com.fvlaenix.queemporium.commands.messagestore
 
+import com.fvlaenix.queemporium.testing.dsl.GuildResolver
 import org.junit.jupiter.api.Test
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
@@ -121,7 +122,7 @@ class HistoricalMessagesStoreCommandTest : BaseMessagesStoreCommandTest() {
   fun `test messages from different channels are processed`() {
     // Create a second channel
     env.createTextChannel(
-      env.jda.getGuildsByName("Test Guild", false).first(),
+      GuildResolver.resolve(env.jda, "Test Guild"),
       "second-channel"
     )
 

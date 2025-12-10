@@ -123,6 +123,67 @@ class BotTestScenarioContext(private val setupContext: BotTestSetupContext) {
     return scenarioBuilder.messageRef(guildId, channelId, index)
   }
 
+  fun guild(nameOrId: String): net.dv8tion.jda.api.entities.Guild {
+    return GuildResolver.resolve(envWithTime.environment.jda, nameOrId)
+  }
+
+  fun channel(
+    guild: net.dv8tion.jda.api.entities.Guild,
+    nameOrId: String
+  ): net.dv8tion.jda.api.entities.channel.concrete.TextChannel {
+    return ChannelResolver.resolve(guild, nameOrId)
+  }
+
+  fun channel(
+    guildNameOrId: String,
+    channelNameOrId: String
+  ): net.dv8tion.jda.api.entities.channel.concrete.TextChannel {
+    val g = guild(guildNameOrId)
+    return channel(g, channelNameOrId)
+  }
+
+  fun message(
+    channel: net.dv8tion.jda.api.entities.channel.middleman.MessageChannel,
+    index: Int = 0,
+    order: MessageOrder = MessageOrder.OLDEST_FIRST
+  ): net.dv8tion.jda.api.entities.Message {
+    return MessageResolver.resolve(channel, index, order)
+  }
+
+  fun message(
+    guildName: String,
+    channelName: String,
+    index: Int = 0,
+    order: MessageOrder = MessageOrder.OLDEST_FIRST
+  ): net.dv8tion.jda.api.entities.Message {
+    val ch = channel(guildName, channelName)
+    return message(ch, index, order)
+  }
+
+  fun messageById(
+    channel: net.dv8tion.jda.api.entities.channel.middleman.MessageChannel,
+    messageId: String
+  ): net.dv8tion.jda.api.entities.Message {
+    return MessageResolver.resolveById(channel, messageId)
+  }
+
+  fun messageById(
+    guildName: String,
+    channelName: String,
+    messageId: String
+  ): net.dv8tion.jda.api.entities.Message {
+    val ch = channel(guildName, channelName)
+    return messageById(ch, messageId)
+  }
+
+  fun latestMessage(channel: net.dv8tion.jda.api.entities.channel.middleman.MessageChannel): net.dv8tion.jda.api.entities.Message {
+    return message(channel, 0, MessageOrder.NEWEST_FIRST)
+  }
+
+  fun firstMessage(channel: net.dv8tion.jda.api.entities.channel.middleman.MessageChannel): net.dv8tion.jda.api.entities.Message {
+    return message(channel, 0, MessageOrder.OLDEST_FIRST)
+  }
+
   internal fun build(): List<com.fvlaenix.queemporium.testing.scenario.ScenarioStep> = scenarioBuilder.build()
 }
 
@@ -169,28 +230,79 @@ class BotTestSetupContext(
   }
 
   fun getMessage(guildId: String, channelId: String, messageIndex: Int): String {
-    val guild = envWithTime.environment.jda.getGuildsByName(guildId, true).firstOrNull()
-      ?: throw IllegalStateException("Guild $guildId not found")
-
-    val channel = guild.getTextChannelsByName(channelId, true).firstOrNull()
-      ?: throw IllegalStateException("Channel $channelId not found in guild $guildId")
-
-    val messages = (channel as TestTextChannel).messages
-    if (messageIndex >= messages.size) {
-      throw IllegalStateException("Message index $messageIndex out of bounds (size: ${messages.size})")
-    }
-
-    return messages[messageIndex].id
+    val guild = guild(guildId)
+    val channel = channel(guild, channelId)
+    val message = MessageResolver.resolve(channel, messageIndex, MessageOrder.OLDEST_FIRST)
+    return message.id
   }
 
   fun getMessages(guildId: String, channelId: String): List<String> {
-    val guild = envWithTime.environment.jda.getGuildsByName(guildId, true).firstOrNull()
-      ?: throw IllegalStateException("Guild $guildId not found")
+    val guild = guild(guildId)
+    val channel = channel(guild, channelId)
+    val testChannel = channel as? TestTextChannel
+      ?: throw IllegalStateException("Channel ${channel.name} is not a test text channel")
+    return testChannel.messages.map { it.id }
+  }
 
-    val channel = guild.getTextChannelsByName(channelId, true).firstOrNull()
-      ?: throw IllegalStateException("Channel $channelId not found in guild $guildId")
+  fun guild(nameOrId: String): net.dv8tion.jda.api.entities.Guild {
+    return GuildResolver.resolve(envWithTime.environment.jda, nameOrId)
+  }
 
-    return (channel as TestTextChannel).messages.map { it.id }
+  fun channel(
+    guild: net.dv8tion.jda.api.entities.Guild,
+    nameOrId: String
+  ): net.dv8tion.jda.api.entities.channel.concrete.TextChannel {
+    return ChannelResolver.resolve(guild, nameOrId)
+  }
+
+  fun channel(
+    guildNameOrId: String,
+    channelNameOrId: String
+  ): net.dv8tion.jda.api.entities.channel.concrete.TextChannel {
+    val g = guild(guildNameOrId)
+    return channel(g, channelNameOrId)
+  }
+
+  fun message(
+    channel: net.dv8tion.jda.api.entities.channel.middleman.MessageChannel,
+    index: Int = 0,
+    order: MessageOrder = MessageOrder.OLDEST_FIRST
+  ): net.dv8tion.jda.api.entities.Message {
+    return MessageResolver.resolve(channel, index, order)
+  }
+
+  fun message(
+    guildName: String,
+    channelName: String,
+    index: Int = 0,
+    order: MessageOrder = MessageOrder.OLDEST_FIRST
+  ): net.dv8tion.jda.api.entities.Message {
+    val ch = channel(guildName, channelName)
+    return message(ch, index, order)
+  }
+
+  fun messageById(
+    channel: net.dv8tion.jda.api.entities.channel.middleman.MessageChannel,
+    messageId: String
+  ): net.dv8tion.jda.api.entities.Message {
+    return MessageResolver.resolveById(channel, messageId)
+  }
+
+  fun messageById(
+    guildName: String,
+    channelName: String,
+    messageId: String
+  ): net.dv8tion.jda.api.entities.Message {
+    val ch = channel(guildName, channelName)
+    return messageById(ch, messageId)
+  }
+
+  fun latestMessage(channel: net.dv8tion.jda.api.entities.channel.middleman.MessageChannel): net.dv8tion.jda.api.entities.Message {
+    return message(channel, 0, MessageOrder.NEWEST_FIRST)
+  }
+
+  fun firstMessage(channel: net.dv8tion.jda.api.entities.channel.middleman.MessageChannel): net.dv8tion.jda.api.entities.Message {
+    return message(channel, 0, MessageOrder.OLDEST_FIRST)
   }
 }
 

@@ -6,9 +6,7 @@ import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.service.MockAnswerService
-import com.fvlaenix.queemporium.testing.dsl.BotTestFixture
-import com.fvlaenix.queemporium.testing.dsl.BotTestScenarioContext
-import com.fvlaenix.queemporium.testing.dsl.testBotFixture
+import com.fvlaenix.queemporium.testing.dsl.*
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
@@ -62,8 +60,8 @@ abstract class BaseExcludeChannelCommandTest : BaseKoinTest() {
     val database = databaseConfig.toDatabase()
     guildInfoConnector = GuildInfoConnector(database)
 
-    testGuild = env.jda.getGuildsByName(defaultGuildName, false).first()
-    generalChannel = testGuild.getTextChannelsByName(defaultGeneralChannelName, false).first()
+    testGuild = GuildResolver.resolve(env.jda, defaultGuildName)
+    generalChannel = ChannelResolver.resolve(testGuild, defaultGeneralChannelName)
 
     adminUser = env.createUser("Admin User", false)
     regularUser = env.createUser("Regular User", false)

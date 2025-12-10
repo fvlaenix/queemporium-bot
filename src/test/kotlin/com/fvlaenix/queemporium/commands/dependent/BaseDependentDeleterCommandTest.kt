@@ -7,9 +7,7 @@ import com.fvlaenix.queemporium.database.MessageDependencyConnector
 import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.mock.TestEnvironment
-import com.fvlaenix.queemporium.testing.dsl.BotTestFixture
-import com.fvlaenix.queemporium.testing.dsl.BotTestScenarioContext
-import com.fvlaenix.queemporium.testing.dsl.testBotFixture
+import com.fvlaenix.queemporium.testing.dsl.*
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
@@ -61,8 +59,8 @@ abstract class BaseDependentDeleterCommandTest : BaseKoinTest() {
     messageDataConnector = MessageDataConnector(database)
     messageDependencyConnector = MessageDependencyConnector(database)
 
-    testGuild = env.jda.getGuildsByName(defaultGuildName, false).first()
-    generalChannel = testGuild.getTextChannelsByName(defaultGeneralChannelName, false).first()
+    testGuild = GuildResolver.resolve(env.jda, defaultGuildName)
+    generalChannel = ChannelResolver.resolve(testGuild, defaultGeneralChannelName)
     testUser = env.createUser("Test User", false)
 
     additionalSetUp()

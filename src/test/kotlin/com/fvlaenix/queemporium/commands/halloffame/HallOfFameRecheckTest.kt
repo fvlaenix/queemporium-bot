@@ -6,6 +6,9 @@ import com.fvlaenix.queemporium.database.MessageEmojiData
 import com.fvlaenix.queemporium.database.MessageEmojiDataConnector
 import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.koin.BaseKoinTest
+import com.fvlaenix.queemporium.testing.dsl.ChannelResolver
+import com.fvlaenix.queemporium.testing.dsl.MessageOrder
+import com.fvlaenix.queemporium.testing.dsl.MessageResolver
 import com.fvlaenix.queemporium.testing.dsl.testBot
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
@@ -44,9 +47,9 @@ class HallOfFameRecheckTest : BaseKoinTest() {
       val hallOfFameConnector = HallOfFameConnector(database)
       val messageEmojiDataConnector = MessageEmojiDataConnector(database)
 
-      val guild = envWithTime.environment.jda.getGuildsByName("test-guild", true).first()
-      val channel = guild.getTextChannelsByName("general", true).first()
-      val message = (channel as com.fvlaenix.queemporium.mock.TestTextChannel).messages.first()
+      val guild = guild("test-guild")
+      val channel = channel(guild, "general")
+      val message = message(channel, 0, MessageOrder.OLDEST_FIRST)
 
       messageEmojiDataConnector.insert(MessageEmojiData(message.id, 10))
 
@@ -89,9 +92,9 @@ class HallOfFameRecheckTest : BaseKoinTest() {
       val hallOfFameConnector = HallOfFameConnector(database)
       val messageEmojiDataConnector = MessageEmojiDataConnector(database)
 
-      val guild = envWithTime.environment.jda.getGuildsByName("test-guild", true).first()
-      val channel = guild.getTextChannelsByName("general", true).first()
-      val message = (channel as com.fvlaenix.queemporium.mock.TestTextChannel).messages.first()
+      val guild = guild("test-guild")
+      val channel = channel(guild, "general")
+      val message = message(channel, 0, MessageOrder.OLDEST_FIRST)
 
       messageEmojiDataConnector.insert(MessageEmojiData(message.id, 5))
 
@@ -134,9 +137,9 @@ class HallOfFameRecheckTest : BaseKoinTest() {
       val hallOfFameConnector = HallOfFameConnector(database)
       val messageEmojiDataConnector = MessageEmojiDataConnector(database)
 
-      val guild = envWithTime.environment.jda.getGuildsByName("test-guild", true).first()
-      val channel = guild.getTextChannelsByName("general", true).first()
-      val message = (channel as com.fvlaenix.queemporium.mock.TestTextChannel).messages.first()
+      val guild = guild("test-guild")
+      val channel = ChannelResolver.resolve(guild, "general")
+      val message = MessageResolver.resolve(channel, 0, MessageOrder.OLDEST_FIRST)
 
       messageEmojiDataConnector.insert(MessageEmojiData(message.id, 10))
 
@@ -181,9 +184,9 @@ class HallOfFameRecheckTest : BaseKoinTest() {
       val hallOfFameConnector = HallOfFameConnector(database)
       val messageEmojiDataConnector = MessageEmojiDataConnector(database)
 
-      val guild = envWithTime.environment.jda.getGuildsByName("test-guild", true).first()
-      val channel = guild.getTextChannelsByName("general", true).first()
-      val message = (channel as com.fvlaenix.queemporium.mock.TestTextChannel).messages.first()
+      val guild = guild("test-guild")
+      val channel = ChannelResolver.resolve(guild, "general")
+      val message = MessageResolver.resolve(channel, 0, MessageOrder.OLDEST_FIRST)
 
       messageEmojiDataConnector.insert(MessageEmojiData(message.id, 25))
 
@@ -227,9 +230,9 @@ class HallOfFameRecheckTest : BaseKoinTest() {
       val hallOfFameConnector = HallOfFameConnector(database)
       val messageEmojiDataConnector = MessageEmojiDataConnector(database)
 
-      val guild = envWithTime.environment.jda.getGuildsByName("test-guild", true).first()
-      val channel = guild.getTextChannelsByName("general", true).first()
-      val message = (channel as com.fvlaenix.queemporium.mock.TestTextChannel).messages.first()
+      val guild = guild("test-guild")
+      val channel = ChannelResolver.resolve(guild, "general")
+      val message = MessageResolver.resolve(channel, 0, MessageOrder.OLDEST_FIRST)
 
       messageEmojiDataConnector.insert(MessageEmojiData(message.id, 10))
 
@@ -271,7 +274,7 @@ class HallOfFameRecheckTest : BaseKoinTest() {
 
     scenario {
       val hallOfFameCommand: HallOfFameCommand by koin.inject()
-      val guild = envWithTime.environment.jda.getGuildsByName("test-guild", true).first()
+      val guild = guild("test-guild")
 
       runBlocking {
         hallOfFameCommand.recheckGuild(guild.id)
@@ -316,15 +319,19 @@ class HallOfFameRecheckTest : BaseKoinTest() {
       val databaseConfig: DatabaseConfiguration by koin.inject()
       val database = databaseConfig.toDatabase()
       val hallOfFameConnector = HallOfFameConnector(database)
-      val guild = envWithTime.environment.jda.getGuildsByName("test-guild", true).first()
+      val guild = guild("test-guild")
 
       runBlocking {
         hallOfFameCommand.recheckGuild(guild.id)
       }
       awaitAll()
 
-      val channel = guild.getTextChannelsByName("general", true).first()
-      val messages = (channel as com.fvlaenix.queemporium.mock.TestTextChannel).messages
+      val channel = channel(guild, "general")
+      val messages = listOf(
+        message(channel, 0, MessageOrder.OLDEST_FIRST),
+        message(channel, 1, MessageOrder.OLDEST_FIRST),
+        message(channel, 2, MessageOrder.OLDEST_FIRST)
+      )
 
       assertNotNull(hallOfFameConnector.getMessage(messages[0].id), "Message 0 should be in HOF")
       assertNotNull(hallOfFameConnector.getMessage(messages[1].id), "Message 1 should be in HOF")

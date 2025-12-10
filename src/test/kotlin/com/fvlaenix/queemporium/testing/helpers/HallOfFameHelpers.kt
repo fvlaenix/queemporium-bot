@@ -5,6 +5,10 @@ import com.fvlaenix.queemporium.database.EmojiDataConnector
 import com.fvlaenix.queemporium.database.HallOfFameConnector
 import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.service.MockAnswerService
+import com.fvlaenix.queemporium.testing.dsl.ChannelResolver
+import com.fvlaenix.queemporium.testing.dsl.GuildResolver
+import com.fvlaenix.queemporium.testing.dsl.MessageOrder
+import com.fvlaenix.queemporium.testing.dsl.MessageResolver
 import com.fvlaenix.queemporium.testing.fixture.TestEnvironmentWithTime
 import com.fvlaenix.queemporium.testing.fixture.awaitAll
 import com.fvlaenix.queemporium.testing.scenario.ExpectContext
@@ -38,19 +42,8 @@ class HallOfFameTestContext(
     threshold: Int = 5,
     adminUserId: String = "admin"
   ) {
-    val guild = try {
-      environment.jda.getGuildById(guildId)
-    } catch (e: NumberFormatException) {
-      null
-    } ?: environment.jda.getGuildsByName(guildId, true).firstOrNull()
-    ?: throw IllegalStateException("Guild $guildId not found")
-
-    val channel = try {
-      guild.getTextChannelById(hallOfFameChannelId)
-    } catch (e: NumberFormatException) {
-      null
-    } ?: guild.getTextChannelsByName(hallOfFameChannelId, true).firstOrNull()
-    ?: throw IllegalStateException("Channel $hallOfFameChannelId not found in guild $guildId")
+    val guild = GuildResolver.resolve(environment.jda, guildId)
+    val channel = ChannelResolver.resolve(guild, hallOfFameChannelId)
 
     val user = envWithTime.userMap[adminUserId]
       ?: run {
@@ -116,26 +109,9 @@ class HallOfFameTestContext(
     emoji: String,
     userIds: List<String>
   ) {
-    val guild = try {
-      environment.jda.getGuildById(guildId)
-    } catch (e: NumberFormatException) {
-      null
-    } ?: environment.jda.getGuildsByName(guildId, true).firstOrNull()
-    ?: throw IllegalStateException("Guild $guildId not found")
-
-    val channel = try {
-      guild.getTextChannelById(channelId)
-    } catch (e: NumberFormatException) {
-      null
-    } ?: guild.getTextChannelsByName(channelId, true).firstOrNull()
-    ?: throw IllegalStateException("Channel $channelId not found")
-
-    val messages = (channel as com.fvlaenix.queemporium.mock.TestTextChannel).messages
-    if (messageIndex >= messages.size) {
-      throw IllegalStateException("Message index $messageIndex out of bounds (channel has ${messages.size} messages)")
-    }
-
-    val message = messages[messageIndex]
+    val guild = GuildResolver.resolve(environment.jda, guildId)
+    val channel = ChannelResolver.resolve(guild, channelId)
+    val message = MessageResolver.resolve(channel, messageIndex, MessageOrder.OLDEST_FIRST)
 
     userIds.forEach { userId ->
       val user = envWithTime.userMap[userId]
@@ -190,12 +166,7 @@ class HallOfFameTestContext(
         if (existingUser == null) {
           val user = environment.createUser(userId)
           // Add to guild so they can be found
-          val guild = try {
-            environment.jda.getGuildById(guildId)
-          } catch (e: NumberFormatException) {
-            null
-          } ?: environment.jda.getGuildsByName(guildId, true).firstOrNull()
-          ?: throw IllegalStateException("Guild $guildId not found")
+          val guild = GuildResolver.resolve(environment.jda, guildId)
           environment.createMember(guild, user)
         }
       }

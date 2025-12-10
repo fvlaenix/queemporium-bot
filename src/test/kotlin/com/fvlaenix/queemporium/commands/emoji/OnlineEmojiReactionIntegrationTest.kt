@@ -3,6 +3,7 @@ package com.fvlaenix.queemporium.commands.emoji
 import com.fvlaenix.queemporium.configuration.commands.OnlineEmojiesStoreCommandConfig
 import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.koin.BaseKoinTest
+import com.fvlaenix.queemporium.testing.dsl.MessageOrder
 import com.fvlaenix.queemporium.testing.dsl.testBot
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -551,9 +552,9 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
         val messageEmojiDataConnector =
           com.fvlaenix.queemporium.database.MessageEmojiDataConnector(databaseConfig.toDatabase())
 
-        val guild = envWithTime.environment.jda.getGuildsByName("test-guild", true).first()
-        val channel = guild.getTextChannelsByName("general", true).first()
-        val message = (channel as com.fvlaenix.queemporium.mock.TestTextChannel).messages.first()
+        val guild = guild("test-guild")
+        val channel = channel(guild, "general")
+        val message = message(channel, 0, MessageOrder.OLDEST_FIRST)
 
         val emojiData =
           messageEmojiDataConnector.get(message.id) ?: throw AssertionError("Expected emoji data to be tracked")
