@@ -122,6 +122,14 @@ class AdventDsl(
 
     if (restartLoop) {
       restartAdventLoop()
+      val timeController = envWithTime.timeController
+      if (timeController != null) {
+        val currentTime = timeController.getCurrentTime()
+        val hasOnlyFutureEntries = adventDataList.all { it.epoch > currentTime.toEpochMilli() }
+        if (hasOnlyFutureEntries) {
+          runBlocking { envWithTime.awaitAll() }
+        }
+      }
     }
   }
 
