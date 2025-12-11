@@ -15,6 +15,7 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 object FeatureKeys {
+  const val DEBUG = "debug"
   const val PING = "ping"
   const val PERMISSIONS_INFO = "permissions-info"
   const val LOGGER = "logger-message"
@@ -38,6 +39,16 @@ object FeatureKeys {
 
 object FeatureRegistry {
   val definitions: Map<String, FeatureDefinition> = listOf(
+    FeatureDefinition(
+      key = FeatureKeys.DEBUG,
+      requiredSharedModules = listOf(SharedModules.coreModule)
+    ) { _ ->
+      listOf(
+        module {
+          single { DebugCommand(get()) } bind net.dv8tion.jda.api.hooks.ListenerAdapter::class
+        }
+      )
+    },
     FeatureDefinition(
       key = FeatureKeys.PING,
       requiredSharedModules = listOf(SharedModules.coreModule)
