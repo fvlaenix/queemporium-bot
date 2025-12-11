@@ -229,7 +229,7 @@ object FeatureRegistry {
     ) { _ ->
       listOf(
         module {
-          single { HallOfFameCommand(get(), get(), get()) } bind net.dv8tion.jda.api.hooks.ListenerAdapter::class
+          single { HallOfFameCommand(get(), get(), get(), get()) } bind net.dv8tion.jda.api.hooks.ListenerAdapter::class
         }
       )
     },

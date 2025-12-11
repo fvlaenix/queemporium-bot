@@ -11,6 +11,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.session.ReadyEvent
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import kotlin.time.Duration.Companion.hours
 
 private val LOG = Logging.getLogger(HallOfFameCommand::class.java)
@@ -18,13 +22,21 @@ private val LOG = Logging.getLogger(HallOfFameCommand::class.java)
 class HallOfFameCommand(
   databaseConfiguration: DatabaseConfiguration,
   private val answerService: AnswerService,
-  coroutineProvider: BotCoroutineProvider
+  coroutineProvider: BotCoroutineProvider,
+  private val clock: java.time.Clock
 ) : CoroutineListenerAdapter(coroutineProvider) {
-  private val hallOfFameConnector = HallOfFameConnector(databaseConfiguration.toDatabase())
-  private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
-  private val dependencyConnector = MessageDependencyConnector(databaseConfiguration.toDatabase())
-  private val emojiDataConnector = EmojiDataConnector(databaseConfiguration.toDatabase())
-  private val messageEmojiDataConnector = MessageEmojiDataConnector(databaseConfiguration.toDatabase())
+  private val database = databaseConfiguration.toDatabase()
+  private val hallOfFameConnector = HallOfFameConnector(database)
+  private val messageDataConnector = MessageDataConnector(database)
+  private val dependencyConnector = MessageDependencyConnector(database)
+  private val emojiDataConnector = EmojiDataConnector(database)
+  private val messageEmojiDataConnector = MessageEmojiDataConnector(database)
+  private val updateDebouncer = HallOfFameUpdateDebouncer(
+    coroutineProvider = coroutineProvider,
+    clock = clock
+  ) { messageId, guildId, newCount ->
+    updatePostedMessage(messageId, guildId, newCount)
+  }
 
   private var sendJob: Job? = null
   private var retrieveJob: Job? = null
@@ -40,7 +52,7 @@ class HallOfFameCommand(
     messages.forEach { message ->
       val dataMessage = messageDataConnector.get(message) ?: return@forEach
 
-      hallOfFameConnector.addMessage(
+      val inserted = hallOfFameConnector.addMessage(
         HallOfFameMessage(
           messageId = message,
           guildId = hallOfFameInfo.guildId,
@@ -48,6 +60,9 @@ class HallOfFameCommand(
           isSent = false
         )
       )
+      if (!inserted) {
+        LOG.debug("Hall of Fame entry $message already exists for guild ${hallOfFameInfo.guildId}, skipping enqueue")
+      }
     }
   }
 
@@ -80,25 +95,46 @@ class HallOfFameCommand(
         }
       ).await()
 
+      val dependentMessages = mutableListOf<String>()
       if (sentMessage != null) {
-        hallOfFameConnector.markAsSent(message.messageId)
-        dependencyConnector.addDependency(
-          MessageDependency(
-            targetMessage = message.messageId,
-            dependentMessage = sentMessage
-          )
-        )
+        dependentMessages.add(sentMessage)
       }
       if (forwardMessage != null) {
-        dependencyConnector.addDependency(
-          MessageDependency(
-            targetMessage = message.messageId,
-            dependentMessage = forwardMessage
-          )
-        )
+        dependentMessages.add(forwardMessage)
+      }
+
+      if (sentMessage != null) {
+        persistAnnouncement(message.messageId, dependentMessages)
+      } else {
+        LOG.warn("Hall of Fame announcement for ${message.messageId} failed to send; will retry later")
       }
     } catch (e: Exception) {
       LOG.error("Failed to process Hall of Fame message ${message.messageId}", e)
+    }
+  }
+
+  private fun persistAnnouncement(messageId: String, dependentMessages: List<String>) {
+    if (dependentMessages.isEmpty()) return
+
+    transaction(database) {
+      val updated = HallOfFameMessagesTable.update({
+        (HallOfFameMessagesTable.messageId eq messageId) and
+            (HallOfFameMessagesTable.isSent eq false)
+      }) {
+        it[isSent] = true
+      }
+
+      if (updated == 0) {
+        LOG.debug("Hall of Fame entry $messageId already marked as sent, skipping dependency recording")
+        return@transaction
+      }
+
+      dependentMessages.forEach { dependentId ->
+        MessageDependencyTable.insert {
+          it[targetMessage] = messageId
+          it[dependentMessage] = dependentId
+        }
+      }
     }
   }
 
@@ -143,7 +179,7 @@ class HallOfFameCommand(
 
       if (existingEntry == null) {
         val dataMessage = messageDataConnector.get(messageId) ?: return
-        hallOfFameConnector.addMessage(
+        val inserted = hallOfFameConnector.addMessage(
           HallOfFameMessage(
             messageId = messageId,
             guildId = guildId,
@@ -151,9 +187,15 @@ class HallOfFameCommand(
             isSent = false
           )
         )
-        LOG.info("Message $messageId added to Hall of Fame queue ($emojiCount reactions)")
+        if (inserted) {
+          LOG.info("Message $messageId added to Hall of Fame queue ($emojiCount reactions)")
+        } else {
+          LOG.debug("Hall of Fame entry $messageId already queued for guild $guildId, skipping")
+        }
       } else if (existingEntry.isSent) {
-        updatePostedMessage(messageId, guildId, emojiCount)
+        updateDebouncer.emit(messageId, guildId, emojiCount)
+      } else {
+        LOG.debug("Hall of Fame entry $messageId already queued for guild $guildId, not sent yet")
       }
     }
   }

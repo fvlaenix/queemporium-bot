@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.time.Instant
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 
 class HallOfFameRecheckTest : BaseKoinTest() {
 
@@ -272,6 +273,60 @@ class HallOfFameRecheckTest : BaseKoinTest() {
       hallOfFame.expectQueued(messages[0], isSent = false)
       hallOfFame.expectQueued(messages[1], isSent = false)
       hallOfFame.expectQueued(messages[2], isSent = false)
+    }
+  }
+
+  @Test
+  @Timeout(value = 30, unit = TimeUnit.SECONDS)
+  fun `sent hall of fame message is not reposted on recheck`() = testBot {
+    withVirtualTime(Instant.now())
+
+    before {
+      enableFeature(FeatureKeys.HALL_OF_FAME)
+      enableFeature(FeatureKeys.SET_HALL_OF_FAME)
+
+      user("admin")
+      user("alice")
+      guild("test-guild") {
+        member("admin", isAdmin = true)
+        channel("general") {
+          message(author = "alice", text = "Hall of fame candidate")
+        }
+        channel("hof")
+      }
+    }
+
+    setup {
+      hallOfFame.configureBlocking("test-guild", "hof", threshold = 3, adminUserId = "admin")
+      hallOfFame.seedMessageToCount("test-guild", "general", 0, count = 3)
+    }
+
+    scenario {
+      val guild = guild("test-guild")
+      val message = message(channel(guild, "general"), 0, MessageOrder.OLDEST_FIRST)
+
+      hallOfFame.triggerBothJobs()
+      val initialAnswers = answerService!!.answers.size
+
+      hallOfFame.expectQueued(message, isSent = true)
+
+      hallOfFame.seedMessageToCount("test-guild", "general", 0, count = 3)
+      hallOfFame.recheckMessage(message, guild.id)
+      hallOfFame.awaitProcessing()
+
+      advanceTime(40.seconds)
+      awaitAll()
+
+      hallOfFame.triggerSendJob()
+
+      expect("should not repost hall of fame message after it was sent") {
+        val updatedAnswers = answerService!!.answers.size
+        if (updatedAnswers != initialAnswers) {
+          throw AssertionError("Expected no additional hall of fame posts; was $updatedAnswers, expected $initialAnswers")
+        }
+      }
+
+      hallOfFame.expectQueued(message, isSent = true)
     }
   }
 }

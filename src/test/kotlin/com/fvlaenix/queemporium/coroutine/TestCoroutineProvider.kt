@@ -6,15 +6,13 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.coroutines.Continuation
 import kotlin.coroutines.coroutineContext
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration
 
 private data class PendingDelay(
   val targetTime: Instant,
-  val continuation: Continuation<Unit>
+  val continuation: CancellableContinuation<Unit>
 ) : Comparable<PendingDelay> {
   override fun compareTo(other: PendingDelay): Int {
     return targetTime.compareTo(other.targetTime)
@@ -55,8 +53,12 @@ class TestCoroutineProvider(
   private suspend fun delayWithVirtualClock(duration: Duration) {
     val targetTime = virtualClock!!.getCurrentTime().plusMillis(duration.inWholeMilliseconds)
 
-    suspendCoroutine<Unit> { continuation ->
-      pendingDelays.add(PendingDelay(targetTime, continuation))
+    suspendCancellableCoroutine { continuation ->
+      val pendingDelay = PendingDelay(targetTime, continuation)
+      continuation.invokeOnCancellation {
+        pendingDelays.removeIf { it.continuation == continuation }
+      }
+      pendingDelays.add(pendingDelay)
     }
   }
 
@@ -90,7 +92,9 @@ class TestCoroutineProvider(
     }
 
     delaysToResume.forEach { delay ->
-      delay.continuation.resume(Unit)
+      if (delay.continuation.isActive) {
+        delay.continuation.resume(Unit)
+      }
     }
   }
 

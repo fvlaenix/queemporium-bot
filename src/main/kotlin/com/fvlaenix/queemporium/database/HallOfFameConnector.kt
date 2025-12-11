@@ -70,19 +70,25 @@ class HallOfFameConnector(private val database: Database) {
       .singleOrNull()
   }
 
-  fun addMessage(message: HallOfFameMessage) = transaction(database) {
-    val existing = HallOfFameMessagesTable.select { HallOfFameMessagesTable.messageId eq message.messageId }.count() > 0
-    if (!existing) {
-      HallOfFameMessagesTable.insert {
-        it[messageId] = message.messageId
-        it[guildId] = message.guildId
-        it[timestamp] = message.timestamp
-        it[isSent] = message.isSent
-      }
+  fun addMessage(message: HallOfFameMessage): Boolean = transaction(database) {
+    val exists = HallOfFameMessagesTable
+      .select { HallOfFameMessagesTable.messageId eq message.messageId }
+      .limit(1)
+      .any()
+    if (exists) {
+      return@transaction false
     }
+
+    HallOfFameMessagesTable.insert {
+      it[messageId] = message.messageId
+      it[guildId] = message.guildId
+      it[timestamp] = message.timestamp
+      it[isSent] = message.isSent
+    }
+    true
   }
 
-  fun markAsSent(messageId: String) = transaction(database) {
+  fun markAsSent(messageId: String): Int = transaction(database) {
     HallOfFameMessagesTable.update({ HallOfFameMessagesTable.messageId eq messageId }) {
       it[isSent] = true
     }
