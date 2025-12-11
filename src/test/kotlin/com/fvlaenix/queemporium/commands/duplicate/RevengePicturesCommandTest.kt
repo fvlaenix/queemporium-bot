@@ -2,7 +2,6 @@ package com.fvlaenix.queemporium.commands.duplicate
 
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.features.FeatureKeys
-import com.fvlaenix.queemporium.service.DuplicateImageService
 import com.fvlaenix.queemporium.verification.verify
 import kotlin.test.Ignore
 import kotlin.test.Test
@@ -25,21 +24,19 @@ class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
     )
 
     // Configure the duplicate service to detect a duplicate
-    mockDuplicateService.setResponseForFile(
-      "duplicate.jpg", listOf(
-        DuplicateImageService.DuplicateImageData(
-          messageId = originalMessage.id,
-          numberInMessage = 0,
-          additionalImageInfo = AdditionalImageInfo(
-            fileName = "original.jpg",
-            isSpoiler = false,
-            originalSizeWidth = 100,
-            originalSizeHeight = 100
-          ),
-          level = 95
-        )
+    duplicates.stubResponse("duplicate.jpg") {
+      duplicate(
+        messageId = originalMessage.id,
+        numberInMessage = 0,
+        additionalImageInfo = AdditionalImageInfo(
+          fileName = "original.jpg",
+          isSpoiler = false,
+          originalSizeWidth = 100,
+          originalSizeHeight = 100
+        ),
+        level = 95
       )
-    )
+    }
 
     // Send a second message that will be a duplicate
     sendMessageWithImage(
@@ -64,7 +61,7 @@ class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
   @Test
   fun `test revenge command ignores excluded channels`() {
     // Add generalChannel to excluded list
-    guildInfoConnector.addExcludingChannel(testGuild.id, generalChannel.id)
+    duplicates.excludeChannel(testGuild.id, generalChannel.id)
 
     // Setup: create an "original" message
     val originalMessage = sendMessageWithImage(
@@ -73,21 +70,19 @@ class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
     )
 
     // Configure the service to detect duplicates
-    mockDuplicateService.setResponseForFile(
-      "duplicate.jpg", listOf(
-        DuplicateImageService.DuplicateImageData(
-          messageId = originalMessage.id,
-          numberInMessage = 0,
-          additionalImageInfo = AdditionalImageInfo(
-            fileName = "original.jpg",
-            isSpoiler = false,
-            originalSizeWidth = 100,
-            originalSizeHeight = 100
-          ),
-          level = 95
-        )
+    duplicates.stubResponse("duplicate.jpg") {
+      duplicate(
+        messageId = originalMessage.id,
+        numberInMessage = 0,
+        additionalImageInfo = AdditionalImageInfo(
+          fileName = "original.jpg",
+          isSpoiler = false,
+          originalSizeWidth = 100,
+          originalSizeHeight = 100
+        ),
+        level = 95
       )
-    )
+    }
 
     // Start the environment
     startEnvironment()
@@ -125,37 +120,33 @@ class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
     )
 
     // Configure the service to detect duplicates
-    mockDuplicateService.setResponseForFile(
-      "test1.jpg", listOf(
-        DuplicateImageService.DuplicateImageData(
-          messageId = originalMessage1.id,
-          numberInMessage = 0,
-          additionalImageInfo = AdditionalImageInfo(
-            fileName = "original1.jpg",
-            isSpoiler = false,
-            originalSizeWidth = 100,
-            originalSizeHeight = 100
-          ),
-          level = 90
-        )
+    duplicates.stubResponse("test1.jpg") {
+      duplicate(
+        messageId = originalMessage1.id,
+        numberInMessage = 0,
+        additionalImageInfo = AdditionalImageInfo(
+          fileName = "original1.jpg",
+          isSpoiler = false,
+          originalSizeWidth = 100,
+          originalSizeHeight = 100
+        ),
+        level = 90
       )
-    )
+    }
 
-    mockDuplicateService.setResponseForFile(
-      "test2.jpg", listOf(
-        DuplicateImageService.DuplicateImageData(
-          messageId = originalMessage2.id,
-          numberInMessage = 0,
-          additionalImageInfo = AdditionalImageInfo(
-            fileName = "original2.jpg",
-            isSpoiler = false,
-            originalSizeWidth = 100,
-            originalSizeHeight = 100
-          ),
-          level = 85
-        )
+    duplicates.stubResponse("test2.jpg") {
+      duplicate(
+        messageId = originalMessage2.id,
+        numberInMessage = 0,
+        additionalImageInfo = AdditionalImageInfo(
+          fileName = "original2.jpg",
+          isSpoiler = false,
+          originalSizeWidth = 100,
+          originalSizeHeight = 100
+        ),
+        level = 85
       )
-    )
+    }
 
     // Start the environment
     startEnvironment()
@@ -194,37 +185,33 @@ class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
     )
 
     // Configure the service to detect duplicates with different similarity levels
-    mockDuplicateService.setResponseForFile(
-      "high_similarity.jpg", listOf(
-        DuplicateImageService.DuplicateImageData(
-          messageId = originalMessage.id,
-          numberInMessage = 0,
-          additionalImageInfo = AdditionalImageInfo(
-            fileName = "original.jpg",
-            isSpoiler = false,
-            originalSizeWidth = 100,
-            originalSizeHeight = 100
-          ),
-          level = 95 // High similarity
-        )
+    duplicates.stubResponse("high_similarity.jpg") {
+      duplicate(
+        messageId = originalMessage.id,
+        numberInMessage = 0,
+        additionalImageInfo = AdditionalImageInfo(
+          fileName = "original.jpg",
+          isSpoiler = false,
+          originalSizeWidth = 100,
+          originalSizeHeight = 100
+        ),
+        level = 95 // High similarity
       )
-    )
+    }
 
-    mockDuplicateService.setResponseForFile(
-      "low_similarity.jpg", listOf(
-        DuplicateImageService.DuplicateImageData(
-          messageId = originalMessage.id,
-          numberInMessage = 0,
-          additionalImageInfo = AdditionalImageInfo(
-            fileName = "original.jpg",
-            isSpoiler = false,
-            originalSizeWidth = 100,
-            originalSizeHeight = 100
-          ),
-          level = 65 // Low similarity
-        )
+    duplicates.stubResponse("low_similarity.jpg") {
+      duplicate(
+        messageId = originalMessage.id,
+        numberInMessage = 0,
+        additionalImageInfo = AdditionalImageInfo(
+          fileName = "original.jpg",
+          isSpoiler = false,
+          originalSizeWidth = 100,
+          originalSizeHeight = 100
+        ),
+        level = 65 // Low similarity
       )
-    )
+    }
 
     // Start the environment
     startEnvironment()

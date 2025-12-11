@@ -28,7 +28,7 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
     env.awaitAll()
 
     // Verify that the image was added (through the mock service)
-    assertEquals(1, mockDuplicateService.countAddImageRequests(), "Should have at least one request to add the image")
+    assertEquals(1, duplicates.countAddImageRequests(), "Should have at least one request to add the image")
 
     // Verify no duplicate notifications were sent
     answerService.verify {
@@ -39,7 +39,7 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
   @Test
   fun `test upload command ignores excluded channels`() {
     // Add generalChannel to excluded list
-    guildInfoConnector.addExcludingChannel(testGuild.id, generalChannel.id)
+    duplicates.excludeChannel(testGuild.id, generalChannel.id)
 
     // Create a message with an image in the excluded channel
     sendMessageWithImage(
@@ -54,7 +54,7 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
     env.awaitAll()
 
     // Verify no requests were made to add the image
-    assertEquals(0, mockDuplicateService.countAddImageRequests(), "Should not have any requests for excluded channel")
+    assertEquals(0, duplicates.countAddImageRequests(), "Should not have any requests for excluded channel")
   }
 
   @Test
@@ -75,7 +75,7 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
     // Wait for completion
     env.awaitAll()
 
-    assertEquals(1, mockDuplicateService.countAddImageRequests(), "Should have requests to add images")
+    assertEquals(1, duplicates.countAddImageRequests(), "Should have requests to add images")
   }
 
   @Test
@@ -87,7 +87,7 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
     )
 
     // Configure the service to return an error
-    mockDuplicateService.setResponseForFile("error_image.jpg", null)
+    duplicates.stubNoResponse("error_image.jpg")
 
     // Start the environment
     startEnvironment()
@@ -118,7 +118,7 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
     env.awaitAll()
 
     // Verify image was processed
-    assertEquals(1, mockDuplicateService.countAddImageRequests(), "Should have a request to add the spoilered image")
+    assertEquals(1, duplicates.countAddImageRequests(), "Should have a request to add the spoilered image")
 
     // Verify no duplicate notifications
     answerService.verify {
@@ -152,7 +152,7 @@ class UploadPicturesCommandTest : BaseDuplicateCommandTest() {
     // Verify images were processed
     assertEquals(
       2,
-      mockDuplicateService.countAddImageRequests(),
+      duplicates.countAddImageRequests(),
       "Should have requests to add images of different sizes"
     )
 

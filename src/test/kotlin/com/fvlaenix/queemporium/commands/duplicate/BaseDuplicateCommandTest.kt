@@ -2,7 +2,6 @@ package com.fvlaenix.queemporium.commands.duplicate
 
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.database.CompressSize
-import com.fvlaenix.queemporium.database.GuildInfoConnector
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.mock.MockDuplicateImageService
 import com.fvlaenix.queemporium.mock.TestEnvironment
@@ -23,7 +22,7 @@ abstract class BaseDuplicateCommandTest : BaseKoinTest() {
   protected lateinit var fixture: BotTestFixture
   protected lateinit var mockDuplicateService: MockDuplicateImageService
   protected lateinit var answerService: MockAnswerService
-  protected lateinit var guildInfoConnector: GuildInfoConnector
+  protected lateinit var duplicates: DuplicateDsl
 
   protected val defaultGuildName = "Test Guild"
   protected val defaultGeneralChannelName = "general"
@@ -61,17 +60,13 @@ abstract class BaseDuplicateCommandTest : BaseKoinTest() {
     fixture.initialize(this@BaseDuplicateCommandTest)
 
     answerService = runWithScenario { answerService!! }
-
-    val databaseConfig =
-      org.koin.core.context.GlobalContext.get().get<com.fvlaenix.queemporium.configuration.DatabaseConfiguration>()
-    val database = databaseConfig.toDatabase()
-    guildInfoConnector = GuildInfoConnector(database)
+    duplicates = fixture.setup.duplicates
 
     testGuild = GuildResolver.resolve(env.jda, defaultGuildName)
     generalChannel = ChannelResolver.resolve(testGuild, defaultGeneralChannelName)
     duplicateChannel = ChannelResolver.resolve(testGuild, defaultDuplicateChannelName)
 
-    guildInfoConnector.setDuplicateInfo(testGuild.id, duplicateChannel.id)
+    duplicates.configureDuplicateChannel(testGuild.id, duplicateChannel.id)
 
     testUser = env.createUser("Test User", false)
 
@@ -177,22 +172,19 @@ abstract class BaseDuplicateCommandTest : BaseKoinTest() {
 
     env.awaitAll()
 
-    mockDuplicateService.setResponseForFile(
-      duplicateFileName,
-      listOf(
-        DuplicateImageService.DuplicateImageData(
-          messageId = originalMessage.id,
-          numberInMessage = 0,
-          additionalImageInfo = AdditionalImageInfo(
-            fileName = originalFileName,
-            isSpoiler = false,
-            originalSizeWidth = 100,
-            originalSizeHeight = 100
-          ),
-          level = 95
-        )
+    duplicates.stubResponse(duplicateFileName) {
+      duplicate(
+        messageId = originalMessage.id,
+        numberInMessage = 0,
+        additionalImageInfo = AdditionalImageInfo(
+          fileName = originalFileName,
+          isSpoiler = false,
+          originalSizeWidth = 100,
+          originalSizeHeight = 100
+        ),
+        level = 95
       )
-    )
+    }
 
     val duplicateMessage = sendMessageWithImage(
       messageText = duplicateText,

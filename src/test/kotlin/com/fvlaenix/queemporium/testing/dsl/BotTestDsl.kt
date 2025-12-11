@@ -76,6 +76,10 @@ class BotTestScenarioContext(private val setupContext: BotTestSetupContext) {
   val reactions: ReactionsDsl
     get() = reactionsDsl
 
+  private val duplicatesDsl by lazy { setupContext.duplicatesWithScenario(scenarioBuilder) }
+  val duplicates: DuplicateDsl
+    get() = duplicatesDsl
+
   val logger: LoggerTestContext
     get() = setupContext.logger
 
@@ -186,6 +190,24 @@ class BotTestScenarioContext(private val setupContext: BotTestSetupContext) {
     return message(channel, 0, MessageOrder.OLDEST_FIRST)
   }
 
+  fun resolveUser(idOrName: String): net.dv8tion.jda.api.entities.User {
+    envWithTime.userMap[idOrName]?.let { return it }
+
+    envWithTime.environment.jda.users.find { it.id == idOrName || it.name == idOrName }?.let { return it }
+
+    envWithTime.environment.jda.guilds
+      .flatMap { it.members }
+      .map { it.user }
+      .firstOrNull { it.id == idOrName || it.name == idOrName }
+      ?.let { return it }
+
+    val user = envWithTime.environment.createUser(idOrName, false)
+    envWithTime.environment.jda.guilds.firstOrNull()?.let { guild ->
+      envWithTime.environment.createMember(guild, user)
+    }
+    return user
+  }
+
   internal fun build(): List<com.fvlaenix.queemporium.testing.scenario.ScenarioStep> = scenarioBuilder.build()
 }
 
@@ -205,11 +227,20 @@ class BotTestSetupContext(
     MessageEmojiDataConnector(databaseConfig.toDatabase())
   }
 
+  val messageDuplicateDataConnector: MessageDuplicateDataConnector by lazy {
+    MessageDuplicateDataConnector(databaseConfig.toDatabase())
+  }
+
   val hallOfFameConnector: HallOfFameConnector by lazy {
     HallOfFameConnector(databaseConfig.toDatabase())
   }
 
+  val messageDependencyConnector: MessageDependencyConnector by lazy {
+    MessageDependencyConnector(databaseConfig.toDatabase())
+  }
+
   private val hallOfFameDsl by lazy { HallOfFameDsl(this) }
+  private val duplicatesDsl by lazy { DuplicateDsl(this) }
   val adventDataConnector: AdventDataConnector by lazy {
     AdventDataConnector(databaseConfig.toDatabase())
   }
@@ -218,6 +249,9 @@ class BotTestSetupContext(
 
   val hallOfFame: HallOfFameDsl
     get() = hallOfFameDsl
+
+  val duplicates: DuplicateDsl
+    get() = duplicatesDsl
 
   val advent: AdventDsl
     get() = adventDsl
@@ -330,6 +364,12 @@ class BotTestSetupContext(
     return HallOfFameDsl(this, scenarioBuilder)
   }
 
+  internal fun duplicatesWithScenario(
+    scenarioBuilder: ScenarioBuilder
+  ): DuplicateDsl {
+    return DuplicateDsl(this, scenarioBuilder)
+  }
+
   internal fun adventWithScenario(
     scenarioBuilder: ScenarioBuilder
   ): AdventDsl {
@@ -402,6 +442,9 @@ fun BaseKoinTest.testBot(block: BotTestContext.() -> Unit) = runBlocking {
 class BotTestFixture(private val context: BotTestContext) {
   private var setupContext: BotTestSetupContext? = null
   var autoStart: Boolean = true
+
+  val setup: BotTestSetupContext
+    get() = setupContext ?: throw IllegalStateException("Fixture not initialized. Call initialize() first.")
 
   suspend fun initialize(koinTest: BaseKoinTest) {
     if (context.answerService == null) {

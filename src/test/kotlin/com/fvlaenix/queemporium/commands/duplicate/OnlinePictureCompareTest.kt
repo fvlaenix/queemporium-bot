@@ -2,7 +2,6 @@ package com.fvlaenix.queemporium.commands.duplicate
 
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.features.FeatureKeys
-import com.fvlaenix.queemporium.service.DuplicateImageService
 import com.fvlaenix.queemporium.verification.verify
 import org.junit.jupiter.api.Test
 
@@ -56,37 +55,33 @@ class OnlinePictureCompareTest : BaseDuplicateCommandTest() {
     env.awaitAll()
 
     // Configure mock to recognize duplicates of both originals
-    mockDuplicateService.setResponseForFile(
-      "duplicate1.jpg", listOf(
-        DuplicateImageService.DuplicateImageData(
-          messageId = originalMessage1.id,
-          numberInMessage = 0,
-          additionalImageInfo = AdditionalImageInfo(
-            fileName = "original1.jpg",
-            isSpoiler = false,
-            originalSizeWidth = 100,
-            originalSizeHeight = 100
-          ),
-          level = 90
-        )
+    duplicates.stubResponse("duplicate1.jpg") {
+      duplicate(
+        messageId = originalMessage1.id,
+        numberInMessage = 0,
+        additionalImageInfo = AdditionalImageInfo(
+          fileName = "original1.jpg",
+          isSpoiler = false,
+          originalSizeWidth = 100,
+          originalSizeHeight = 100
+        ),
+        level = 90
       )
-    )
+    }
 
-    mockDuplicateService.setResponseForFile(
-      "duplicate2.jpg", listOf(
-        DuplicateImageService.DuplicateImageData(
-          messageId = originalMessage2.id,
-          numberInMessage = 0,
-          additionalImageInfo = AdditionalImageInfo(
-            fileName = "original2.jpg",
-            isSpoiler = false,
-            originalSizeWidth = 100,
-            originalSizeHeight = 100
-          ),
-          level = 85
-        )
+    duplicates.stubResponse("duplicate2.jpg") {
+      duplicate(
+        messageId = originalMessage2.id,
+        numberInMessage = 0,
+        additionalImageInfo = AdditionalImageInfo(
+          fileName = "original2.jpg",
+          isSpoiler = false,
+          originalSizeWidth = 100,
+          originalSizeHeight = 100
+        ),
+        level = 85
       )
-    )
+    }
 
     // Send message with multiple duplicate images
     sendMessageWithMultipleImages(
