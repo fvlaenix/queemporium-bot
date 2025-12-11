@@ -19,6 +19,7 @@ import kotlin.time.Duration.Companion.hours
  * Helper context for Hall of Fame testing utilities.
  * Provides convenient methods for setting up and verifying Hall of Fame functionality.
  */
+@Deprecated("Use HallOfFameDsl via BotTestContext.hallOfFame instead. TODO: migrate remaining usages and remove HallOfFameTestContext")
 class HallOfFameTestContext(
   private val environment: TestEnvironment,
   private val envWithTime: TestEnvironmentWithTime,

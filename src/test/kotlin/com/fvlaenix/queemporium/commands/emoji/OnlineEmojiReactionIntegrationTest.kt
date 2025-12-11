@@ -548,19 +548,12 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
       awaitAll()
 
       expect("should update reaction count in database after exceeding threshold") {
-        val databaseConfig: com.fvlaenix.queemporium.configuration.DatabaseConfiguration by koin.inject()
-        val messageEmojiDataConnector =
-          com.fvlaenix.queemporium.database.MessageEmojiDataConnector(databaseConfig.toDatabase())
-
         val guild = guild("test-guild")
         val channel = channel(guild, "general")
         val message = message(channel, 0, MessageOrder.OLDEST_FIRST)
 
-        val emojiData =
-          messageEmojiDataConnector.get(message.id) ?: throw AssertionError("Expected emoji data to be tracked")
-
-        if (emojiData.count != 5) {
-          throw AssertionError("Expected emoji count to be 5, got: ${emojiData.count}")
+        reactions.expectPersisted(message) {
+          count(5)
         }
 
         // TODO check if text changed

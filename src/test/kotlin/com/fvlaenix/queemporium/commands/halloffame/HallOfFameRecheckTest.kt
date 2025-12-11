@@ -1,23 +1,13 @@
 package com.fvlaenix.queemporium.commands.halloffame
 
-import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
-import com.fvlaenix.queemporium.database.HallOfFameConnector
-import com.fvlaenix.queemporium.database.MessageEmojiData
-import com.fvlaenix.queemporium.database.MessageEmojiDataConnector
 import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.koin.BaseKoinTest
-import com.fvlaenix.queemporium.testing.dsl.ChannelResolver
 import com.fvlaenix.queemporium.testing.dsl.MessageOrder
-import com.fvlaenix.queemporium.testing.dsl.MessageResolver
 import com.fvlaenix.queemporium.testing.dsl.testBot
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.time.Instant
 import java.util.concurrent.TimeUnit
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 
 class HallOfFameRecheckTest : BaseKoinTest() {
 
@@ -41,23 +31,15 @@ class HallOfFameRecheckTest : BaseKoinTest() {
     }
 
     scenario {
-      val hallOfFameCommand: HallOfFameCommand by koin.inject()
-      val databaseConfig: DatabaseConfiguration by koin.inject()
-      val database = databaseConfig.toDatabase()
-      val hallOfFameConnector = HallOfFameConnector(database)
-      val messageEmojiDataConnector = MessageEmojiDataConnector(database)
-
       val guild = guild("test-guild")
-      val channel = channel(guild, "general")
-      val message = message(channel, 0, MessageOrder.OLDEST_FIRST)
+      val message = message(channel(guild, "general"), 0, MessageOrder.OLDEST_FIRST)
 
-      messageEmojiDataConnector.insert(MessageEmojiData(message.id, 10))
+      hallOfFame.seedMessageToCount("test-guild", "general", 0, count = 10)
 
-      hallOfFameCommand.recheckMessage(message.id, guild.id)
+      hallOfFame.recheckMessage(message, guild.id)
       awaitAll()
 
-      val hofMessage = hallOfFameConnector.getMessage(message.id)
-      assertNull(hofMessage, "Message should not be added to Hall of Fame when not configured")
+      hallOfFame.expectNotQueued(message)
     }
   }
 
@@ -82,27 +64,20 @@ class HallOfFameRecheckTest : BaseKoinTest() {
     }
 
     setup {
-      hallOfFame.configureHallOfFameBlocking("test-guild", "hof", threshold = 10, adminUserId = "admin")
+      hallOfFame.configureBlocking("test-guild", "hof", threshold = 10, adminUserId = "admin")
     }
 
     scenario {
-      val hallOfFameCommand: HallOfFameCommand by koin.inject()
-      val databaseConfig: DatabaseConfiguration by koin.inject()
-      val database = databaseConfig.toDatabase()
-      val hallOfFameConnector = HallOfFameConnector(database)
-      val messageEmojiDataConnector = MessageEmojiDataConnector(database)
-
       val guild = guild("test-guild")
       val channel = channel(guild, "general")
       val message = message(channel, 0, MessageOrder.OLDEST_FIRST)
 
-      messageEmojiDataConnector.insert(MessageEmojiData(message.id, 5))
+      hallOfFame.seedMessageToCount("test-guild", "general", 0, count = 5)
 
-      hallOfFameCommand.recheckMessage(message.id, guild.id)
+      hallOfFame.recheckMessage(message, guild.id)
       awaitAll()
 
-      val hofMessage = hallOfFameConnector.getMessage(message.id)
-      assertNull(hofMessage, "Message with count below threshold should not be added")
+      hallOfFame.expectNotQueued(message)
     }
   }
 
@@ -127,29 +102,19 @@ class HallOfFameRecheckTest : BaseKoinTest() {
     }
 
     setup {
-      hallOfFame.configureHallOfFameBlocking("test-guild", "hof", threshold = 10, adminUserId = "admin")
+      hallOfFame.configureBlocking("test-guild", "hof", threshold = 10, adminUserId = "admin")
     }
 
     scenario {
-      val hallOfFameCommand: HallOfFameCommand by koin.inject()
-      val databaseConfig: DatabaseConfiguration by koin.inject()
-      val database = databaseConfig.toDatabase()
-      val hallOfFameConnector = HallOfFameConnector(database)
-      val messageEmojiDataConnector = MessageEmojiDataConnector(database)
-
       val guild = guild("test-guild")
-      val channel = ChannelResolver.resolve(guild, "general")
-      val message = MessageResolver.resolve(channel, 0, MessageOrder.OLDEST_FIRST)
+      val message = message(channel(guild, "general"), 0, MessageOrder.OLDEST_FIRST)
 
-      messageEmojiDataConnector.insert(MessageEmojiData(message.id, 10))
+      hallOfFame.seedMessageToCount("test-guild", "general", 0, count = 10)
 
-      hallOfFameCommand.recheckMessage(message.id, guild.id)
+      hallOfFame.recheckMessage(message, guild.id)
       awaitAll()
 
-      val hofMessage = hallOfFameConnector.getMessage(message.id)
-      assertNotNull(hofMessage, "Message meeting threshold should be added to Hall of Fame")
-      assertEquals(false, hofMessage.isSent, "Message should be queued (not sent yet)")
-      assertEquals(guild.id, hofMessage.guildId)
+      hallOfFame.expectQueued(message, isSent = false)
     }
   }
 
@@ -174,28 +139,19 @@ class HallOfFameRecheckTest : BaseKoinTest() {
     }
 
     setup {
-      hallOfFame.configureHallOfFameBlocking("test-guild", "hof", threshold = 10, adminUserId = "admin")
+      hallOfFame.configureBlocking("test-guild", "hof", threshold = 10, adminUserId = "admin")
     }
 
     scenario {
-      val hallOfFameCommand: HallOfFameCommand by koin.inject()
-      val databaseConfig: DatabaseConfiguration by koin.inject()
-      val database = databaseConfig.toDatabase()
-      val hallOfFameConnector = HallOfFameConnector(database)
-      val messageEmojiDataConnector = MessageEmojiDataConnector(database)
-
       val guild = guild("test-guild")
-      val channel = ChannelResolver.resolve(guild, "general")
-      val message = MessageResolver.resolve(channel, 0, MessageOrder.OLDEST_FIRST)
+      val message = message(channel(guild, "general"), 0, MessageOrder.OLDEST_FIRST)
 
-      messageEmojiDataConnector.insert(MessageEmojiData(message.id, 25))
+      hallOfFame.seedMessageToCount("test-guild", "general", 0, count = 25)
 
-      hallOfFameCommand.recheckMessage(message.id, guild.id)
+      hallOfFame.recheckMessage(message, guild.id)
       awaitAll()
 
-      val hofMessage = hallOfFameConnector.getMessage(message.id)
-      assertNotNull(hofMessage, "Message exceeding threshold should be added to Hall of Fame")
-      assertEquals(false, hofMessage.isSent)
+      hallOfFame.expectQueued(message, isSent = false)
     }
   }
 
@@ -220,35 +176,24 @@ class HallOfFameRecheckTest : BaseKoinTest() {
     }
 
     setup {
-      hallOfFame.configureHallOfFameBlocking("test-guild", "hof", threshold = 10, adminUserId = "admin")
+      hallOfFame.configureBlocking("test-guild", "hof", threshold = 10, adminUserId = "admin")
     }
 
     scenario {
-      val hallOfFameCommand: HallOfFameCommand by koin.inject()
-      val databaseConfig: DatabaseConfiguration by koin.inject()
-      val database = databaseConfig.toDatabase()
-      val hallOfFameConnector = HallOfFameConnector(database)
-      val messageEmojiDataConnector = MessageEmojiDataConnector(database)
-
       val guild = guild("test-guild")
-      val channel = ChannelResolver.resolve(guild, "general")
-      val message = MessageResolver.resolve(channel, 0, MessageOrder.OLDEST_FIRST)
+      val message = message(channel(guild, "general"), 0, MessageOrder.OLDEST_FIRST)
 
-      messageEmojiDataConnector.insert(MessageEmojiData(message.id, 10))
+      hallOfFame.seedMessageToCount("test-guild", "general", 0, count = 10)
 
-      hallOfFameCommand.recheckMessage(message.id, guild.id)
+      hallOfFame.recheckMessage(message, guild.id)
       awaitAll()
 
-      val hofMessage1 = hallOfFameConnector.getMessage(message.id)
-      assertNotNull(hofMessage1)
+      hallOfFame.expectQueued(message, isSent = false)
 
-      hallOfFameCommand.recheckMessage(message.id, guild.id)
+      hallOfFame.recheckMessage(message, guild.id)
       awaitAll()
 
-      val hofMessage2 = hallOfFameConnector.getMessage(message.id)
-      assertNotNull(hofMessage2)
-      assertEquals(hofMessage1.messageId, hofMessage2.messageId)
-      assertEquals(hofMessage1.isSent, hofMessage2.isSent)
+      hallOfFame.expectQueued(message, isSent = false)
     }
   }
 
@@ -276,9 +221,7 @@ class HallOfFameRecheckTest : BaseKoinTest() {
       val hallOfFameCommand: HallOfFameCommand by koin.inject()
       val guild = guild("test-guild")
 
-      runBlocking {
-        hallOfFameCommand.recheckGuild(guild.id)
-      }
+      hallOfFameCommand.recheckGuild(guild.id)
       awaitAll()
 
       // No assertion needed - just verify no crash
@@ -308,23 +251,16 @@ class HallOfFameRecheckTest : BaseKoinTest() {
     }
 
     setup {
-      hallOfFame.configureHallOfFameBlocking("test-guild", "hof", threshold = 5, adminUserId = "admin")
+      hallOfFame.configureBlocking("test-guild", "hof", threshold = 5, adminUserId = "admin")
       hallOfFame.seedMessageToCount("test-guild", "general", 0, count = 7)
       hallOfFame.seedMessageToCount("test-guild", "general", 1, count = 6)
       hallOfFame.seedMessageToCount("test-guild", "general", 2, count = 8)
     }
 
     scenario {
-      val hallOfFameCommand: HallOfFameCommand by koin.inject()
-      val databaseConfig: DatabaseConfiguration by koin.inject()
-      val database = databaseConfig.toDatabase()
-      val hallOfFameConnector = HallOfFameConnector(database)
       val guild = guild("test-guild")
 
-      runBlocking {
-        hallOfFameCommand.recheckGuild(guild.id)
-      }
-      awaitAll()
+      hallOfFame.recheckGuild(guild.id)
 
       val channel = channel(guild, "general")
       val messages = listOf(
@@ -333,9 +269,9 @@ class HallOfFameRecheckTest : BaseKoinTest() {
         message(channel, 2, MessageOrder.OLDEST_FIRST)
       )
 
-      assertNotNull(hallOfFameConnector.getMessage(messages[0].id), "Message 0 should be in HOF")
-      assertNotNull(hallOfFameConnector.getMessage(messages[1].id), "Message 1 should be in HOF")
-      assertNotNull(hallOfFameConnector.getMessage(messages[2].id), "Message 2 should be in HOF")
+      hallOfFame.expectQueued(messages[0], isSent = false)
+      hallOfFame.expectQueued(messages[1], isSent = false)
+      hallOfFame.expectQueued(messages[2], isSent = false)
     }
   }
 }

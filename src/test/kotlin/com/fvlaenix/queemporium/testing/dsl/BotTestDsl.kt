@@ -10,9 +10,7 @@ import com.fvlaenix.queemporium.testing.fixture.FixtureBuilder
 import com.fvlaenix.queemporium.testing.fixture.TestEnvironmentWithTime
 import com.fvlaenix.queemporium.testing.fixture.setupWithFixture
 import com.fvlaenix.queemporium.testing.fixture.setupWithFixtureAndModules
-import com.fvlaenix.queemporium.testing.helpers.HallOfFameTestContext
 import com.fvlaenix.queemporium.testing.helpers.LoggerTestContext
-import com.fvlaenix.queemporium.testing.helpers.hallOfFameContext
 import com.fvlaenix.queemporium.testing.scenario.ScenarioBuilder
 import com.fvlaenix.queemporium.testing.time.VirtualClock
 import kotlinx.coroutines.runBlocking
@@ -34,7 +32,6 @@ class BotTestContext {
   internal var databaseConfig: DatabaseConfiguration? = null
   internal var messageDataConnector: MessageDataConnector? = null
 
-  internal var _hallOfFameContext: HallOfFameTestContext? = null
   internal var _loggerContext: LoggerTestContext? = null
 
   fun before(block: FixtureBuilder.() -> Unit) {
@@ -66,8 +63,9 @@ class BotTestContext {
 class BotTestScenarioContext(private val setupContext: BotTestSetupContext) {
   private val scenarioBuilder = ScenarioBuilder()
 
-  val hallOfFame: HallOfFameTestContext
-    get() = setupContext.hallOfFame
+  private val hallOfFameDsl by lazy { setupContext.hallOfFameWithScenario(scenarioBuilder) }
+  val hallOfFame: HallOfFameDsl
+    get() = hallOfFameDsl
 
   private val adventDsl by lazy { setupContext.adventWithScenario(scenarioBuilder) }
   val advent: AdventDsl
@@ -206,24 +204,19 @@ class BotTestSetupContext(
     MessageEmojiDataConnector(databaseConfig.toDatabase())
   }
 
+  val hallOfFameConnector: HallOfFameConnector by lazy {
+    HallOfFameConnector(databaseConfig.toDatabase())
+  }
+
+  private val hallOfFameDsl by lazy { HallOfFameDsl(this) }
   val adventDataConnector: AdventDataConnector by lazy {
     AdventDataConnector(databaseConfig.toDatabase())
   }
 
   private val adventDsl by lazy { AdventDsl(this) }
 
-  val hallOfFame: HallOfFameTestContext by lazy {
-    parentContext._hallOfFameContext ?: run {
-      val hallOfFameConnector = HallOfFameConnector(databaseConfig.toDatabase())
-      val context = envWithTime.hallOfFameContext(
-        hallOfFameConnector = hallOfFameConnector,
-        emojiDataConnector = emojiDataConnector,
-        answerService = answerService
-      )
-      parentContext._hallOfFameContext = context
-      context
-    }
-  }
+  val hallOfFame: HallOfFameDsl
+    get() = hallOfFameDsl
 
   val advent: AdventDsl
     get() = adventDsl
@@ -312,6 +305,30 @@ class BotTestSetupContext(
     return message(channel, 0, MessageOrder.OLDEST_FIRST)
   }
 
+  fun resolveUser(idOrName: String): net.dv8tion.jda.api.entities.User {
+    envWithTime.userMap[idOrName]?.let { return it }
+
+    envWithTime.environment.jda.users.find { it.id == idOrName || it.name == idOrName }?.let { return it }
+
+    envWithTime.environment.jda.guilds
+      .flatMap { it.members }
+      .map { it.user }
+      .firstOrNull { it.id == idOrName || it.name == idOrName }
+      ?.let { return it }
+
+    val user = envWithTime.environment.createUser(idOrName, false)
+    envWithTime.environment.jda.guilds.firstOrNull()?.let { guild ->
+      envWithTime.environment.createMember(guild, user)
+    }
+    return user
+  }
+
+  internal fun hallOfFameWithScenario(
+    scenarioBuilder: ScenarioBuilder
+  ): HallOfFameDsl {
+    return HallOfFameDsl(this, scenarioBuilder)
+  }
+
   internal fun adventWithScenario(
     scenarioBuilder: ScenarioBuilder
   ): AdventDsl {
@@ -344,7 +361,7 @@ fun BaseKoinTest.testBot(block: BotTestContext.() -> Unit) = runBlocking {
   autoPopulateMessageData(envWithTime, messageDataConnector)
 
   // Automatically populate author data into the database
-  val authorDataConnector = com.fvlaenix.queemporium.database.AuthorDataConnector(databaseConfig.toDatabase())
+  val authorDataConnector = AuthorDataConnector(databaseConfig.toDatabase())
   autoPopulateAuthorData(envWithTime, authorDataConnector)
 
   // Automatically populate emoji/reaction data into the database
@@ -416,7 +433,7 @@ class BotTestFixture(private val context: BotTestContext) {
     autoPopulateMessageData(envWithTime, messageDataConnector)
 
     // Automatically populate author data into the database
-    val authorDataConnector = com.fvlaenix.queemporium.database.AuthorDataConnector(databaseConfig.toDatabase())
+    val authorDataConnector = AuthorDataConnector(databaseConfig.toDatabase())
     autoPopulateAuthorData(envWithTime, authorDataConnector)
 
     // Automatically populate emoji/reaction data into the database
@@ -495,16 +512,16 @@ private fun autoPopulateMessageData(
 
 private fun autoPopulateAuthorData(
   envWithTime: TestEnvironmentWithTime,
-  authorDataConnector: com.fvlaenix.queemporium.database.AuthorDataConnector
+  authorDataConnector: AuthorDataConnector
 ) {
   envWithTime.environment.jda.guilds.forEach { guild ->
-    val authors = mutableSetOf<com.fvlaenix.queemporium.database.AuthorData>()
+    val authors = mutableSetOf<AuthorData>()
 
     // Collect authors from all messages in the guild
     guild.channels.filterIsInstance<TestTextChannel>().forEach { channel ->
       channel.messages.forEach { msg ->
         authors.add(
-          com.fvlaenix.queemporium.database.AuthorData(
+          AuthorData(
             authorId = msg.author.id,
             guildId = guild.id,
             authorName = msg.author.name
@@ -524,7 +541,7 @@ private fun autoPopulateEmojiData(
   envWithTime: TestEnvironmentWithTime,
   emojiDataConnector: EmojiDataConnector
 ) {
-  val emojiDataList = mutableListOf<com.fvlaenix.queemporium.database.EmojiData>()
+  val emojiDataList = mutableListOf<EmojiData>()
 
   envWithTime.environment.jda.guilds.forEach { guild ->
     guild.channels.filterIsInstance<TestTextChannel>().forEach { channel ->
@@ -532,7 +549,7 @@ private fun autoPopulateEmojiData(
         msg.reactions.forEach { reaction ->
           reaction.retrieveUsers().complete().forEach { user ->
             emojiDataList.add(
-              com.fvlaenix.queemporium.database.EmojiData(
+              EmojiData(
                 messageId = msg.id,
                 emojiId = reaction.emoji.name,
                 authorId = user.id
