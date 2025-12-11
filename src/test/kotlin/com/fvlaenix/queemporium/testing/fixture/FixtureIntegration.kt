@@ -73,7 +73,8 @@ data class TestEnvironmentWithTime(
   val environment: TestEnvironment,
   val timeController: TimeController?,
   val testProvider: TestCoroutineProvider,
-  val userMap: Map<String, net.dv8tion.jda.api.entities.User> = emptyMap()
+  val userMap: Map<String, net.dv8tion.jda.api.entities.User> = emptyMap(),
+  val storageForTests: MutableMap<String, Any> = mutableMapOf()
 )
 
 suspend fun TestEnvironmentWithTime.awaitAll() {

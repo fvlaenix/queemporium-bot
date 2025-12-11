@@ -56,6 +56,10 @@ class GuildFixtureBuilder(private val name: String) {
     members.add(MemberFixture(userId, isAdmin))
   }
 
+  fun addAdmin(userId: String) {
+    member(userId, isAdmin = true)
+  }
+
   fun channel(name: String, block: ChannelFixtureBuilder.() -> Unit = {}): ChannelFixture {
     val builder = ChannelFixtureBuilder(name)
     builder.block()

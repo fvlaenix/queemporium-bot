@@ -58,6 +58,15 @@ class AdventDataConnector(val database: Database) {
     }
   }
 
+  fun updateEpoch(guildId: String, messageId: String, newEpoch: Long) = transaction(database) {
+    AdventDataTable.update({
+      (AdventDataTable.guildPostId eq guildId) and
+          (AdventDataTable.messageId eq messageId)
+    }) {
+      it[epoch] = newEpoch
+    }
+  }
+
   companion object {
     private fun get(resultRow: ResultRow): AdventData = AdventData(
       resultRow[AdventDataTable.messageId],

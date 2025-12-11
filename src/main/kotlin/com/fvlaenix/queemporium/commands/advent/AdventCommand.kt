@@ -37,6 +37,9 @@ class AdventCommand(
 
   companion object {
     const val COMMAND_PREFIX = "/shogun-sama start-advent"
+    const val COMMAND_ADVENT_PREFIX = "/shogun-sama advent"
+    const val COMMAND_POST_RIGHT_NOW = "/shogun-sama advent post-right-now"
+    const val COMMAND_LIST = "/shogun-sama advent list"
     const val DEFAULT_COUNT = 31
     const val MIN_COUNT = 2
 
@@ -48,6 +51,8 @@ class AdventCommand(
     private const val MESSAGE_GUILD_ONLY = "This only applies to servers, stupid!"
     private const val MESSAGE_ADMIN_ONLY = "Pathetic, only admins can use this!"
     private const val MESSAGE_CANT_SEND = "I can't send message! Please look at it by link"
+    private const val MESSAGE_ADVENT_NOT_CONFIGURED = "Advent is not configured for this server."
+    private const val MESSAGE_NO_UNREVEALED_ENTRIES = "No unrevealed advent entries left."
 
     private val DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy-HH:mm")
   }
@@ -86,6 +91,122 @@ class AdventCommand(
     }
   }
 
+  private fun rescheduleRemaining(nowMillis: Long, remaining: List<AdventData>) {
+    if (remaining.isEmpty()) return
+
+    val sorted = remaining.sortedBy { it.epoch }
+    val newStart = nowMillis
+    val originalFinalEpoch = sorted.last().epoch
+    val finalEpoch = originalFinalEpoch.coerceAtLeast(newStart)
+
+    if (sorted.size == 1) {
+      adventDataConnector.updateEpoch(sorted[0].guildPostId, sorted[0].messageId, newStart)
+      LOG.info("Rescheduled single remaining entry to epoch $newStart")
+      return
+    }
+
+    val divisor = sorted.size - 1
+    val interval = if (finalEpoch <= newStart) 0L else (finalEpoch - newStart) / divisor
+
+    sorted.forEachIndexed { index, data ->
+      val newEpoch = if (interval == 0L) newStart else newStart + interval * index
+      adventDataConnector.updateEpoch(data.guildPostId, data.messageId, newEpoch)
+      LOG.info("Rescheduled entry ${data.messageId} from epoch ${data.epoch} to $newEpoch")
+    }
+
+    LOG.info("Rescheduled ${sorted.size} entries with interval $interval ms")
+  }
+
+  private suspend fun handlePostRightNow(event: MessageReceivedEvent) {
+    val guildId = event.guild.id
+    val jda = event.jda
+
+    LOG.info("Handling post-right-now command for guild $guildId by user ${event.author.name}")
+
+    val allAdvents = adventDataConnector.getAdvents().filter { it.guildPostId == guildId }
+    if (allAdvents.isEmpty()) {
+      LOG.warn("No advent configured for guild $guildId")
+      answerService.sendReply(event.message, MESSAGE_ADVENT_NOT_CONFIGURED)
+      return
+    }
+
+    val unrevealed = allAdvents.filter { !it.isRevealed }.sortedBy { it.epoch }
+    if (unrevealed.isEmpty()) {
+      LOG.warn("No unrevealed entries for guild $guildId")
+      answerService.sendReply(event.message, MESSAGE_NO_UNREVEALED_ENTRIES)
+      return
+    }
+
+    val toPost = unrevealed.first()
+    val originalPosition = allAdvents.sortedBy { it.epoch }.indexOf(toPost) + 1
+
+    LOG.info("Posting entry #$originalPosition (messageId=${toPost.messageId}) immediately")
+
+    postMessage(jda, toPost)
+    adventDataConnector.markAsRevealed(toPost.guildPostId, toPost.messageId)
+
+    val nowMillis = Instant.now(clock).toEpochMilli()
+    val remaining = adventDataConnector.getAdvents()
+      .filter { it.guildPostId == guildId && !it.isRevealed }
+
+    rescheduleRemaining(nowMillis, remaining)
+
+    runAdvent(jda)
+
+    val responseText = buildString {
+      append("Posted Advent entry #$originalPosition.")
+      if (remaining.isNotEmpty()) {
+        val nextEntry = remaining.sortedBy { it.epoch }.first()
+        val nextTime = Instant.ofEpochMilli(nextEntry.epoch)
+        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")
+          .withZone(ZoneOffset.UTC)
+        append(" Next entry at ${formatter.format(nextTime)} UTC.")
+      }
+    }
+
+    LOG.info("Post-right-now completed for guild $guildId: $responseText")
+    answerService.sendReply(event.message, responseText)
+  }
+
+  private suspend fun handleList(event: MessageReceivedEvent) {
+    val guildId = event.guild.id
+
+    LOG.info("Handling list command for guild $guildId by user ${event.author.name}")
+
+    val allAdvents = adventDataConnector.getAdvents().filter { it.guildPostId == guildId }
+    if (allAdvents.isEmpty()) {
+      LOG.warn("No advent configured for guild $guildId")
+      answerService.sendReply(event.message, MESSAGE_ADVENT_NOT_CONFIGURED)
+      return
+    }
+
+    val unrevealed = allAdvents.filter { !it.isRevealed }.sortedBy { it.epoch }
+    if (unrevealed.isEmpty()) {
+      LOG.warn("No unrevealed entries for guild $guildId")
+      answerService.sendReply(event.message, MESSAGE_NO_UNREVEALED_ENTRIES)
+      return
+    }
+
+    val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")
+      .withZone(ZoneOffset.UTC)
+
+    val responseText = buildString {
+      appendLine("Advent queue (UTC):")
+      unrevealed.forEachIndexed { index, data ->
+        val position = index + 1
+        val time = Instant.ofEpochMilli(data.epoch)
+        val formattedTime = formatter.format(time)
+        val url = messagesDataConnector.get(data.messageId)?.let { messageData ->
+          "https://discord.com/channels/${messageData.guildId ?: "@me"}/${messageData.channelId}/${messageData.messageId}"
+        } ?: "URL unavailable"
+        appendLine("#$position – $formattedTime – $url")
+      }
+    }
+
+    LOG.info("List command completed for guild $guildId: ${unrevealed.size} unrevealed entries")
+    answerService.sendReply(event.message, responseText.trim())
+  }
+
   private fun runAdvent(jda: JDA) {
     currentJob?.cancel()
     currentJob = coroutineProvider.mainScope.launch(Dispatchers.IO) {
@@ -108,8 +229,10 @@ class AdventCommand(
     runAdvent(event.jda)
   }
 
-  override fun receiveMessageFilter(event: MessageReceivedEvent): Boolean =
-    event.message.contentRaw.startsWith(COMMAND_PREFIX)
+  override fun receiveMessageFilter(event: MessageReceivedEvent): Boolean {
+    val content = event.message.contentRaw
+    return content.startsWith(COMMAND_PREFIX) || content.startsWith(COMMAND_ADVENT_PREFIX)
+  }
 
   override suspend fun onMessageReceivedSuspend(event: MessageReceivedEvent) {
     LOG.info("Received advent command from user ${event.author.name} in guild ${event.guild?.name}")
@@ -127,27 +250,50 @@ class AdventCommand(
       answerService.sendReply(postMessage, MESSAGE_ADMIN_ONLY)
       return
     }
-    val jda = event.jda
 
-    LOG.info("Parsing advent command for guild $postGuildId, channel $postChannelId")
-    val (allCommandsEvents, debugData, errors) = getEventsFromCommand(
-      postMessage.contentRaw,
-      jda, postGuildId, postChannelId
-    )
+    val commandContent = postMessage.contentRaw
 
-    if (errors.isEmpty()) {
-      LOG.info("Successfully parsed ${allCommandsEvents.size} advent entries")
-      if (debugData.isNotBlank()) {
-        answerService.sendReply(postMessage, debugData)
+    when {
+      commandContent.startsWith(COMMAND_POST_RIGHT_NOW) -> {
+        handlePostRightNow(event)
       }
-      adventDataConnector.initializeAdvent(allCommandsEvents)
-      runAdvent(event.jda)
-    } else {
-      LOG.warn("Command parsing failed with ${errors.size} errors")
-      answerService.sendReply(
-        destination = postMessage,
-        text = errors.joinToString("\n")
-      )
+
+      commandContent.startsWith(COMMAND_LIST) -> {
+        handleList(event)
+      }
+
+      commandContent.startsWith(COMMAND_PREFIX) -> {
+        val jda = event.jda
+
+        LOG.info("Parsing advent command for guild $postGuildId, channel $postChannelId")
+        val (allCommandsEvents, debugData, errors) = getEventsFromCommand(
+          postMessage.contentRaw,
+          jda, postGuildId, postChannelId
+        )
+
+        if (errors.isEmpty()) {
+          LOG.info("Successfully parsed ${allCommandsEvents.size} advent entries")
+          if (debugData.isNotBlank()) {
+            answerService.sendReply(postMessage, debugData)
+          }
+          adventDataConnector.initializeAdvent(allCommandsEvents)
+          runAdvent(event.jda)
+        } else {
+          LOG.warn("Command parsing failed with ${errors.size} errors")
+          answerService.sendReply(
+            destination = postMessage,
+            text = errors.joinToString("\n")
+          )
+        }
+      }
+
+      else -> {
+        LOG.warn("Unknown advent command: $commandContent")
+        answerService.sendReply(
+          postMessage,
+          "Unknown advent command. Available commands: start-advent, advent post-right-now, advent list"
+        )
+      }
     }
   }
 

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.time.Instant
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 
@@ -382,6 +383,194 @@ class AdventCommandIntegrationTest : BaseKoinTest() {
       advent.expectQueue {
         revealedCount(2)
         unrevealedCount(0)
+      }
+    }
+  }
+
+  @Test
+  @Timeout(value = 30, unit = TimeUnit.SECONDS)
+  fun `test post-right-now posts next entry immediately`() = testBot {
+    val startTime = Instant.parse("2024-12-01T00:00:00Z")
+    withVirtualTime(startTime)
+
+    before {
+      enableFeature(FeatureKeys.ADVENT)
+
+      user("admin") { isBot(false) }
+      user("alice")
+
+      guild("test-guild") {
+        channel("general") {
+          message(author = "alice", text = "Day 1 content") {
+            reaction("👍") { user("alice") }
+          }
+          message(author = "alice", text = "Day 2 content") {
+            reaction("👍") { user("alice") }
+          }
+          message(author = "alice", text = "Day 3 content") {
+            reaction("👍") { user("alice") }
+          }
+        }
+        channel("advent-reveals")
+        addAdmin("admin")
+      }
+    }
+
+    setup {
+      val messages = getMessages("test-guild", "general")
+
+      advent.scheduleMultipleEntries(
+        guildId = "test-guild",
+        postChannelId = "advent-reveals",
+        entries = listOf(
+          messages[0] to "Entry 1",
+          messages[1] to "Entry 2",
+          messages[2] to "Entry 3"
+        ),
+        startTime = startTime.plusMillis(10.days.inWholeMilliseconds),
+        interval = 1.days
+      )
+
+      advent.expectQueue {
+        revealedCount(0)
+        unrevealedCount(3)
+      }
+    }
+
+    scenario {
+      sendMessage("test-guild", "advent-reveals", "admin", AdventCommand.COMMAND_POST_RIGHT_NOW)
+      awaitAll()
+
+      advent.expectMessagePosted(channel("test-guild", "advent-reveals").id, "Entry 1")
+
+      advent.expectQueue {
+        revealedCount(2)
+        unrevealedCount(1)
+      }
+
+      expect("success message sent") {
+        val answers = answerService!!.answers
+        val successMessage = answers.find { it.text.contains("Posted Advent entry #1") }
+        assertTrue(successMessage != null, "Should send success message")
+      }
+    }
+  }
+
+  @Test
+  @Timeout(value = 30, unit = TimeUnit.SECONDS)
+  fun `test post-right-now with no advent configured`() = testBot {
+    val startTime = Instant.parse("2024-12-01T00:00:00Z")
+    withVirtualTime(startTime)
+
+    before {
+      enableFeature(FeatureKeys.ADVENT)
+
+      user("admin") { isBot(false) }
+
+      guild("test-guild") {
+        channel("advent-reveals")
+        addAdmin("admin")
+      }
+    }
+
+    scenario {
+      sendMessage("test-guild", "advent-reveals", "admin", AdventCommand.COMMAND_POST_RIGHT_NOW)
+      awaitAll()
+
+      expect("error message sent") {
+        val answers = answerService!!.answers
+        val errorMessage = answers.find { it.text.contains("Advent is not configured") }
+        assertTrue(errorMessage != null, "Should send error message when advent not configured")
+      }
+    }
+  }
+
+  @Test
+  @Timeout(value = 30, unit = TimeUnit.SECONDS)
+  fun `test list shows all unrevealed entries`() = testBot {
+    val startTime = Instant.parse("2024-12-01T00:00:00Z")
+    withVirtualTime(startTime)
+
+    before {
+      enableFeature(FeatureKeys.ADVENT)
+
+      user("admin") { isBot(false) }
+      user("alice")
+
+      guild("test-guild") {
+        channel("general") {
+          message(author = "alice", text = "Entry 1") {
+            reaction("👍") { user("alice") }
+          }
+          message(author = "alice", text = "Entry 2") {
+            reaction("👍") { user("alice") }
+          }
+          message(author = "alice", text = "Entry 3") {
+            reaction("👍") { user("alice") }
+          }
+        }
+        channel("advent-reveals")
+        addAdmin("admin")
+      }
+    }
+
+    setup {
+      val messages = getMessages("test-guild", "general")
+
+      advent.scheduleMultipleEntries(
+        guildId = "test-guild",
+        postChannelId = "advent-reveals",
+        entries = listOf(
+          messages[0] to "Entry 1",
+          messages[1] to "Entry 2",
+          messages[2] to "Entry 3"
+        ),
+        startTime = startTime.plusMillis(1.days.inWholeMilliseconds),
+        interval = 1.days
+      )
+    }
+
+    scenario {
+      sendMessage("test-guild", "advent-reveals", "admin", AdventCommand.COMMAND_LIST)
+      awaitAll()
+
+      expect("list response contains all entries") {
+        val answers = answerService!!.answers
+        val listMessage = answers.find { it.text.contains("Advent queue") }
+        assertTrue(listMessage != null, "Should send list message")
+        assertTrue(listMessage!!.text.contains("#1"), "Should contain entry #1")
+        assertTrue(listMessage.text.contains("#2"), "Should contain entry #2")
+        assertTrue(listMessage.text.contains("#3"), "Should contain entry #3")
+        assertTrue(listMessage.text.contains("UTC"), "Should contain UTC timezone")
+      }
+    }
+  }
+
+  @Test
+  @Timeout(value = 30, unit = TimeUnit.SECONDS)
+  fun `test list with no advent configured`() = testBot {
+    val startTime = Instant.parse("2024-12-01T00:00:00Z")
+    withVirtualTime(startTime)
+
+    before {
+      enableFeature(FeatureKeys.ADVENT)
+
+      user("admin") { isBot(false) }
+
+      guild("test-guild") {
+        channel("advent-reveals")
+        addAdmin("admin")
+      }
+    }
+
+    scenario {
+      sendMessage("test-guild", "advent-reveals", "admin", AdventCommand.COMMAND_LIST)
+      awaitAll()
+
+      expect("error message sent") {
+        val answers = answerService!!.answers
+        val errorMessage = answers.find { it.text.contains("Advent is not configured") }
+        assertTrue(errorMessage != null, "Should send error message when advent not configured")
       }
     }
   }
