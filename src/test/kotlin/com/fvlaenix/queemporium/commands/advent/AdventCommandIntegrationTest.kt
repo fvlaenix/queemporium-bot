@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.time.Instant
 import java.util.concurrent.TimeUnit
-import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 
@@ -51,15 +50,19 @@ class AdventCommandIntegrationTest : BaseKoinTest() {
         interval = 1.hours
       )
 
-      assertEquals(0, advent.getRevealedCount())
-      assertEquals(2, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(0)
+        unrevealedCount(2)
+      }
     }
 
     scenario {
       advent.revealAllEntries()
 
-      assertEquals(2, advent.getRevealedCount())
-      assertEquals(0, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(2)
+        unrevealedCount(0)
+      }
     }
   }
 
@@ -101,15 +104,19 @@ class AdventCommandIntegrationTest : BaseKoinTest() {
         interval = 1.days
       )
 
-      assertEquals(0, advent.getRevealedCount())
-      assertEquals(2, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(0)
+        unrevealedCount(2)
+      }
     }
 
     scenario {
       advent.revealAllEntries()
 
-      assertEquals(2, advent.getRevealedCount())
-      assertEquals(0, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(2)
+        unrevealedCount(0)
+      }
     }
   }
 
@@ -155,8 +162,10 @@ class AdventCommandIntegrationTest : BaseKoinTest() {
         interval = 2.hours
       )
 
-      assertEquals(0, advent.getRevealedCount())
-      assertEquals(2, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(0)
+        unrevealedCount(2)
+      }
     }
 
     scenario {
@@ -169,7 +178,10 @@ class AdventCommandIntegrationTest : BaseKoinTest() {
         }
       }
 
-      assertEquals(1, advent.getRevealedCount())
+      advent.expectQueue {
+        revealedCount(1)
+        unrevealedCount(1)
+      }
     }
 
     scenario {
@@ -182,7 +194,10 @@ class AdventCommandIntegrationTest : BaseKoinTest() {
         }
       }
 
-      assertEquals(2, advent.getRevealedCount())
+      advent.expectQueue {
+        revealedCount(2)
+        unrevealedCount(0)
+      }
     }
   }
 
@@ -232,8 +247,10 @@ class AdventCommandIntegrationTest : BaseKoinTest() {
     scenario {
       advent.revealAllEntries()
 
-      assertEquals(3, advent.getRevealedCount())
-      assertEquals(0, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(3)
+        unrevealedCount(0)
+      }
 
       expect("all messages revealed quickly") {
         messageSentCount(6)
@@ -281,8 +298,10 @@ class AdventCommandIntegrationTest : BaseKoinTest() {
         restartLoop = false
       )
 
-      assertEquals(0, advent.getRevealedCount())
-      assertEquals(2, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(0)
+        unrevealedCount(2)
+      }
     }
 
     scenario {
@@ -297,7 +316,10 @@ class AdventCommandIntegrationTest : BaseKoinTest() {
         }
       }
 
-      assertEquals(1, advent.getRevealedCount())
+      advent.expectQueue {
+        revealedCount(1)
+        unrevealedCount(1)
+      }
     }
   }
 
@@ -339,22 +361,28 @@ class AdventCommandIntegrationTest : BaseKoinTest() {
         interval = 7.days
       )
 
-      assertEquals(0, advent.getRevealedCount())
-      assertEquals(2, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(0)
+        unrevealedCount(2)
+      }
     }
 
     scenario {
       advent.advanceToNextReveal()
 
-      assertEquals(1, advent.getRevealedCount())
-      assertEquals(1, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(1)
+        unrevealedCount(1)
+      }
     }
 
     scenario {
       advent.advanceToNextReveal()
 
-      assertEquals(2, advent.getRevealedCount())
-      assertEquals(0, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(2)
+        unrevealedCount(0)
+      }
     }
   }
 }

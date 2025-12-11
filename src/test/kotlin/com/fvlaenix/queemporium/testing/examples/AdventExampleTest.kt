@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.time.Instant
 import java.util.concurrent.TimeUnit
-import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 
@@ -48,17 +47,14 @@ class AdventExampleTest : BaseKoinTest() {
     scenario {
       advent.advanceToNextReveal()
 
-      expect("should reveal advent message") {
-        val hasMessage = answerService!!.answers.any { it.text.contains("Day 1 of Advent!") }
-        if (!hasMessage) {
-          throw AssertionError("No message found containing 'Day 1 of Advent!'")
-        }
-      }
+      advent.expectMessagePosted(channel("test-guild", "advent-reveals").id, "Day 1 of Advent!")
     }
 
     scenario {
-      assertEquals(1, advent.getRevealedCount())
-      assertEquals(0, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(1)
+        unrevealedCount(0)
+      }
     }
   }
 
@@ -99,50 +95,43 @@ class AdventExampleTest : BaseKoinTest() {
         interval = 1.days
       )
 
-      assertEquals(0, advent.getRevealedCount())
-      assertEquals(3, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(0)
+        unrevealedCount(3)
+      }
     }
 
     scenario {
       advent.advanceToNextReveal()
 
-      expect("should reveal first entry") {
-        val hasMessage = answerService!!.answers.any { it.text.contains("Day 1!") }
-        if (!hasMessage) {
-          throw AssertionError("No message found containing 'Day 1!'")
-        }
-      }
+      advent.expectMessagePosted(channel("calendar-guild", "advent-reveals").id, "Day 1!")
 
-      assertEquals(1, advent.getRevealedCount())
-      assertEquals(2, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(1)
+        unrevealedCount(2)
+      }
     }
 
     scenario {
       advent.advanceToNextReveal()
 
-      expect("should reveal second entry") {
-        val hasMessage = answerService!!.answers.any { it.text.contains("Day 2!") }
-        if (!hasMessage) {
-          throw AssertionError("No message found containing 'Day 2!'")
-        }
-      }
+      advent.expectMessagePosted(channel("calendar-guild", "advent-reveals").id, "Day 2!")
 
-      assertEquals(2, advent.getRevealedCount())
-      assertEquals(1, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(2)
+        unrevealedCount(1)
+      }
     }
 
     scenario {
       advent.advanceToNextReveal()
 
-      expect("should reveal third entry") {
-        val hasMessage = answerService!!.answers.any { it.text.contains("Day 3!") }
-        if (!hasMessage) {
-          throw AssertionError("No message found containing 'Day 3!'")
-        }
-      }
+      advent.expectMessagePosted(channel("calendar-guild", "advent-reveals").id, "Day 3!")
 
-      assertEquals(3, advent.getRevealedCount())
-      assertEquals(0, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(3)
+        unrevealedCount(0)
+      }
     }
   }
 
@@ -184,8 +173,10 @@ class AdventExampleTest : BaseKoinTest() {
     scenario {
       advent.revealAllEntries()
 
-      assertEquals(2, advent.getRevealedCount())
-      assertEquals(0, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(2)
+        unrevealedCount(0)
+      }
 
       expect("should reveal all entries") {
         messageSentCount(4)
@@ -228,14 +219,12 @@ class AdventExampleTest : BaseKoinTest() {
     scenario {
       advent.advanceTime(1.hours)
 
-      expect("should reveal past entry immediately") {
-        val hasMessage = answerService!!.answers.any { it.text.contains("Late reveal!") }
-        if (!hasMessage) {
-          throw AssertionError("No message found containing 'Late reveal!'")
-        }
-      }
+      advent.expectMessagePosted(channel("past-guild", "advent-reveals").id, "Late reveal!")
 
-      assertEquals(1, advent.getRevealedCount())
+      advent.expectQueue {
+        revealedCount(1)
+        unrevealedCount(0)
+      }
     }
   }
 
@@ -396,10 +385,9 @@ class AdventExampleTest : BaseKoinTest() {
       // Restart the advent loop to ensure it's running
       advent.restartAdventLoop()
 
-      expect("command should be processed successfully") {
-        // Should have initialized 20 entries
-        assertEquals(20, advent.getUnrevealedCount())
-        assertEquals(0, advent.getRevealedCount())
+      advent.expectQueue {
+        revealedCount(0)
+        unrevealedCount(20)
       }
     }
 
@@ -420,8 +408,10 @@ class AdventExampleTest : BaseKoinTest() {
         }
       }
 
-      assertEquals(1, advent.getRevealedCount())
-      assertEquals(19, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(1)
+        unrevealedCount(19)
+      }
     }
 
     scenario {
@@ -430,16 +420,20 @@ class AdventExampleTest : BaseKoinTest() {
         advent.advanceToNextReveal()
       }
 
-      assertEquals(6, advent.getRevealedCount())
-      assertEquals(14, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(6)
+        unrevealedCount(14)
+      }
     }
 
     scenario {
       // Reveal all remaining entries
       advent.revealAllEntries()
 
-      assertEquals(20, advent.getRevealedCount())
-      assertEquals(0, advent.getUnrevealedCount())
+      advent.expectQueue {
+        revealedCount(20)
+        unrevealedCount(0)
+      }
 
       expect("should have revealed exactly 20 messages (top by reactions)") {
         // Each reveal sends 2 messages: description + forwarded message

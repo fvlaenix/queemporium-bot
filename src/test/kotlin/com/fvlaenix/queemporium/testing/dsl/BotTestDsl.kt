@@ -10,7 +10,9 @@ import com.fvlaenix.queemporium.testing.fixture.FixtureBuilder
 import com.fvlaenix.queemporium.testing.fixture.TestEnvironmentWithTime
 import com.fvlaenix.queemporium.testing.fixture.setupWithFixture
 import com.fvlaenix.queemporium.testing.fixture.setupWithFixtureAndModules
-import com.fvlaenix.queemporium.testing.helpers.*
+import com.fvlaenix.queemporium.testing.helpers.HallOfFameTestContext
+import com.fvlaenix.queemporium.testing.helpers.LoggerTestContext
+import com.fvlaenix.queemporium.testing.helpers.hallOfFameContext
 import com.fvlaenix.queemporium.testing.scenario.ScenarioBuilder
 import com.fvlaenix.queemporium.testing.time.VirtualClock
 import kotlinx.coroutines.runBlocking
@@ -33,7 +35,6 @@ class BotTestContext {
   internal var messageDataConnector: MessageDataConnector? = null
 
   internal var _hallOfFameContext: HallOfFameTestContext? = null
-  internal var _adventContext: AdventTestContext? = null
   internal var _loggerContext: LoggerTestContext? = null
 
   fun before(block: FixtureBuilder.() -> Unit) {
@@ -68,8 +69,9 @@ class BotTestScenarioContext(private val setupContext: BotTestSetupContext) {
   val hallOfFame: HallOfFameTestContext
     get() = setupContext.hallOfFame
 
-  val advent: AdventTestContext
-    get() = setupContext.advent
+  private val adventDsl by lazy { setupContext.adventWithScenario(scenarioBuilder) }
+  val advent: AdventDsl
+    get() = adventDsl
 
   private val reactionsDsl by lazy { ReactionsDsl(setupContext, scenarioBuilder) }
   val reactions: ReactionsDsl
@@ -204,6 +206,12 @@ class BotTestSetupContext(
     MessageEmojiDataConnector(databaseConfig.toDatabase())
   }
 
+  val adventDataConnector: AdventDataConnector by lazy {
+    AdventDataConnector(databaseConfig.toDatabase())
+  }
+
+  private val adventDsl by lazy { AdventDsl(this) }
+
   val hallOfFame: HallOfFameTestContext by lazy {
     parentContext._hallOfFameContext ?: run {
       val hallOfFameConnector = HallOfFameConnector(databaseConfig.toDatabase())
@@ -217,17 +225,8 @@ class BotTestSetupContext(
     }
   }
 
-  val advent: AdventTestContext by lazy {
-    parentContext._adventContext ?: run {
-      val adventDataConnector = AdventDataConnector(databaseConfig.toDatabase())
-      val context = envWithTime.adventContext(
-        adventDataConnector = adventDataConnector,
-        answerService = answerService
-      )
-      parentContext._adventContext = context
-      context
-    }
-  }
+  val advent: AdventDsl
+    get() = adventDsl
 
   val logger: LoggerTestContext by lazy {
     parentContext._loggerContext ?: run {
@@ -311,6 +310,12 @@ class BotTestSetupContext(
 
   fun firstMessage(channel: net.dv8tion.jda.api.entities.channel.middleman.MessageChannel): net.dv8tion.jda.api.entities.Message {
     return message(channel, 0, MessageOrder.OLDEST_FIRST)
+  }
+
+  internal fun adventWithScenario(
+    scenarioBuilder: ScenarioBuilder
+  ): AdventDsl {
+    return AdventDsl(this, scenarioBuilder)
   }
 }
 
