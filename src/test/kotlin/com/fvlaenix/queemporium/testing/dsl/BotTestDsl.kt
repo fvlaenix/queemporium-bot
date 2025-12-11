@@ -19,6 +19,7 @@ import java.time.Instant
 @DslMarker
 annotation class BotTestDsl
 
+// TODO remove koin.inject and so on from test classes
 @BotTestDsl
 class BotTestContext {
   internal val fixtureBuilder = FixtureBuilder()
