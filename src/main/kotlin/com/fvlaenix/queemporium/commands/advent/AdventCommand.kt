@@ -473,7 +473,7 @@ class AdventCommand(
       }
 
       val startOfYear = toEpochMillis(parseDateTime("01-12-${params.year - 1}-00:00"))
-      val endOfYear = toEpochMillis(parseDateTime("01-01-${params.year + 1}-00:00"))
+      val endOfYear = toEpochMillis(parseDateTime("01-12-${params.year}-00:00"))
 
       // Use the resolved channel ID if a channel was resolved, otherwise use the params channelId (which may be null for all-channels query)
       val queryChannelId = channel?.id ?: params.channelId
