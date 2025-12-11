@@ -34,6 +34,18 @@ data class CustomTraceEvent(
   val data: Any?
 ) : TraceEvent()
 
+enum class DslTraceType {
+  DSL_ACTION,
+  DSL_ASSERT,
+  DSL_DB_CHECK
+}
+
+data class DslTraceEvent(
+  override val timestamp: Instant,
+  val type: DslTraceType,
+  val details: Map<String, Any?>
+) : TraceEvent()
+
 data class ScenarioTrace(
   val testName: String,
   val events: MutableList<TraceEvent> = mutableListOf(),

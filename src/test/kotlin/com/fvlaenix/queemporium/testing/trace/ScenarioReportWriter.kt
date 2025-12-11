@@ -62,6 +62,10 @@ object ScenarioReportWriter {
           writer.println("[$time] STEP: ${event.type}")
           event.details.forEach { (k, v) -> writer.println("  $k: $v") }
         }
+        is DslTraceEvent -> {
+          writer.println("[$time] ${event.type.name}:")
+          event.details.forEach { (k, v) -> writer.println("  $k: $v") }
+        }
 
         is TimeAdvanceEvent -> {
           writer.println("[$time] TIME: Advanced by ${event.duration} -> ${event.newTime}")
@@ -94,6 +98,7 @@ object ScenarioReportWriter {
         val time = timestampFormatter.format(event.timestamp)
         val desc = when (event) {
           is ScenarioStepEvent -> "STEP ${event.type}"
+          is DslTraceEvent -> event.type.name
           is TimeAdvanceEvent -> "TIME +${event.duration}"
           is BotMessageEvent -> "BOT ${event.text.take(50)}"
           is CustomTraceEvent -> "LOG ${event.label}"

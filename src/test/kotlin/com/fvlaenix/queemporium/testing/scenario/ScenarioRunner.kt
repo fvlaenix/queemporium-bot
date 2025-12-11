@@ -30,6 +30,7 @@ class ScenarioRunner(
         channel.messages.forEachIndexed { index, message ->
           val ref = MessageRef(guild.name, channel.name, index)
           context.messagesByRef[ref] = message
+          context.messagesById[message.id] = message
         }
       }
     }
@@ -45,6 +46,7 @@ class ScenarioRunner(
     when (step) {
       is SendMessageStep -> executeSendMessage(step)
       is AddReactionStep -> executeAddReaction(step)
+      is AddReactionByIdStep -> executeAddReactionById(step)
       is AdvanceTimeStep -> executeAdvanceTime(step)
       is AwaitAllStep -> executeAwaitAll()
       is ExpectationStep -> executeExpectation(step)
@@ -74,12 +76,23 @@ class ScenarioRunner(
         val ref = MessageRef(step.guildId, step.channelId, messageIndex)
         context.messagesByRef[ref] = message
       }
+      context.messagesById[message.id] = message
     }
   }
 
   private fun executeAddReaction(step: AddReactionStep) {
     val message = context.messagesByRef[step.messageRef]
       ?: throw IllegalStateException("Message not found for reference: ${step.messageRef}")
+
+    val user = getUser(step.userId)
+    val emoji = TestEmoji(step.emoji)
+
+    environment.addReactionWithEvent(message, emoji, user)
+  }
+
+  private fun executeAddReactionById(step: AddReactionByIdStep) {
+    val message = findMessageById(step.messageId)
+      ?: throw IllegalStateException("Message not found for id: ${step.messageId}")
 
     val user = getUser(step.userId)
     val emoji = TestEmoji(step.emoji)
@@ -118,6 +131,21 @@ class ScenarioRunner(
     return guildCache.getOrPut(guildId) {
       GuildResolver.resolve(environment.jda, guildId)
     }
+  }
+
+  private fun findMessageById(messageId: String): Message? {
+    context.messagesById[messageId]?.let { return it }
+
+    environment.jda.guilds.forEach { guild ->
+      guild.channels.filterIsInstance<TestTextChannel>().forEach { channel ->
+        val message = channel.messages.find { it.id == messageId }
+        if (message != null) {
+          context.messagesById[messageId] = message
+          return message
+        }
+      }
+    }
+    return null
   }
 }
 

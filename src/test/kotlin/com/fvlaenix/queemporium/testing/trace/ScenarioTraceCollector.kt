@@ -29,6 +29,18 @@ object ScenarioTraceCollector {
     addEvent(CustomTraceEvent(Instant.now(), label, data))
   }
 
+  fun logDslAction(details: Map<String, Any?> = emptyMap()) {
+    addEvent(DslTraceEvent(Instant.now(), DslTraceType.DSL_ACTION, details))
+  }
+
+  fun logDslAssert(details: Map<String, Any?> = emptyMap()) {
+    addEvent(DslTraceEvent(Instant.now(), DslTraceType.DSL_ASSERT, details))
+  }
+
+  fun logDslDbCheck(details: Map<String, Any?> = emptyMap()) {
+    addEvent(DslTraceEvent(Instant.now(), DslTraceType.DSL_DB_CHECK, details))
+  }
+
   fun setFixtureSnapshot(snapshot: String) {
     getTrace()?.fixtureSnapshot = snapshot
   }

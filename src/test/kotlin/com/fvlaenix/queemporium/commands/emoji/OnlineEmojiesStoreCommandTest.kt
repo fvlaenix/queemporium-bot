@@ -1,17 +1,8 @@
 package com.fvlaenix.queemporium.commands.emoji
 
-import com.fvlaenix.queemporium.database.EmojiData
-import com.fvlaenix.queemporium.database.EmojiDataConnector
-import com.fvlaenix.queemporium.database.EmojiDataTable
 import com.fvlaenix.queemporium.features.FeatureKeys
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Test
 import kotlin.test.Ignore
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 /**
  * Tests for OnlineEmojiesStoreCommand
@@ -35,12 +26,9 @@ class OnlineEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
       )
     )
 
-    // Before command execution, there should be no emoji data
-    val beforeCount = messageEmojiDataConnector.get(message.id)?.count ?: 0
-    assertEquals(
-      0, beforeCount,
-      "Before command execution, there should be no emoji data stored"
-    )
+    runWithScenario {
+      reactions.expectCount(message, 0)
+    }
 
     // Start the environment which activates the command
     startEnvironment()
@@ -48,23 +36,14 @@ class OnlineEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
     // Wait for all async operations to complete
     env.awaitAll()
 
-    // Check that emoji data was stored
-    val emojiData = messageEmojiDataConnector.get(message.id)
-
-    // Should be 5 reactions (3 👍 + 2 ❤️)
-    assertNotNull(emojiData, "Emoji data should be stored")
-    assertEquals(5, emojiData.count, "Should store all 5 reactions")
-
-    // Check that specific emoji data was stored
-    val storedEmojis = emojiDataConnector.getMessagesAboveThreshold(
-      guildId = testGuild.id,
-      threshold = 1
-    )
-
-    assertTrue(
-      storedEmojis.contains(message.id),
-      "Message should be included in messages with emojis above threshold"
-    )
+    runWithScenario {
+      reactions.awaitProcessing("online emoji store command finished")
+      reactions.expectPersisted(message) {
+        count(5) // 3 👍 + 2 ❤️
+        contains("👍")
+        contains("❤️")
+      }
+    }
   }
 
   @Test
@@ -85,20 +64,18 @@ class OnlineEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
     // Wait for all async operations to complete
     env.awaitAll()
 
-    // Verify all messages have emoji data stored
-    messages.forEach { message ->
-      val emojiData = messageEmojiDataConnector.get(message.id)
-      assertNotNull(emojiData, "Emoji data should be stored for message ${message.id}")
-      assertEquals(6, emojiData.count, "Each message should have 6 reactions stored")
+    runWithScenario {
+      messages.forEach { message ->
+        reactions.expectCount(message, 6)
+      }
+
+      val firstMessage = messages.first()
+      reactions.expectPersisted(firstMessage) {
+        count(6)
+        containsForUser(testUsers[1].id, "👍")
+        containsForUser(testUsers[1].id, "🎉")
+      }
     }
-
-    // Verify that emoji data for individual users is correctly stored
-    val firstMessageId = messages.first().id
-    val firstUserEmojis = emojiDataConnector.getEmojisForMessageByUser(firstMessageId, testUsers[1].id)
-
-    assertEquals(2, firstUserEmojis.size, "User should have 2 emojis on the first message")
-    assertTrue(firstUserEmojis.any { it.emojiId == "👍" }, "User should have thumbs up reaction")
-    assertTrue(firstUserEmojis.any { it.emojiId == "🎉" }, "User should have party reaction")
   }
 
   @Test
@@ -123,8 +100,9 @@ class OnlineEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
     env.awaitAll()
 
     // Verify the old message wasn't processed
-    val oldMessageData = messageEmojiDataConnector.get(oldMessage.id)
-    assertEquals(null, oldMessageData, "Old message should not have emoji data stored")
+    runWithScenario {
+      reactions.expectCount(oldMessage, 0)
+    }
   }
 
   @Test
@@ -145,43 +123,13 @@ class OnlineEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
     // Wait for processing
     env.awaitAll()
 
-    // Verify emoji data was stored
-    val emojiData = messageEmojiDataConnector.get(message.id)
-    assertNotNull(emojiData, "Emoji data should be stored")
-    assertEquals(6, emojiData.count, "Should store all 6 reactions including custom emojis")
-
-    // Verify specific emoji types
-    val storedEmojis = emojiDataConnector.getEmojisForMessage(message.id)
-    assertTrue(storedEmojis.any { it.emojiId == "👍" }, "Should store standard emoji")
-    assertTrue(storedEmojis.any { it.emojiId == "🔥" }, "Should store another standard emoji")
-    assertTrue(storedEmojis.any { it.emojiId == "custom_emoji" }, "Should store custom emoji")
-  }
-}
-
-// Extension functions for testing - these would be added to your project
-private fun EmojiDataConnector.getEmojisForMessageByUser(messageId: String, userId: String): List<EmojiData> {
-  return transaction(database) {
-    EmojiDataTable.select {
-      (EmojiDataTable.messageId eq messageId) and (EmojiDataTable.authorId eq userId)
-    }.map {
-      EmojiData(
-        messageId = it[EmojiDataTable.messageId],
-        emojiId = it[EmojiDataTable.emojiId],
-        authorId = it[EmojiDataTable.authorId]
-      )
-    }
-  }
-}
-
-internal fun EmojiDataConnector.getEmojisForMessage(messageId: String): List<EmojiData> {
-  return transaction(database) {
-    EmojiDataTable.select { EmojiDataTable.messageId eq messageId }
-      .map {
-        EmojiData(
-          messageId = it[EmojiDataTable.messageId],
-          emojiId = it[EmojiDataTable.emojiId],
-          authorId = it[EmojiDataTable.authorId]
-        )
+    runWithScenario {
+      reactions.expectPersisted(message) {
+        count(6)
+        contains("👍")
+        contains("🔥")
+        contains("custom_emoji")
       }
+    }
   }
 }

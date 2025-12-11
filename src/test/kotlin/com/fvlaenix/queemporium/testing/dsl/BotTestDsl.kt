@@ -2,10 +2,7 @@ package com.fvlaenix.queemporium.testing.dsl
 
 import com.fvlaenix.queemporium.commands.advent.AdventDataConnector
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
-import com.fvlaenix.queemporium.database.EmojiDataConnector
-import com.fvlaenix.queemporium.database.HallOfFameConnector
-import com.fvlaenix.queemporium.database.MessageData
-import com.fvlaenix.queemporium.database.MessageDataConnector
+import com.fvlaenix.queemporium.database.*
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.mock.TestTextChannel
 import com.fvlaenix.queemporium.service.MockAnswerService
@@ -73,6 +70,10 @@ class BotTestScenarioContext(private val setupContext: BotTestSetupContext) {
 
   val advent: AdventTestContext
     get() = setupContext.advent
+
+  private val reactionsDsl by lazy { ReactionsDsl(setupContext, scenarioBuilder) }
+  val reactions: ReactionsDsl
+    get() = reactionsDsl
 
   val logger: LoggerTestContext
     get() = setupContext.logger
@@ -195,10 +196,17 @@ class BotTestSetupContext(
   val messageDataConnector: MessageDataConnector,
   private val parentContext: BotTestContext
 ) {
+  val emojiDataConnector: EmojiDataConnector by lazy {
+    EmojiDataConnector(databaseConfig.toDatabase())
+  }
+
+  val messageEmojiDataConnector: MessageEmojiDataConnector by lazy {
+    MessageEmojiDataConnector(databaseConfig.toDatabase())
+  }
+
   val hallOfFame: HallOfFameTestContext by lazy {
     parentContext._hallOfFameContext ?: run {
       val hallOfFameConnector = HallOfFameConnector(databaseConfig.toDatabase())
-      val emojiDataConnector = EmojiDataConnector(databaseConfig.toDatabase())
       val context = envWithTime.hallOfFameContext(
         hallOfFameConnector = hallOfFameConnector,
         emojiDataConnector = emojiDataConnector,

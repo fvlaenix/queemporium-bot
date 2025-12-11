@@ -19,6 +19,12 @@ data class AddReactionStep(
   val userId: String
 ) : ScenarioStep()
 
+data class AddReactionByIdStep(
+  val messageId: String,
+  val emoji: String,
+  val userId: String
+) : ScenarioStep()
+
 data class AdvanceTimeStep(
   val duration: Duration
 ) : ScenarioStep()
@@ -41,5 +47,6 @@ data class MessageRef(
 data class ScenarioContext(
   val sentMessages: MutableList<Message> = mutableListOf(),
   val messagesByRef: MutableMap<MessageRef, Message> = mutableMapOf(),
+  val messagesById: MutableMap<String, Message> = mutableMapOf(),
   val answerService: com.fvlaenix.queemporium.service.AnswerService? = null
 )

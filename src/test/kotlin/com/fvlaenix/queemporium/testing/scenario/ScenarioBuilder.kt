@@ -39,6 +39,14 @@ class ScenarioBuilder {
     steps.add(AddReactionStep(ref, emoji, userId))
   }
 
+  fun addReactionById(
+    messageId: String,
+    emoji: String,
+    userId: String
+  ) {
+    steps.add(AddReactionByIdStep(messageId, emoji, userId))
+  }
+
   fun advanceTime(duration: Duration) {
     steps.add(AdvanceTimeStep(duration))
   }

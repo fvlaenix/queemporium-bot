@@ -9,8 +9,6 @@ import org.junit.jupiter.api.Test
 import org.koin.dsl.module
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 /**
  * Tests for LongTermEmojiesStoreCommand
@@ -38,9 +36,10 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
     )
 
     // Verify that no emoji data exists before command runs
-    messages.forEach { message ->
-      val emojiData = messageEmojiDataConnector.get(message.id)
-      assertEquals(null, emojiData, "No emoji data should exist before command runs")
+    runWithScenario {
+      messages.forEach { message ->
+        reactions.expectCount(message, 0)
+      }
     }
 
     // Start the environment which will trigger the command
@@ -50,25 +49,18 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
     env.awaitAll()
 
     // Verify that emoji data was collected for all messages
-    messages.forEach { message ->
-      val emojiData = messageEmojiDataConnector.get(message.id)
-      assertNotNull(emojiData, "Emoji data should be stored for message ${message.id}")
-      assertEquals(4, emojiData.count, "Each message should have 4 reactions stored")
+    runWithScenario {
+      messages.forEach { message ->
+        reactions.expectCount(message, 4)
+      }
+
+      val firstMessage = messages.first()
+      reactions.expectPersisted(firstMessage) {
+        count(4) // 2 thumbs up + 2 hearts
+        contains("👍")
+        contains("❤️")
+      }
     }
-
-    // Verify emojis are correctly associated with users
-    val firstMessageId = messages.first().id
-    val storedEmojis = emojiDataConnector.getEmojisForMessage(firstMessageId)
-
-    // Should have 4 emoji entries (2 thumbs up + 2 hearts)
-    assertEquals(4, storedEmojis.size, "First message should have 4 emoji entries")
-
-    // Check specific emoji counts
-    val thumbsUpCount = storedEmojis.count { it.emojiId == "👍" }
-    val heartCount = storedEmojis.count { it.emojiId == "❤️" }
-
-    assertEquals(2, thumbsUpCount, "Should have 2 thumbs up reactions")
-    assertEquals(2, heartCount, "Should have 2 heart reactions")
   }
 
   @Test
@@ -100,17 +92,16 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
     // Wait for processing
     env.awaitAll()
 
-    // Verify recent messages have data
-    recentMessages.forEach { message ->
-      val emojiData = messageEmojiDataConnector.get(message.id)
-      assertNotNull(emojiData, "Recent message should have emoji data")
-      assertEquals(2, emojiData.count, "Recent message should have 2 reactions")
-    }
+    runWithScenario {
+      // Verify recent messages have data
+      recentMessages.forEach { message ->
+        reactions.expectCount(message, 2)
+      }
 
-    // Verify old messages are not processed due to time constraint
-    oldMessages.forEach { message ->
-      val emojiData = messageEmojiDataConnector.get(message.id)
-      assertEquals(null, emojiData, "Old messages outside timeframe should not be processed")
+      // Verify old messages are not processed due to time constraint
+      oldMessages.forEach { message ->
+        reactions.expectCount(message, 0)
+      }
     }
   }
 
@@ -151,11 +142,11 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
     // Wait for processing
     env.awaitAll()
 
-    // Verify all messages were processed, regardless of order
-    messages.forEach { message ->
-      val emojiData = messageEmojiDataConnector.get(message.id)
-      assertNotNull(emojiData, "All messages should be processed when shuffling")
-      assertEquals(2, emojiData.count, "Each message should have correct reaction count")
+    runWithScenario {
+      // Verify all messages were processed, regardless of order
+      messages.forEach { message ->
+        reactions.expectCount(message, 2)
+      }
     }
   }
 
@@ -182,18 +173,17 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
     // Wait for processing
     env.awaitAll()
 
-    // Verify all reactions were stored
-    val emojiData = messageEmojiDataConnector.get(message.id)
-    assertNotNull(emojiData, "Emoji data should be stored")
-    assertEquals(12, emojiData.count, "Should store all 12 reactions (6 emojis × 2 users each)")
-
-    // Verify emoji distributions
-    val storedEmojis = emojiDataConnector.getEmojisForMessage(message.id)
-    val emojiCounts = storedEmojis.groupBy { it.emojiId }.mapValues { it.value.size }
-
-    assertEquals(6, emojiCounts.size, "Should have 6 different emoji types")
-    emojiCounts.forEach { (_, count) ->
-      assertEquals(2, count, "Each emoji should have exactly 2 reactions")
+    runWithScenario {
+      // Verify all reactions were stored
+      reactions.expectPersisted(message) {
+        count(12) // 6 emojis × 2 users
+        contains("👍")
+        contains("❤️")
+        contains("😂")
+        contains("🎉")
+        contains("🔥")
+        contains("👀")
+      }
     }
   }
 
@@ -243,17 +233,16 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
     // Wait for processing
     env.awaitAll()
 
-    // Verify first guild messages were processed
-    firstGuildMessages.forEach { message ->
-      val emojiData = messageEmojiDataConnector.get(message.id)
-      assertNotNull(emojiData, "First guild message should have emoji data")
-    }
+    runWithScenario {
+      // Verify first guild messages were processed
+      firstGuildMessages.forEach { message ->
+        reactions.expectCount(message, 4)
+      }
 
-    // Verify second guild messages were processed
-    secondGuildMessages.forEach { message ->
-      val emojiData = messageEmojiDataConnector.get(message.id)
-      assertNotNull(emojiData, "Second guild message should have emoji data")
-      assertEquals(3, emojiData.count, "Should have correct reaction count")
+      // Verify second guild messages were processed
+      secondGuildMessages.forEach { message ->
+        reactions.expectCount(message, 3)
+      }
     }
   }
 
