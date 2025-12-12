@@ -8,7 +8,7 @@ import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.testing.dsl.BotTestFixture
 import com.fvlaenix.queemporium.testing.dsl.BotTestScenarioContext
 import com.fvlaenix.queemporium.testing.dsl.testBotFixture
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 
@@ -28,7 +28,7 @@ abstract class BaseMessagesStoreCommandTest : BaseKoinTest() {
    * Standard test environment setup that runs before each test
    */
   @BeforeEach
-  fun baseSetUp() = runBlocking {
+  fun baseSetUp() = runTest {
     fixture = testBotFixture {
       before {
         enableFeatures(FeatureKeys.MESSAGES_STORE)
@@ -61,13 +61,15 @@ abstract class BaseMessagesStoreCommandTest : BaseKoinTest() {
     // Does nothing by default, should be overridden in specific tests
   }
 
-  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T = runBlocking {
+  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T {
     var result: T? = null
-    fixture.runScenario {
-      result = block()
+    runTest {
+      fixture.runScenario {
+        result = block()
+      }
     }
     @Suppress("UNCHECKED_CAST")
-    result as T
+    return result as T
   }
 
   protected val env: TestEnvironment

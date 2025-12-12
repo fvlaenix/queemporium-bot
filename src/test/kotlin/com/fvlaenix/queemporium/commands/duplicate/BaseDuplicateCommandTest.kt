@@ -9,7 +9,7 @@ import com.fvlaenix.queemporium.mock.createTestAttachment
 import com.fvlaenix.queemporium.service.DuplicateImageService
 import com.fvlaenix.queemporium.service.MockAnswerService
 import com.fvlaenix.queemporium.testing.dsl.*
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User
@@ -36,7 +36,7 @@ abstract class BaseDuplicateCommandTest : BaseKoinTest() {
   protected open var autoStartEnvironment: Boolean = true
 
   @BeforeEach
-  fun baseSetUp() = runBlocking {
+  fun baseSetUp() = runTest {
     mockDuplicateService = createMockDuplicateService()
 
     fixture = testBotFixture {
@@ -99,13 +99,15 @@ abstract class BaseDuplicateCommandTest : BaseKoinTest() {
     return service
   }
 
-  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T = runBlocking {
+  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T {
     var result: T? = null
-    fixture.runScenario {
-      result = block()
+    runTest {
+      fixture.runScenario {
+        result = block()
+      }
     }
     @Suppress("UNCHECKED_CAST")
-    result as T
+    return result as T
   }
 
   protected val env: TestEnvironment
@@ -129,7 +131,7 @@ abstract class BaseDuplicateCommandTest : BaseKoinTest() {
 
     env.awaitAll()
 
-    return result.complete(true)!!
+    return requireNotNull(result.complete(true)) { "Failed to send message with image to $channelName" }
   }
 
   protected fun sendMessageWithMultipleImages(
@@ -156,7 +158,7 @@ abstract class BaseDuplicateCommandTest : BaseKoinTest() {
 
     env.awaitAll()
 
-    return result.complete(true)!!
+    return requireNotNull(result.complete(true)) { "Failed to send message with multiple images to $channelName" }
   }
 
   protected fun createMessageChain(

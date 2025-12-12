@@ -62,21 +62,21 @@ class AdventCommand(
     val postChannel = postGuild.getTextChannelById(adventData.channelPostId) ?: return
 
     val messageData = messagesDataConnector.get(adventData.messageId) ?: run {
-      answerService.sendMessage(postChannel, MESSAGE_CANT_SEND)
+      answerService.sendMessage(postChannel, MESSAGE_CANT_SEND).await()
       return
     }
 
     val originalGuild = messageData.guildId?.let { jda.getGuildById(it) }
     val originalMessageChannel = originalGuild?.getTextChannelById(messageData.channelId)
       ?: jda.getTextChannelById(messageData.channelId) ?: run {
-        answerService.sendMessage(postChannel, MESSAGE_CANT_SEND)
+        answerService.sendMessage(postChannel, MESSAGE_CANT_SEND).await()
         return
       }
 
     val originalMessage = try {
       originalMessageChannel.retrieveMessageById(messageData.messageId).complete()
     } catch (e: Exception) {
-      answerService.sendMessage(postChannel, MESSAGE_CANT_SEND)
+      answerService.sendMessage(postChannel, MESSAGE_CANT_SEND).await()
       return
     }
 
@@ -87,7 +87,7 @@ class AdventCommand(
 
     val messageId = answerService.forwardMessage(originalMessage, postChannel).await()
     if (messageId == null) {
-      answerService.sendMessage(postChannel, MESSAGE_CANT_SEND)
+      answerService.sendMessage(postChannel, MESSAGE_CANT_SEND).await()
     }
   }
 
@@ -126,14 +126,14 @@ class AdventCommand(
     val allAdvents = adventDataConnector.getAdvents().filter { it.guildPostId == guildId }
     if (allAdvents.isEmpty()) {
       LOG.warn("No advent configured for guild $guildId")
-      answerService.sendReply(event.message, MESSAGE_ADVENT_NOT_CONFIGURED)
+      answerService.sendReply(event.message, MESSAGE_ADVENT_NOT_CONFIGURED).await()
       return
     }
 
     val unrevealed = allAdvents.filter { !it.isRevealed }.sortedBy { it.epoch }
     if (unrevealed.isEmpty()) {
       LOG.warn("No unrevealed entries for guild $guildId")
-      answerService.sendReply(event.message, MESSAGE_NO_UNREVEALED_ENTRIES)
+      answerService.sendReply(event.message, MESSAGE_NO_UNREVEALED_ENTRIES).await()
       return
     }
 
@@ -151,12 +151,29 @@ class AdventCommand(
 
     rescheduleRemaining(nowMillis, remaining)
 
+    val rescheduledEntries = adventDataConnector.getAdvents()
+      .filter { it.guildPostId == guildId && !it.isRevealed }
+      .sortedBy { it.epoch }
+
+    for (entry in rescheduledEntries) {
+      if (entry.epoch <= nowMillis) {
+        postMessage(jda, entry)
+        adventDataConnector.markAsRevealed(entry.guildPostId, entry.messageId)
+      } else {
+        break
+      }
+    }
+
     runAdvent(jda)
+
+    val finalRemaining = adventDataConnector.getAdvents()
+      .filter { it.guildPostId == guildId && !it.isRevealed }
+      .sortedBy { it.epoch }
 
     val responseText = buildString {
       append("Posted Advent entry #$originalPosition.")
-      if (remaining.isNotEmpty()) {
-        val nextEntry = remaining.sortedBy { it.epoch }.first()
+      if (finalRemaining.isNotEmpty()) {
+        val nextEntry = finalRemaining.first()
         val nextTime = Instant.ofEpochMilli(nextEntry.epoch)
         val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")
           .withZone(ZoneOffset.UTC)
@@ -165,7 +182,7 @@ class AdventCommand(
     }
 
     LOG.info("Post-right-now completed for guild $guildId: $responseText")
-    answerService.sendReply(event.message, responseText)
+    answerService.sendReply(event.message, responseText).await()
   }
 
   private suspend fun handleList(event: MessageReceivedEvent) {
@@ -176,14 +193,14 @@ class AdventCommand(
     val allAdvents = adventDataConnector.getAdvents().filter { it.guildPostId == guildId }
     if (allAdvents.isEmpty()) {
       LOG.warn("No advent configured for guild $guildId")
-      answerService.sendReply(event.message, MESSAGE_ADVENT_NOT_CONFIGURED)
+      answerService.sendReply(event.message, MESSAGE_ADVENT_NOT_CONFIGURED).await()
       return
     }
 
     val unrevealed = allAdvents.filter { !it.isRevealed }.sortedBy { it.epoch }
     if (unrevealed.isEmpty()) {
       LOG.warn("No unrevealed entries for guild $guildId")
-      answerService.sendReply(event.message, MESSAGE_NO_UNREVEALED_ENTRIES)
+      answerService.sendReply(event.message, MESSAGE_NO_UNREVEALED_ENTRIES).await()
       return
     }
 
@@ -204,7 +221,7 @@ class AdventCommand(
     }
 
     LOG.info("List command completed for guild $guildId: ${unrevealed.size} unrevealed entries")
-    answerService.sendReply(event.message, responseText.trim())
+    answerService.sendReply(event.message, responseText.trim()).await()
   }
 
   private fun runAdvent(jda: JDA) {

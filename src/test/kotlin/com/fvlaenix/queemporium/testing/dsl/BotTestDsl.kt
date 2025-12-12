@@ -13,7 +13,7 @@ import com.fvlaenix.queemporium.testing.fixture.setupWithFixtureAndModules
 import com.fvlaenix.queemporium.testing.helpers.LoggerTestContext
 import com.fvlaenix.queemporium.testing.scenario.ScenarioBuilder
 import com.fvlaenix.queemporium.testing.time.VirtualClock
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import java.time.Instant
 
 @DslMarker
@@ -40,7 +40,11 @@ class BotTestContext {
   }
 
   fun withVirtualTime(startTime: Instant = Instant.now()) {
-    virtualClock = VirtualClock(startTime)
+    val clock = VirtualClock(startTime)
+    virtualClock = clock
+    registerModuleBeforeFeatureLoad(org.koin.dsl.module {
+      single<java.time.Clock> { clock }
+    })
   }
 
   fun withAnswerService(service: MockAnswerService = MockAnswerService()) {
@@ -377,7 +381,7 @@ class BotTestSetupContext(
   }
 }
 
-fun BaseKoinTest.testBot(block: BotTestContext.() -> Unit) = runBlocking {
+fun BaseKoinTest.testBot(block: BotTestContext.() -> Unit) = runTest {
   val context = BotTestContext()
   context.block()
 

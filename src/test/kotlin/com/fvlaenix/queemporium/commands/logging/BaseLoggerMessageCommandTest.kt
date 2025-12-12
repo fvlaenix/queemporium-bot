@@ -6,7 +6,7 @@ import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.testing.dsl.BotTestFixture
 import com.fvlaenix.queemporium.testing.dsl.BotTestScenarioContext
 import com.fvlaenix.queemporium.testing.dsl.testBotFixture
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import net.dv8tion.jda.api.JDA
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -17,7 +17,7 @@ abstract class BaseLoggerMessageCommandTest : BaseKoinTest() {
   protected open var autoStartEnvironment: Boolean = true
 
   @BeforeEach
-  fun baseSetUp() = runBlocking {
+  fun baseSetUp() = runTest {
     fixture = testBotFixture {
       before {
         enableFeatures(*getFeaturesForTest())
@@ -46,27 +46,31 @@ abstract class BaseLoggerMessageCommandTest : BaseKoinTest() {
 
   protected abstract fun getFeaturesForTest(): Array<String>
 
-  protected fun clearLogs() = runBlocking {
+  protected fun clearLogs() = runTest {
     fixture.runScenario {
       logger.clearLogs()
     }
   }
 
-  protected fun getLogsContaining(text: String): List<ILoggingEvent> = runBlocking {
+  protected fun getLogsContaining(text: String): List<ILoggingEvent> {
     var result: List<ILoggingEvent> = emptyList()
-    fixture.runScenario {
-      result = logger.getLogsContaining(text)
+    runTest {
+      fixture.runScenario {
+        result = logger.getLogsContaining(text)
+      }
     }
-    result
+    return result
   }
 
-  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T = runBlocking {
+  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T {
     var result: T? = null
-    fixture.runScenario {
-      result = block()
+    runTest {
+      fixture.runScenario {
+        result = block()
+      }
     }
     @Suppress("UNCHECKED_CAST")
-    result as T
+    return result as T
   }
 
   protected val env: TestEnvironment

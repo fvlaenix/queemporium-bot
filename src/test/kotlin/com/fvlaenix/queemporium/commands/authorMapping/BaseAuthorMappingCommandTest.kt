@@ -10,7 +10,7 @@ import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.mock.createTestAttachment
 import com.fvlaenix.queemporium.service.MockAnswerService
 import com.fvlaenix.queemporium.testing.dsl.*
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User
@@ -46,7 +46,7 @@ abstract class BaseAuthorMappingCommandTest : BaseKoinTest() {
    * Standard test environment setup that runs before each test
    */
   @BeforeEach
-  fun baseSetUp() = runBlocking {
+  fun baseSetUp() = runTest {
     mockAnswerService = MockAnswerService()
 
     fixture = testBotFixture {
@@ -83,13 +83,15 @@ abstract class BaseAuthorMappingCommandTest : BaseKoinTest() {
     fixture.cleanup()
   }
 
-  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T = runBlocking {
+  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T {
     var result: T? = null
-    fixture.runScenario {
-      result = block()
+    runTest {
+      fixture.runScenario {
+        result = block()
+      }
     }
     @Suppress("UNCHECKED_CAST")
-    result as T
+    return result as T
   }
 
   protected val env: TestEnvironment
@@ -126,6 +128,6 @@ abstract class BaseAuthorMappingCommandTest : BaseKoinTest() {
     // Wait for processing
     env.awaitAll()
 
-    return result.complete(true)!!
+    return requireNotNull(result.complete(true)) { "sendMessage should return a Message for $channelName" }
   }
 }

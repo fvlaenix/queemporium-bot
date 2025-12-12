@@ -85,6 +85,7 @@ dependencies {
     // tests
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit5"))
+  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     testImplementation("io.mockk:mockk:1.13.13")
 
     // logging

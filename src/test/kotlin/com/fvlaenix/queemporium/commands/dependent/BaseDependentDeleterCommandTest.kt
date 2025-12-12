@@ -8,7 +8,7 @@ import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.testing.dsl.*
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User
@@ -39,7 +39,7 @@ abstract class BaseDependentDeleterCommandTest : BaseKoinTest() {
    * Standard test environment setup that runs before each test
    */
   @BeforeEach
-  fun baseSetUp() = runBlocking {
+  fun baseSetUp() = runTest {
     fixture = testBotFixture {
       before {
         enableFeatures(FeatureKeys.DEPENDENT_DELETER, FeatureKeys.MESSAGES_STORE)
@@ -78,13 +78,15 @@ abstract class BaseDependentDeleterCommandTest : BaseKoinTest() {
     // Does nothing by default, can be overridden in specific tests
   }
 
-  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T = runBlocking {
+  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T {
     var result: T? = null
-    fixture.runScenario {
-      result = block()
+    runTest {
+      fixture.runScenario {
+        result = block()
+      }
     }
     @Suppress("UNCHECKED_CAST")
-    result as T
+    return result as T
   }
 
   protected val env: TestEnvironment
@@ -103,11 +105,11 @@ abstract class BaseDependentDeleterCommandTest : BaseKoinTest() {
       channelName,
       testUser,
       messageText
-    ).complete(true)!!
+    ).complete(true)
 
     env.awaitAll()
 
-    return message
+    return requireNotNull(message) { "Failed to create message in $channelName" }
   }
 
   /**

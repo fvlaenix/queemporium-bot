@@ -11,7 +11,7 @@ import com.fvlaenix.queemporium.mock.TestEmoji
 import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.mock.TestMessage
 import com.fvlaenix.queemporium.testing.dsl.*
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User
@@ -36,7 +36,7 @@ abstract class BaseEmojiStoreCommandTest : BaseKoinTest() {
   protected open var autoStartEnvironment: Boolean = true
 
   @BeforeEach
-  fun baseSetUp() = runBlocking {
+  fun baseSetUp() = runTest {
     fixture = testBotFixture {
       before {
         enableFeatures(*getFeatureKeysForTest())
@@ -108,13 +108,15 @@ abstract class BaseEmojiStoreCommandTest : BaseKoinTest() {
 
   protected abstract fun getFeatureKeysForTest(): Array<String>
 
-  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T = runBlocking {
+  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T {
     var result: T? = null
-    fixture.runScenario {
-      result = block()
+    runTest {
+      fixture.runScenario {
+        result = block()
+      }
     }
     @Suppress("UNCHECKED_CAST")
-    result as T
+    return result as T
   }
 
   protected val env: TestEnvironment
@@ -125,12 +127,14 @@ abstract class BaseEmojiStoreCommandTest : BaseKoinTest() {
     messageText: String = "Test message with reactions",
     reactionConfig: List<ReactionConfig> = emptyList()
   ): Message {
-    val message = env.sendMessage(
+    val message = requireNotNull(
+      env.sendMessage(
       defaultGuildName,
       channelName,
       testUsers[0],
       messageText
-    ).complete(true)!! as TestMessage
+      ).complete(true) as? TestMessage
+    ) { "Failed to create test message" }
 
     reactionConfig.forEach { config ->
       val emoji = TestEmoji(config.emojiName)

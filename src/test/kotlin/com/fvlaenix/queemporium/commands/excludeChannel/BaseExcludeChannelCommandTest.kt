@@ -7,7 +7,7 @@ import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.service.MockAnswerService
 import com.fvlaenix.queemporium.testing.dsl.*
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User
@@ -39,7 +39,7 @@ abstract class BaseExcludeChannelCommandTest : BaseKoinTest() {
    * Standard test environment setup that runs before each test
    */
   @BeforeEach
-  fun baseSetUp(): Unit = runBlocking {
+  fun baseSetUp(): Unit = runTest {
     answerService = MockAnswerService()
 
     fixture = testBotFixture {
@@ -75,13 +75,15 @@ abstract class BaseExcludeChannelCommandTest : BaseKoinTest() {
     fixture.cleanup()
   }
 
-  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T = runBlocking {
+  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T {
     var result: T? = null
-    fixture.runScenario {
-      result = block()
+    runTest {
+      fixture.runScenario {
+        result = block()
+      }
     }
     @Suppress("UNCHECKED_CAST")
-    result as T
+    return result as T
   }
 
   protected val env: TestEnvironment
@@ -106,7 +108,7 @@ abstract class BaseExcludeChannelCommandTest : BaseKoinTest() {
     )
 
     // Set the member on the message
-    val message = result.complete(true)!!
+    val message = requireNotNull(result.complete(true)) { "Failed to send command to $channelName" }
 
     // Wait for processing
     env.awaitAll()
@@ -123,7 +125,7 @@ abstract class BaseExcludeChannelCommandTest : BaseKoinTest() {
 
     // Send the direct message
     val result = env.sendDirectMessage(dmUser, command)
-    val message = result.complete(true)!!
+    val message = requireNotNull(result.complete(true)) { "Failed to send direct message" }
 
     // Wait for processing
     env.awaitAll()

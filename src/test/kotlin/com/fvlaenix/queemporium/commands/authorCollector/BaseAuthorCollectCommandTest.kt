@@ -9,7 +9,7 @@ import com.fvlaenix.queemporium.testing.dsl.BotTestFixture
 import com.fvlaenix.queemporium.testing.dsl.BotTestScenarioContext
 import com.fvlaenix.queemporium.testing.dsl.GuildResolver
 import com.fvlaenix.queemporium.testing.dsl.testBotFixture
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.User
 import org.junit.jupiter.api.AfterEach
@@ -35,7 +35,7 @@ abstract class BaseAuthorCollectCommandTest : BaseKoinTest() {
    * Standard test environment setup that runs before each test
    */
   @BeforeEach
-  fun baseSetUp() = runBlocking {
+  fun baseSetUp() = runTest {
     fixture = testBotFixture {
       before {
         enableFeatures(FeatureKeys.AUTHOR_COLLECT)
@@ -74,13 +74,15 @@ abstract class BaseAuthorCollectCommandTest : BaseKoinTest() {
     // Does nothing by default, should be overridden in specific tests
   }
 
-  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T = runBlocking {
+  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T {
     var result: T? = null
-    fixture.runScenario {
-      result = block()
+    runTest {
+      fixture.runScenario {
+        result = block()
+      }
     }
     @Suppress("UNCHECKED_CAST")
-    result as T
+    return result as T
   }
 
   protected val env: TestEnvironment

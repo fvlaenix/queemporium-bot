@@ -9,7 +9,7 @@ import com.fvlaenix.queemporium.testing.fixture.setupWithFixture
 import com.fvlaenix.queemporium.testing.scenario.runScenario
 import com.fvlaenix.queemporium.testing.time.VirtualClock
 import com.fvlaenix.queemporium.verification.verify
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import kotlin.test.assertEquals
@@ -27,7 +27,7 @@ class DslVerificationTest : BaseKoinTest() {
   // ========================================
 
   @Test
-  fun `messageCount should pass when count matches`() = runBlocking {
+  fun `messageCount should pass when count matches`() = runTest {
     val answerService = MockAnswerService()
 
     val testFixture = fixture {
@@ -53,7 +53,7 @@ class DslVerificationTest : BaseKoinTest() {
   }
 
   @Test
-  fun `messageCount should fail when count doesn't match`() = runBlocking {
+  fun `messageCount should fail when count doesn't match`() = runTest {
     val answerService = MockAnswerService()
 
     val testFixture = fixture {
@@ -106,7 +106,7 @@ class DslVerificationTest : BaseKoinTest() {
   // ========================================
 
   @Test
-  fun `lastMessageContains should pass when text found`() = runBlocking {
+  fun `lastMessageContains should pass when text found`() = runTest {
     val answerService = MockAnswerService()
 
     val testFixture = fixture {
@@ -132,7 +132,7 @@ class DslVerificationTest : BaseKoinTest() {
   }
 
   @Test
-  fun `lastMessageContains should fail when text not found`() = runBlocking {
+  fun `lastMessageContains should fail when text not found`() = runTest {
     val answerService = MockAnswerService()
 
     val testFixture = fixture {
@@ -302,7 +302,7 @@ class DslVerificationTest : BaseKoinTest() {
   // ========================================
 
   @Test
-  fun `noMessagesSent should pass when no messages`() = runBlocking {
+  fun `noMessagesSent should pass when no messages`() = runTest {
     val answerService = MockAnswerService()
 
     val testFixture = fixture {
@@ -327,7 +327,7 @@ class DslVerificationTest : BaseKoinTest() {
   }
 
   @Test
-  fun `noMessagesSent should fail when messages sent`() = runBlocking {
+  fun `noMessagesSent should fail when messages sent`() = runTest {
     val answerService = MockAnswerService()
 
     val testFixture = fixture {
@@ -381,7 +381,7 @@ class DslVerificationTest : BaseKoinTest() {
   // ========================================
 
   @Test
-  fun `verification should work with multiple messages`() = runBlocking {
+  fun `verification should work with multiple messages`() = runTest {
     val answerService = MockAnswerService()
 
     val testFixture = fixture {
@@ -418,7 +418,7 @@ class DslVerificationTest : BaseKoinTest() {
   // ========================================
 
   @Test
-  fun `fixture should create guilds and channels correctly`() = runBlocking {
+  fun `fixture should create guilds and channels correctly`() = runTest {
     val testFixture = fixture {
       guild("guild1") {
         channel("channel1")
@@ -526,7 +526,7 @@ class DslVerificationTest : BaseKoinTest() {
   }
 
   @Test
-  fun `expect block should support custom description`() = runBlocking {
+  fun `expect block should support custom description`() = runTest {
     val answerService = MockAnswerService()
 
     val testFixture = fixture {

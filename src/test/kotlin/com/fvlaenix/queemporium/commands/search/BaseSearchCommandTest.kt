@@ -6,7 +6,7 @@ import com.fvlaenix.queemporium.mock.createTestAttachment
 import com.fvlaenix.queemporium.service.MockAnswerService
 import com.fvlaenix.queemporium.service.SearchService
 import com.fvlaenix.queemporium.testing.dsl.*
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
@@ -25,7 +25,7 @@ abstract class BaseSearchCommandTest : BaseKoinTest() {
   protected val defaultGeneralChannelName = "general"
 
   @BeforeEach
-  fun baseSetUp() = runBlocking {
+  fun baseSetUp() = runTest {
     mockSearchService = createMockSearchService()
 
     fixture = testBotFixture {
@@ -69,13 +69,15 @@ abstract class BaseSearchCommandTest : BaseKoinTest() {
     return service
   }
 
-  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T = runBlocking {
+  protected fun <T> runWithScenario(block: suspend BotTestScenarioContext.() -> T): T {
     var result: T? = null
-    fixture.runScenario {
-      result = block()
+    runTest {
+      fixture.runScenario {
+        result = block()
+      }
     }
     @Suppress("UNCHECKED_CAST")
-    result as T
+    return result as T
   }
 
   protected val env: TestEnvironment
@@ -118,7 +120,7 @@ abstract class BaseSearchCommandTest : BaseKoinTest() {
       awaitAll()
     }
 
-    return result.complete(true)!!
+    return requireNotNull(result.complete(true)) { "Failed to send search message to $channelName" }
   }
 
   protected fun sendSearchMessageWithMultipleImages(
@@ -146,7 +148,7 @@ abstract class BaseSearchCommandTest : BaseKoinTest() {
       awaitAll()
     }
 
-    return result.complete(true)!!
+    return requireNotNull(result.complete(true)) { "Failed to send search message with multiple images to $channelName" }
   }
 
   protected data class ImageConfig(
