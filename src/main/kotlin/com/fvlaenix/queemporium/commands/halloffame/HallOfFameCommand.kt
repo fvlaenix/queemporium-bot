@@ -23,7 +23,8 @@ class HallOfFameCommand(
   databaseConfiguration: DatabaseConfiguration,
   private val answerService: AnswerService,
   coroutineProvider: BotCoroutineProvider,
-  private val clock: java.time.Clock
+  private val clock: java.time.Clock,
+  private val debug: Boolean = false
 ) : CoroutineListenerAdapter(coroutineProvider) {
   private val database = databaseConfiguration.toDatabase()
   private val hallOfFameConnector = HallOfFameConnector(database)
@@ -33,7 +34,8 @@ class HallOfFameCommand(
   private val messageEmojiDataConnector = MessageEmojiDataConnector(database)
   private val updateDebouncer = HallOfFameUpdateDebouncer(
     coroutineProvider = coroutineProvider,
-    clock = clock
+    clock = clock,
+    debug = debug
   ) { messageId, guildId, newCount ->
     updatePostedMessage(messageId, guildId, newCount)
   }
@@ -49,6 +51,10 @@ class HallOfFameCommand(
       threshold = hallOfFameInfo.threshold,
     )
 
+    if (debug) {
+      LOG.debug("Guild ${hallOfFameInfo.guildId}: Found ${messages.size} messages above threshold ${hallOfFameInfo.threshold}")
+    }
+
     messages.forEach { message ->
       val dataMessage = messageDataConnector.get(message) ?: return@forEach
 
@@ -60,17 +66,26 @@ class HallOfFameCommand(
           isSent = false
         )
       )
-      if (!inserted) {
-        LOG.debug("Hall of Fame entry $message already exists for guild ${hallOfFameInfo.guildId}, skipping enqueue")
+      if (inserted) {
+        if (debug) LOG.debug("Guild ${hallOfFameInfo.guildId}: Enqueued new message $message")
+      } else {
+        if (debug) LOG.debug("Hall of Fame entry $message already exists for guild ${hallOfFameInfo.guildId}, skipping enqueue")
       }
     }
   }
 
   private suspend fun processGuild(jda: JDA, guildId: String) {
+    if (debug) LOG.debug("Processing guild $guildId for Hall of Fame sending")
     val hallOfFameInfo = hallOfFameConnector.getHallOfFameInfo(guildId) ?: return
 
     // Get oldest unsent message
-    val message = hallOfFameConnector.getOldestUnsentMessage(guildId) ?: return
+    val message = hallOfFameConnector.getOldestUnsentMessage(guildId)
+    if (message == null) {
+      if (debug) LOG.debug("No unsent messages for guild $guildId")
+      return
+    }
+
+    if (debug) LOG.debug("Attempting to send Hall of Fame message ${message.messageId} for guild $guildId")
 
     try {
       val guild = jda.getGuildById(guildId) ?: return
@@ -116,6 +131,8 @@ class HallOfFameCommand(
   private fun persistAnnouncement(messageId: String, dependentMessages: List<String>) {
     if (dependentMessages.isEmpty()) return
 
+    if (debug) LOG.debug("Persisting announcement dependencies for $messageId: $dependentMessages")
+
     transaction(database) {
       val updated = HallOfFameMessagesTable.update({
         (HallOfFameMessagesTable.messageId eq messageId) and
@@ -125,7 +142,7 @@ class HallOfFameCommand(
       }
 
       if (updated == 0) {
-        LOG.debug("Hall of Fame entry $messageId already marked as sent, skipping dependency recording")
+        if (debug) LOG.debug("Hall of Fame entry $messageId already marked as sent, skipping dependency recording")
         return@transaction
       }
 
@@ -139,11 +156,13 @@ class HallOfFameCommand(
   }
 
   private fun runHallOfFame(jda: JDA) {
+    if (debug) LOG.debug("Starting Hall of Fame background jobs")
     sendJob?.cancel()
     retrieveJob?.cancel()
 
     sendJob = coroutineProvider.mainScope.launch(CoroutineName("Hall of Fame Send Part")) {
       while (true) {
+        if (debug) LOG.debug("Running Hall of Fame send cycle")
         jda.guilds.forEach { guild ->
           processGuild(jda, guild.id)
         }
@@ -152,6 +171,7 @@ class HallOfFameCommand(
     }
     retrieveJob = coroutineProvider.mainScope.launch(CoroutineName("Hall of Fame Retrieve Part")) {
       while (true) {
+        if (debug) LOG.debug("Running Hall of Fame retrieve cycle")
         hallOfFameConnector.getAll().forEach { info ->
           updateHallOfFameMessages(info)
         }
@@ -168,11 +188,13 @@ class HallOfFameCommand(
   suspend fun recheckMessage(messageId: String, guildId: String) {
     val hallOfFameInfo = hallOfFameConnector.getHallOfFameInfo(guildId)
     if (hallOfFameInfo == null) {
-      LOG.debug("Hall of Fame not configured for guild $guildId")
+      if (debug) LOG.debug("Hall of Fame not configured for guild $guildId")
       return
     }
 
     val emojiCount = messageEmojiDataConnector.get(messageId)?.count ?: return
+
+    if (debug) LOG.debug("Rechecking message $messageId in $guildId. Count: $emojiCount, Threshold: ${hallOfFameInfo.threshold}")
 
     if (emojiCount >= hallOfFameInfo.threshold) {
       val existingEntry = hallOfFameConnector.getMessage(messageId)
@@ -190,22 +212,27 @@ class HallOfFameCommand(
         if (inserted) {
           LOG.info("Message $messageId added to Hall of Fame queue ($emojiCount reactions)")
         } else {
-          LOG.debug("Hall of Fame entry $messageId already queued for guild $guildId, skipping")
+          if (debug) LOG.debug("Hall of Fame entry $messageId already queued for guild $guildId, skipping")
         }
       } else if (existingEntry.isSent) {
+        if (debug) LOG.debug("Message $messageId already sent, debouncing update")
         updateDebouncer.emit(messageId, guildId, emojiCount)
       } else {
-        LOG.debug("Hall of Fame entry $messageId already queued for guild $guildId, not sent yet")
+        if (debug) LOG.debug("Hall of Fame entry $messageId already queued for guild $guildId, not sent yet")
       }
+    } else {
+      if (debug) LOG.debug("Message $messageId below threshold ($emojiCount < ${hallOfFameInfo.threshold})")
     }
   }
 
   suspend fun recheckGuild(guildId: String) {
+    if (debug) LOG.debug("Rechecking guild $guildId")
     val hallOfFameInfo = hallOfFameConnector.getHallOfFameInfo(guildId) ?: return
     updateHallOfFameMessages(hallOfFameInfo)
   }
 
   private suspend fun updatePostedMessage(messageId: String, guildId: String, newCount: Int) {
+    if (debug) LOG.debug("Updating posted Hall of Fame message for $messageId in $guildId to count $newCount")
     val currentJda = jda ?: return
     val dependencies = dependencyConnector.getDependencies(messageId)
     val announcementMessageId = dependencies.firstOrNull() ?: return

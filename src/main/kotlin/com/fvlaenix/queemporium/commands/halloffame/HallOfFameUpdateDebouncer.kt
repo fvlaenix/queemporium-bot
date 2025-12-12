@@ -16,6 +16,7 @@ class HallOfFameUpdateDebouncer(
   private val coroutineProvider: BotCoroutineProvider,
   private val clock: Clock,
   private val debounceDuration: Duration = 30.seconds,
+  private val debug: Boolean = false,
   private val onUpdate: suspend (messageId: String, guildId: String, newCount: Int) -> Unit
 ) {
   private data class MessageKey(val messageId: String, val guildId: String)
@@ -25,15 +26,26 @@ class HallOfFameUpdateDebouncer(
   suspend fun emit(messageId: String, guildId: String, newCount: Int) {
     val key = MessageKey(messageId, guildId)
 
+    if (debug) {
+      LOG.debug("HallOfFameUpdateDebouncer: emit request for $messageId in $guildId with count $newCount")
+    }
+
     pendingJobs[key]?.cancel()
 
     val job = coroutineProvider.mainScope.launch(CoroutineName("hof-debounce-${key.messageId}")) {
-      LOG.debug("Debouncing Hall of Fame update for ${key.messageId} in guild ${key.guildId} (count=$newCount)")
+      if (debug) {
+        LOG.debug("Debouncing Hall of Fame update for ${key.messageId} in guild ${key.guildId} (count=$newCount)")
+      } else {
+        LOG.debug("Debouncing Hall of Fame update for ${key.messageId}")
+      }
       coroutineProvider.safeDelay(debounceDuration)
 
       pendingJobs.remove(key)
 
       runCatching {
+        if (debug) {
+          LOG.debug("HallOfFameUpdateDebouncer: applying update for $messageId in $guildId with count $newCount")
+        }
         onUpdate(key.messageId, key.guildId, newCount)
       }.onFailure { error ->
         LOG.error("Failed to apply Hall of Fame update for ${key.messageId} in guild ${key.guildId}", error)

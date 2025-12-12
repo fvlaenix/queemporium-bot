@@ -11,6 +11,8 @@ import com.fvlaenix.queemporium.commands.halloffame.HallOfFameCommand
 import com.fvlaenix.queemporium.commands.halloffame.SetHallOfFameCommand
 import com.fvlaenix.queemporium.configuration.commands.LongTermEmojiesStoreCommandConfig
 import com.fvlaenix.queemporium.configuration.commands.OnlineEmojiesStoreCommandConfig
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
@@ -237,10 +239,19 @@ object FeatureRegistry {
     FeatureDefinition(
       key = FeatureKeys.HALL_OF_FAME,
       requiredSharedModules = listOf(SharedModules.coreModule, SharedModules.databaseModule)
-    ) { _ ->
+    ) { toggle ->
+      val debug = toggle.params["debug"]?.jsonPrimitive?.booleanOrNull ?: false
       listOf(
         module {
-          single { HallOfFameCommand(get(), get(), get(), get()) } bind net.dv8tion.jda.api.hooks.ListenerAdapter::class
+          single {
+            HallOfFameCommand(
+              get(),
+              get(),
+              get(),
+              get(),
+              debug
+            )
+          } bind net.dv8tion.jda.api.hooks.ListenerAdapter::class
         }
       )
     },
