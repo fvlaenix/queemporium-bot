@@ -332,7 +332,7 @@ class AdventReschedulingTest : BaseKoinTest() {
           messages[5] to "Entry 6",
           messages[6] to "Entry 7"
         ),
-        startTime = startTime,
+        startTime = startTime.plusMillis(1.hours.inWholeMilliseconds),
         interval = 1.days
       )
 
