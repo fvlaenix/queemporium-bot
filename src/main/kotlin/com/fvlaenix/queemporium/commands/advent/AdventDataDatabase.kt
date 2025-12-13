@@ -31,7 +31,9 @@ class AdventDataConnector(val database: Database) {
   fun initializeAdvent(adventsData: List<AdventData>) = transaction(database) {
     if (adventsData.isEmpty()) return@transaction
 
-    assert(adventsData.map { it.guildPostId }.distinct().size == 1)
+    require(adventsData.map { it.guildPostId }.distinct().size == 1) {
+      "All advent entries must target the same guild"
+    }
     AdventDataTable.deleteWhere { AdventDataTable.guildPostId eq adventsData.first().guildPostId }
     adventsData.forEach { adventData ->
       AdventDataTable.insert {
