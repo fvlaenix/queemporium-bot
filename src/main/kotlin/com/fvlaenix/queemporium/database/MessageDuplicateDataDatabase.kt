@@ -23,7 +23,7 @@ data class MessageDuplicateData(
   )
 
   fun withMessageData(messageData: MessageData): FullInfo {
-    assert(messageData.messageId == messageId)
+    require(messageData.messageId == messageId) { "Mismatched message ids" }
     return FullInfo(
       messageId,
       messageData.text,
