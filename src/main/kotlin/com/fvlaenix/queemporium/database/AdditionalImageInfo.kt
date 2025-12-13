@@ -14,7 +14,7 @@ data class Size(val width: Int, val height: Int)
 
 data class CompressSize(val width: Int?, val height: Int?) {
   init {
-    assert((height == null && width != null) || (height != null && width == null))
+    require((height == null) xor (width == null)) { "Exactly one of width/height must be set" }
   }
 
   fun getScaledSize(size: Size): Size {
