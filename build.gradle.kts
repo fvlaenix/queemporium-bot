@@ -82,6 +82,9 @@ dependencies {
     // saucenao
     implementation("dev.inmo:saucenaoapi:0.17.2")
 
+  // aws s3
+  implementation("software.amazon.awssdk:s3:2.29.29")
+
     // tests
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit5"))

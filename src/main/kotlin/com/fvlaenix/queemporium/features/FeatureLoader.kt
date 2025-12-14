@@ -6,6 +6,7 @@ import com.fvlaenix.queemporium.configuration.DuplicateImageServiceConfig
 import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
 import com.fvlaenix.queemporium.service.AnswerService
 import com.fvlaenix.queemporium.service.DuplicateImageService
+import com.fvlaenix.queemporium.service.S3FileService
 import com.fvlaenix.queemporium.service.SearchService
 import com.fvlaenix.queemporium.utils.Logging
 import org.koin.core.Koin
@@ -53,6 +54,7 @@ class FeatureLoader(
           koin.getOrNull<DuplicateImageServiceConfig>() == null
 
       SharedModules.searchModule -> koin.getOrNull<SearchService>() == null
+      SharedModules.s3Module -> koin.getOrNull<S3FileService>() == null
       else -> true
     }
 }

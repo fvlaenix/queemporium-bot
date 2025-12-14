@@ -12,7 +12,8 @@ data class ApplicationConfig(
   val databasePropertiesPath: String?,
   val botPropertiesPath: String?,
   val searchPropertiesPath: String?,
-  val duplicateImagePropertiesPath: String?
+  val duplicateImagePropertiesPath: String?,
+  val s3PropertiesPath: String?
 ) {
   companion object {
     private const val CONFIG_PATH_ENV = "APP_CONFIG_PATH"
@@ -43,7 +44,8 @@ data class ApplicationConfig(
         databasePropertiesPath = properties.getProperty("database.properties.path"),
         botPropertiesPath = properties.getProperty("bot.properties.path"),
         searchPropertiesPath = properties.getProperty("search.properties.path"),
-        duplicateImagePropertiesPath = properties.getProperty("duplicate.image.properties.path")
+        duplicateImagePropertiesPath = properties.getProperty("duplicate.image.properties.path"),
+        s3PropertiesPath = properties.getProperty("s3.properties.path")
       )
     }
   }

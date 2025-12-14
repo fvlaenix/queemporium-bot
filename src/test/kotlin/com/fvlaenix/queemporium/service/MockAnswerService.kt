@@ -71,4 +71,28 @@ class MockAnswerService : AnswerService() {
     )
     return CompletableDeferred(currentAnswer.incrementAndGet().toString())
   }
+
+  override suspend fun sendFile(
+    destination: MessageChannel,
+    filename: String,
+    bytes: ByteArray
+  ): Deferred<String?> {
+    ScenarioTraceCollector.addEvent(
+      BotMessageEvent(
+        timestamp = Instant.now(),
+        channelId = destination.id,
+        text = "File: $filename (${bytes.size} bytes)",
+        images = emptyList()
+      )
+    )
+    answers.add(
+      MockAnswer(
+        channelId = destination.id,
+        text = "File: $filename (${bytes.size} bytes)",
+        imageWithFileNames = emptyList()
+      )
+    )
+    val id = currentAnswer.incrementAndGet().toString()
+    return CompletableDeferred(id)
+  }
 }

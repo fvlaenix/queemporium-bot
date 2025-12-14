@@ -70,4 +70,22 @@ class AnswerServiceImpl : AnswerService() {
     message.forwardTo(destination).queue({ deferred.complete(it.id); successCallback(it) }, { deferred.complete(null); failedCallback(it) })
     return deferred
   }
+
+  override suspend fun sendFile(
+    destination: MessageChannel,
+    filename: String,
+    bytes: ByteArray
+  ): Deferred<String?> {
+    val fileUpload = toFileUpload(bytes, filename)
+    val deferred = CompletableDeferred<String?>()
+    destination.sendFiles(fileUpload)
+      .queue(
+        { message -> deferred.complete(message.id) },
+        { error ->
+          LOG.error("Error while sending file: $filename, size: ${bytes.size}", error)
+          deferred.complete(null)
+        }
+      )
+    return deferred
+  }
 }

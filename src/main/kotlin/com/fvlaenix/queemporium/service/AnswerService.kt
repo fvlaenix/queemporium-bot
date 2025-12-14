@@ -201,4 +201,10 @@ abstract class AnswerService {
       deferred
     }
   }
+
+  abstract suspend fun sendFile(
+    destination: MessageChannel,
+    filename: String,
+    bytes: ByteArray
+  ): Deferred<String?>
 }

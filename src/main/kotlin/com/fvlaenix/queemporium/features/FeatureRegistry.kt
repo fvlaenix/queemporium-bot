@@ -11,6 +11,7 @@ import com.fvlaenix.queemporium.commands.halloffame.HallOfFameCommand
 import com.fvlaenix.queemporium.commands.halloffame.SetHallOfFameCommand
 import com.fvlaenix.queemporium.configuration.commands.LongTermEmojiesStoreCommandConfig
 import com.fvlaenix.queemporium.configuration.commands.OnlineEmojiesStoreCommandConfig
+import com.fvlaenix.queemporium.database.ImageMappingConnector
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import org.koin.dsl.bind
@@ -38,6 +39,7 @@ object FeatureKeys {
   const val ADVENT = "advent"
   const val ONLINE_EMOJI = "online-emoji-store"
   const val LONG_TERM_EMOJI = "long-term-emoji-store"
+  const val SEND_IMAGE = "send-image"
 }
 
 object FeatureRegistry {
@@ -326,6 +328,17 @@ object FeatureRegistry {
               get()
             )
           } bind net.dv8tion.jda.api.hooks.ListenerAdapter::class
+        }
+      )
+    },
+    FeatureDefinition(
+      key = FeatureKeys.SEND_IMAGE,
+      requiredSharedModules = listOf(SharedModules.coreModule, SharedModules.databaseModule, SharedModules.s3Module)
+    ) { _ ->
+      listOf(
+        module {
+          single { ImageMappingConnector(get<com.fvlaenix.queemporium.configuration.DatabaseConfiguration>().toDatabase()) }
+          single { SendImageCommand(get(), get(), get(), get()) } bind net.dv8tion.jda.api.hooks.ListenerAdapter::class
         }
       )
     }

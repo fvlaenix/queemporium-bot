@@ -46,3 +46,4 @@ bin/
 /src/main/resources/bot-properties*.xml
 /src/main/resources/bot-properties*.yaml
 /src/main/resources/application.properties
+/src/main/resources/s3.properties
