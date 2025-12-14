@@ -270,6 +270,8 @@ class AdventReschedulingTest : BaseKoinTest() {
         unrevealedCount(3)
       }
 
+      awaitAll()
+
       expect("success message sent") {
         val answers = answerService!!.answers
         val successMessage = answers.find { it.text.contains("Posted Advent entry #1") }
