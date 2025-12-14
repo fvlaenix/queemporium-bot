@@ -161,18 +161,18 @@ class HallOfFameConnector(private val database: Database) {
     val emojiDataConnector = EmojiDataConnector(database)
     val messageDataConnector = MessageDataConnector(database)
 
+    val nowEpoch = System.currentTimeMillis() / 1000
     val messagesAboveThreshold = emojiDataConnector.getMessagesAboveThreshold(guildId, threshold)
-    val cutoffEpoch = System.currentTimeMillis() - (lookbackDays * 24 * 60 * 60 * 1000)
+    val cutoffEpoch = nowEpoch - (lookbackDays * 24 * 60 * 60)
 
     val messageEpochs = messagesAboveThreshold.mapNotNull { messageId ->
       messageDataConnector.get(messageId)?.epoch
     }.filter { it >= cutoffEpoch }
 
     val bins = listOf(1L, 2L, 3L, 5L, 7L, 14L, 30L, 60L, 90L)
-    val nowEpoch = System.currentTimeMillis()
 
     bins.associateWith { days ->
-      val binCutoff = nowEpoch - (days * 24 * 60 * 60 * 1000)
+      val binCutoff = nowEpoch - (days * 24 * 60 * 60)
       messageEpochs.count { it >= binCutoff }
     }
   }
