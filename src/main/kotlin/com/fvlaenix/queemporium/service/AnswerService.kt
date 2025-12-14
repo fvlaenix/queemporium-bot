@@ -4,13 +4,19 @@ import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.database.CorrectAuthorMappingData
 import com.fvlaenix.queemporium.database.MessageDuplicateData
 import com.fvlaenix.queemporium.service.DuplicateImageService.DuplicateImageData
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
+import net.dv8tion.jda.api.utils.FileUpload
 import java.awt.image.BufferedImage
+import java.util.logging.Level
+import java.util.logging.Logger
 import javax.imageio.ImageIO
+
+private val LOG: Logger = Logger.getLogger(AnswerService::class.java.name)
 
 abstract class AnswerService {
   data class ImageUploadInfo(
@@ -158,7 +164,7 @@ abstract class AnswerService {
         <@$authorId> (no tag while beta testing) made mistake in sending picture!
 
         Your picture was sent with Pixiv compression. Please, open it in another tab and copy properly
-        
+
         Message: $messageUrl
       """.trimIndent()
     val image = withContext(Dispatchers.IO) {
@@ -169,5 +175,30 @@ abstract class AnswerService {
       text = message,
       imageWithFileNames = listOf(ImageUploadInfo(image, "what-a-pixel.jpg", false))
     )
+  }
+
+  suspend fun sendTextOrAttachment(
+    destination: MessageChannel,
+    text: String,
+    filename: String = "details.txt"
+  ): Deferred<String?> {
+    return if (text.length <= 2000) {
+      sendMessage(destination, text)
+    } else {
+      val deferred = CompletableDeferred<String?>()
+      withContext(Dispatchers.IO) {
+        val textBytes = text.toByteArray(Charsets.UTF_8)
+        val fileUpload = FileUpload.fromData(textBytes, filename)
+        destination.sendFiles(fileUpload)
+          .queue(
+            { message -> deferred.complete(message.id) },
+            { error ->
+              LOG.log(Level.SEVERE, "Error while sending message: $error")
+              deferred.complete(null)
+            }
+          )
+      }
+      deferred
+    }
   }
 }

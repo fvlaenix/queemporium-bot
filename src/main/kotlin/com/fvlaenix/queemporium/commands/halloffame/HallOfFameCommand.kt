@@ -11,10 +11,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.session.ReadyEvent
-import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
 import kotlin.time.Duration.Companion.hours
 
 private val LOG = Logging.getLogger(HallOfFameCommand::class.java)
@@ -63,7 +61,9 @@ class HallOfFameCommand(
           messageId = message,
           guildId = hallOfFameInfo.guildId,
           timestamp = dataMessage.epoch,
-          isSent = false
+          state = HallOfFameState.NOT_SELECTED,
+          hofMessageId = null,
+          thresholdCrossDetectedAt = clock.millis()
         )
       )
       if (inserted) {
@@ -78,80 +78,76 @@ class HallOfFameCommand(
     if (debug) LOG.debug("Processing guild $guildId for Hall of Fame sending")
     val hallOfFameInfo = hallOfFameConnector.getHallOfFameInfo(guildId) ?: return
 
-    // Get oldest unsent message
-    val message = hallOfFameConnector.getOldestUnsentMessage(guildId)
+    val message = hallOfFameConnector.getOldestToSendMessage(guildId)
     if (message == null) {
-      if (debug) LOG.debug("No unsent messages for guild $guildId")
+      if (debug) LOG.debug("No TO_SEND messages for guild $guildId")
       return
     }
 
     if (debug) LOG.debug("Attempting to send Hall of Fame message ${message.messageId} for guild $guildId")
 
     try {
-      val guild = jda.getGuildById(guildId) ?: return
-      val dataMessage = messageDataConnector.get(message.messageId) ?: return
+      val guild = jda.getGuildById(guildId) ?: run {
+        LOG.warn("Guild $guildId not found, skipping message ${message.messageId}")
+        return
+      }
+      val dataMessage = messageDataConnector.get(message.messageId) ?: run {
+        LOG.warn("Message data not found for ${message.messageId}, skipping")
+        return
+      }
 
-      val sourceChannel = guild.getTextChannelById(dataMessage.channelId) ?: return
-      val targetChannel = guild.getTextChannelById(hallOfFameInfo.channelId) ?: return
-      val sourceMessage = sourceChannel.retrieveMessageById(message.messageId).complete() ?: return
+      val sourceChannel = guild.getTextChannelById(dataMessage.channelId) ?: run {
+        LOG.warn("Source channel ${dataMessage.channelId} not found, skipping message ${message.messageId}")
+        return
+      }
+      val targetChannel = guild.getTextChannelById(hallOfFameInfo.channelId) ?: run {
+        LOG.warn("Target channel ${hallOfFameInfo.channelId} not found, skipping message ${message.messageId}")
+        return
+      }
+      val sourceMessage = sourceChannel.retrieveMessageById(message.messageId).complete() ?: run {
+        LOG.warn("Source message ${message.messageId} not found, skipping")
+        return
+      }
 
       val messageUrl = sourceMessage.jumpUrl
       val reactionCount = sourceMessage.reactions.sumOf { it.count }
 
-      val sentMessage = answerService.sendMessage(
+      val sentMessageId = answerService.sendMessage(
         destination = targetChannel,
         text = "Message reached $reactionCount reactions! 🎉\nOriginal message: $messageUrl"
       ).await()
-      val forwardMessage = answerService.forwardMessage(
-        message = sourceMessage,
-        destination = targetChannel,
-        failedCallback = {
-          LOG.error("Failed to forward message: $it")
+
+      if (sentMessageId != null) {
+        val forwardMessage = answerService.forwardMessage(
+          message = sourceMessage,
+          destination = targetChannel,
+          failedCallback = {
+            LOG.error("Failed to forward message: $it")
+          }
+        ).await()
+
+        val dependentMessages = mutableListOf(sentMessageId)
+        if (forwardMessage != null) {
+          dependentMessages.add(forwardMessage)
         }
-      ).await()
 
-      val dependentMessages = mutableListOf<String>()
-      if (sentMessage != null) {
-        dependentMessages.add(sentMessage)
-      }
-      if (forwardMessage != null) {
-        dependentMessages.add(forwardMessage)
-      }
+        hallOfFameConnector.markAsPosted(message.messageId, sentMessageId)
 
-      if (sentMessage != null) {
-        persistAnnouncement(message.messageId, dependentMessages)
+        dependentMessages.forEach { dependentId ->
+          transaction(database) {
+            MessageDependencyTable.insert {
+              it[targetMessage] = message.messageId
+              it[dependentMessage] = dependentId
+            }
+          }
+        }
+
+        LOG.info("Posted Hall of Fame message ${message.messageId} with $reactionCount reactions")
       } else {
-        LOG.warn("Hall of Fame announcement for ${message.messageId} failed to send; will retry later")
+        LOG.warn("Hall of Fame announcement for ${message.messageId} failed to send; skipping")
       }
     } catch (e: Exception) {
-      LOG.error("Failed to process Hall of Fame message ${message.messageId}", e)
-    }
-  }
-
-  private fun persistAnnouncement(messageId: String, dependentMessages: List<String>) {
-    if (dependentMessages.isEmpty()) return
-
-    if (debug) LOG.debug("Persisting announcement dependencies for $messageId: $dependentMessages")
-
-    transaction(database) {
-      val updated = HallOfFameMessagesTable.update({
-        (HallOfFameMessagesTable.messageId eq messageId) and
-            (HallOfFameMessagesTable.isSent eq false)
-      }) {
-        it[isSent] = true
-      }
-
-      if (updated == 0) {
-        if (debug) LOG.debug("Hall of Fame entry $messageId already marked as sent, skipping dependency recording")
-        return@transaction
-      }
-
-      dependentMessages.forEach { dependentId ->
-        MessageDependencyTable.insert {
-          it[targetMessage] = messageId
-          it[dependentMessage] = dependentId
-        }
-      }
+      LOG.error("Failed to process Hall of Fame message ${message.messageId}, skipping", e)
     }
   }
 
@@ -166,7 +162,7 @@ class HallOfFameCommand(
         jda.guilds.forEach { guild ->
           processGuild(jda, guild.id)
         }
-        coroutineProvider.safeDelay(4.hours)
+        coroutineProvider.safeDelay(6.hours)
       }
     }
     retrieveJob = coroutineProvider.mainScope.launch(CoroutineName("Hall of Fame Retrieve Part")) {
@@ -200,28 +196,100 @@ class HallOfFameCommand(
       val existingEntry = hallOfFameConnector.getMessage(messageId)
 
       if (existingEntry == null) {
-        val dataMessage = messageDataConnector.get(messageId) ?: return
-        val inserted = hallOfFameConnector.addMessage(
+        if (debug) LOG.debug("Message $messageId crossed threshold online, posting immediately")
+        postMessageImmediately(messageId, guildId, hallOfFameInfo, emojiCount)
+      } else if (existingEntry.state == HallOfFameState.POSTED) {
+        if (debug) LOG.debug("Message $messageId already posted, debouncing update")
+        updateDebouncer.emit(messageId, guildId, emojiCount)
+      } else {
+        if (debug) LOG.debug("Hall of Fame entry $messageId exists in state ${existingEntry.state}, not posted yet")
+      }
+    } else {
+      if (debug) LOG.debug("Message $messageId below threshold ($emojiCount < ${hallOfFameInfo.threshold})")
+    }
+  }
+
+  private suspend fun postMessageImmediately(
+    messageId: String,
+    guildId: String,
+    hallOfFameInfo: HallOfFameInfo,
+    reactionCount: Int
+  ) {
+    val currentJda = jda ?: run {
+      LOG.warn("JDA not available, cannot post message immediately")
+      return
+    }
+
+    try {
+      val guild = currentJda.getGuildById(guildId) ?: run {
+        LOG.warn("Guild $guildId not found")
+        return
+      }
+      val dataMessage = messageDataConnector.get(messageId) ?: run {
+        LOG.warn("Message data not found for $messageId")
+        return
+      }
+
+      val sourceChannel = guild.getTextChannelById(dataMessage.channelId) ?: run {
+        LOG.warn("Source channel ${dataMessage.channelId} not found")
+        return
+      }
+      val targetChannel = guild.getTextChannelById(hallOfFameInfo.channelId) ?: run {
+        LOG.warn("Target channel ${hallOfFameInfo.channelId} not found")
+        return
+      }
+      val sourceMessage = sourceChannel.retrieveMessageById(messageId).complete() ?: run {
+        LOG.warn("Source message $messageId not found")
+        return
+      }
+
+      val messageUrl = sourceMessage.jumpUrl
+
+      val sentMessageId = answerService.sendMessage(
+        destination = targetChannel,
+        text = "Message reached $reactionCount reactions! 🎉\nOriginal message: $messageUrl"
+      ).await()
+
+      if (sentMessageId != null) {
+        val forwardMessage = answerService.forwardMessage(
+          message = sourceMessage,
+          destination = targetChannel,
+          failedCallback = {
+            LOG.error("Failed to forward message: $it")
+          }
+        ).await()
+
+        val dependentMessages = mutableListOf(sentMessageId)
+        if (forwardMessage != null) {
+          dependentMessages.add(forwardMessage)
+        }
+
+        hallOfFameConnector.updateOrInsertMessage(
           HallOfFameMessage(
             messageId = messageId,
             guildId = guildId,
             timestamp = dataMessage.epoch,
-            isSent = false
+            state = HallOfFameState.POSTED,
+            hofMessageId = sentMessageId,
+            thresholdCrossDetectedAt = clock.millis()
           )
         )
-        if (inserted) {
-          LOG.info("Message $messageId added to Hall of Fame queue ($emojiCount reactions)")
-        } else {
-          if (debug) LOG.debug("Hall of Fame entry $messageId already queued for guild $guildId, skipping")
+
+        dependentMessages.forEach { dependentId ->
+          transaction(database) {
+            MessageDependencyTable.insert {
+              it[targetMessage] = messageId
+              it[dependentMessage] = dependentId
+            }
+          }
         }
-      } else if (existingEntry.isSent) {
-        if (debug) LOG.debug("Message $messageId already sent, debouncing update")
-        updateDebouncer.emit(messageId, guildId, emojiCount)
+
+        LOG.info("Posted Hall of Fame message $messageId immediately (online crossing) with $reactionCount reactions")
       } else {
-        if (debug) LOG.debug("Hall of Fame entry $messageId already queued for guild $guildId, not sent yet")
+        LOG.warn("Failed to send Hall of Fame announcement for $messageId")
       }
-    } else {
-      if (debug) LOG.debug("Message $messageId below threshold ($emojiCount < ${hallOfFameInfo.threshold})")
+    } catch (e: Exception) {
+      LOG.error("Failed to post Hall of Fame message $messageId immediately", e)
     }
   }
 
@@ -234,8 +302,13 @@ class HallOfFameCommand(
   private suspend fun updatePostedMessage(messageId: String, guildId: String, newCount: Int) {
     if (debug) LOG.debug("Updating posted Hall of Fame message for $messageId in $guildId to count $newCount")
     val currentJda = jda ?: return
-    val dependencies = dependencyConnector.getDependencies(messageId)
-    val announcementMessageId = dependencies.firstOrNull() ?: return
+
+    val hallOfFameMessage = hallOfFameConnector.getMessage(messageId) ?: return
+    val announcementMessageId = hallOfFameMessage.hofMessageId ?: run {
+      if (debug) LOG.debug("No hofMessageId found for $messageId, falling back to dependencies")
+      val dependencies = dependencyConnector.getDependencies(messageId)
+      dependencies.firstOrNull() ?: return
+    }
 
     val dataMessage = messageDataConnector.get(messageId) ?: return
     val hallOfFameInfo = hallOfFameConnector.getHallOfFameInfo(guildId) ?: return

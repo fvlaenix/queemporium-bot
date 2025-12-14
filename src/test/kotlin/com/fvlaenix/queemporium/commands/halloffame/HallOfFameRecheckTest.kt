@@ -115,7 +115,7 @@ class HallOfFameRecheckTest : BaseKoinTest() {
       hallOfFame.recheckMessage(message, guild.id)
       awaitAll()
 
-      hallOfFame.expectQueued(message, isSent = false)
+      hallOfFame.expectQueued(message, isSent = true)
     }
   }
 
@@ -152,7 +152,7 @@ class HallOfFameRecheckTest : BaseKoinTest() {
       hallOfFame.recheckMessage(message, guild.id)
       awaitAll()
 
-      hallOfFame.expectQueued(message, isSent = false)
+      hallOfFame.expectQueued(message, isSent = true)
     }
   }
 
@@ -189,12 +189,12 @@ class HallOfFameRecheckTest : BaseKoinTest() {
       hallOfFame.recheckMessage(message, guild.id)
       awaitAll()
 
-      hallOfFame.expectQueued(message, isSent = false)
+      hallOfFame.expectQueued(message, isSent = true)
 
       hallOfFame.recheckMessage(message, guild.id)
       awaitAll()
 
-      hallOfFame.expectQueued(message, isSent = false)
+      hallOfFame.expectQueued(message, isSent = true)
     }
   }
 
@@ -284,6 +284,7 @@ class HallOfFameRecheckTest : BaseKoinTest() {
     before {
       enableFeature(FeatureKeys.HALL_OF_FAME)
       enableFeature(FeatureKeys.SET_HALL_OF_FAME)
+      enableFeature(FeatureKeys.HALL_OF_FAME_OLDEST)
 
       user("admin")
       user("alice")
@@ -297,15 +298,18 @@ class HallOfFameRecheckTest : BaseKoinTest() {
     }
 
     setup {
-      hallOfFame.configureBlocking("test-guild", "hof", threshold = 3, adminUserId = "admin")
       hallOfFame.seedMessageToCount("test-guild", "general", 0, count = 3)
+      hallOfFame.configureBlocking("test-guild", "hof", threshold = 3, adminUserId = "admin")
     }
 
     scenario {
       val guild = guild("test-guild")
       val message = message(channel(guild, "general"), 0, MessageOrder.OLDEST_FIRST)
 
-      hallOfFame.triggerBothJobs()
+      hallOfFame.seedMessageToCount("test-guild", "general", 0, count = 3)
+      hallOfFame.recheckMessage(message, guild.id)
+      awaitAll()
+
       val initialAnswers = answerService!!.answers.size
 
       hallOfFame.expectQueued(message, isSent = true)

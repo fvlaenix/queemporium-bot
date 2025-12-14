@@ -18,6 +18,7 @@ class HallOfFameExampleTest : BaseKoinTest() {
     before {
       enableFeature(FeatureKeys.HALL_OF_FAME)
       enableFeature(FeatureKeys.SET_HALL_OF_FAME)
+      enableFeature(FeatureKeys.HALL_OF_FAME_OLDEST)
 
       user("admin")
       user("alice") { name("Alice") }
@@ -33,13 +34,17 @@ class HallOfFameExampleTest : BaseKoinTest() {
     }
 
     setup {
-      hallOfFame.configureHallOfFameBlocking("test-guild", "hall-of-fame", threshold = 5, adminUserId = "admin")
       hallOfFame.seedMessageToCount("test-guild", "general", messageIndex = 0, count = 5)
+      hallOfFame.configureHallOfFameBlocking("test-guild", "hall-of-fame", threshold = 5, adminUserId = "admin")
     }
 
     scenario {
-      hallOfFame.triggerRetrieveJob()
-      hallOfFame.triggerSendJob()
+      val guild = guild("test-guild")
+      val message =
+        message(channel(guild, "general"), 0, com.fvlaenix.queemporium.testing.dsl.MessageOrder.OLDEST_FIRST)
+
+      hallOfFame.recheckMessage(message, guild.id)
+      awaitAll()
 
       expect("should send hall of fame message") {
         val hasMessage = answerService!!.answers.any { it.text.contains("reactions") }
@@ -58,6 +63,7 @@ class HallOfFameExampleTest : BaseKoinTest() {
     before {
       enableFeature(FeatureKeys.HALL_OF_FAME)
       enableFeature(FeatureKeys.SET_HALL_OF_FAME)
+      enableFeature(FeatureKeys.HALL_OF_FAME_OLDEST)
 
       user("admin")
       user("alice")
@@ -74,16 +80,19 @@ class HallOfFameExampleTest : BaseKoinTest() {
     }
 
     setup {
-      hallOfFame.configureHallOfFameBlocking("my-guild", "hall-of-fame", threshold = 3, adminUserId = "admin")
       hallOfFame.seedMessageToCount("my-guild", "general", messageIndex = 0, count = 3)
       hallOfFame.seedMessageToCount("my-guild", "general", messageIndex = 1, count = 4)
+      hallOfFame.configureHallOfFameBlocking("my-guild", "hall-of-fame", threshold = 3, adminUserId = "admin")
     }
 
     scenario {
-      advanceTime(kotlin.time.Duration.parse("10h"))
-      awaitAll()
+      val guild = guild("my-guild")
+      val channel = channel(guild, "general")
+      val message1 = message(channel, 0, com.fvlaenix.queemporium.testing.dsl.MessageOrder.OLDEST_FIRST)
+      val message2 = message(channel, 1, com.fvlaenix.queemporium.testing.dsl.MessageOrder.OLDEST_FIRST)
 
-      advanceTime(kotlin.time.Duration.parse("8h"))
+      hallOfFame.recheckMessage(message1, guild.id)
+      hallOfFame.recheckMessage(message2, guild.id)
       awaitAll()
 
       expect("should send multiple hall of fame messages") {
@@ -103,6 +112,7 @@ class HallOfFameExampleTest : BaseKoinTest() {
     before {
       enableFeature(FeatureKeys.HALL_OF_FAME)
       enableFeature(FeatureKeys.SET_HALL_OF_FAME)
+      enableFeature(FeatureKeys.HALL_OF_FAME_OLDEST)
 
       user("admin")
       user("alice")
@@ -119,8 +129,6 @@ class HallOfFameExampleTest : BaseKoinTest() {
     }
 
     setup {
-      hallOfFame.configureHallOfFameBlocking("emoji-guild", "hall-of-fame", threshold = 3, adminUserId = "admin")
-
       hallOfFame.seedEmojiReactions(
         guildId = "emoji-guild",
         channelId = "general",
@@ -136,9 +144,14 @@ class HallOfFameExampleTest : BaseKoinTest() {
         emoji = "❤️",
         userIds = listOf("charlie")
       )
+
+      hallOfFame.configureHallOfFameBlocking("emoji-guild", "hall-of-fame", threshold = 3, adminUserId = "admin")
     }
 
     scenario {
+      hallOfFame.triggerRetrieveJob()
+      hallOfFame.approveBacklog("emoji-guild")
+
       advanceTime(kotlin.time.Duration.parse("10h"))
       awaitAll()
       advanceTime(kotlin.time.Duration.parse("4h"))

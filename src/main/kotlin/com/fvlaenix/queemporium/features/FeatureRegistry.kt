@@ -34,6 +34,7 @@ object FeatureKeys {
   const val ONLINE_COMPARE = "online-picture-compare"
   const val HALL_OF_FAME = "hall-of-fame"
   const val SET_HALL_OF_FAME = "set-hall-of-fame"
+  const val HALL_OF_FAME_OLDEST = "hall-of-fame-oldest"
   const val ADVENT = "advent"
   const val ONLINE_EMOJI = "online-emoji-store"
   const val LONG_TERM_EMOJI = "long-term-emoji-store"
@@ -262,6 +263,23 @@ object FeatureRegistry {
       listOf(
         module {
           single { SetHallOfFameCommand(get(), get(), get()) } bind net.dv8tion.jda.api.hooks.ListenerAdapter::class
+        }
+      )
+    },
+    FeatureDefinition(
+      key = FeatureKeys.HALL_OF_FAME_OLDEST,
+      requiredSharedModules = listOf(SharedModules.coreModule, SharedModules.databaseModule)
+    ) { _ ->
+      listOf(
+        module {
+          single {
+            com.fvlaenix.queemporium.commands.halloffame.HallOfFameOldestCommand(
+              get(),
+              get(),
+              get(),
+              get()
+            )
+          } bind net.dv8tion.jda.api.hooks.ListenerAdapter::class
         }
       )
     },

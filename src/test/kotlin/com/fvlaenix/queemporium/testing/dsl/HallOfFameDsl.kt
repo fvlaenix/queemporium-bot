@@ -2,6 +2,7 @@ package com.fvlaenix.queemporium.testing.dsl
 
 import com.fvlaenix.queemporium.commands.halloffame.HallOfFameCommand
 import com.fvlaenix.queemporium.database.EmojiData
+import com.fvlaenix.queemporium.database.HallOfFameState
 import com.fvlaenix.queemporium.database.MessageEmojiData
 import com.fvlaenix.queemporium.testing.fixture.awaitAll
 import com.fvlaenix.queemporium.testing.trace.ScenarioTraceCollector
@@ -75,6 +76,22 @@ class HallOfFameDsl(
     threshold: Int = 5,
     adminUserId: String = "admin"
   ) = configureBlocking(guildId, hallOfFameChannelId, threshold, adminUserId)
+
+  fun approveBacklog(
+    guildId: String,
+    maxAgeDays: Long = 90
+  ) {
+    ScenarioTraceCollector.logDslAction(
+      mapOf(
+        "action" to "hof.approveBacklog",
+        "guildId" to guildId,
+        "maxAgeDays" to maxAgeDays
+      )
+    )
+    val currentTime =
+      setupContext.envWithTime.timeController?.getCurrentTime()?.toEpochMilli() ?: System.currentTimeMillis()
+    hallOfFameConnector.markMessagesAsToSend(guildId, maxAgeDays, currentTime)
+  }
 
   fun seedEmojiReactions(
     guildId: String,
@@ -159,7 +176,7 @@ class HallOfFameDsl(
     ScenarioTraceCollector.logDslAction(
       mapOf("action" to "hof.triggerSendJob")
     )
-    advanceTimeInternal(4.hours, "hof.triggerSendJob")
+    advanceTimeInternal(6.hours, "hof.triggerSendJob")
   }
 
   suspend fun triggerBothJobs() {
@@ -219,8 +236,9 @@ class HallOfFameDsl(
         throw AssertionError("Hall of Fame entry for $messageId is missing")
       }
       isSent?.let { expected ->
-        if (entry.isSent != expected) {
-          throw AssertionError("Expected Hall of Fame entry isSent=$expected but was ${entry.isSent}")
+        val actualIsSent = entry.state == HallOfFameState.POSTED
+        if (actualIsSent != expected) {
+          throw AssertionError("Expected Hall of Fame entry isSent=$expected but was $actualIsSent (state=${entry.state})")
         }
       }
     }

@@ -3,6 +3,12 @@ package com.fvlaenix.queemporium.database
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
+enum class HallOfFameState {
+  NOT_SELECTED,
+  TO_SEND,
+  POSTED
+}
+
 data class HallOfFameInfo(
   val guildId: String,
   val channelId: String,
@@ -13,7 +19,9 @@ data class HallOfFameMessage(
   val messageId: String,
   val guildId: String,
   val timestamp: Long,
-  val isSent: Boolean
+  val state: HallOfFameState,
+  val hofMessageId: String?,
+  val thresholdCrossDetectedAt: Long
 )
 
 object HallOfFameInfoTable : Table() {
@@ -26,11 +34,14 @@ object HallOfFameMessagesTable : Table() {
   val messageId = varchar("messageId", 400).primaryKey()
   val guildId = varchar("guildId", 50)
   val timestamp = long("timestamp")
-  val isSent = bool("isSent")
+  val state = varchar("state", 20)
+  val hofMessageId = varchar("hofMessageId", 400).nullable()
+  val thresholdCrossDetectedAt = long("thresholdCrossDetectedAt")
 
   init {
     index(false, guildId)
     index(false, timestamp)
+    index(false, guildId, thresholdCrossDetectedAt)
   }
 }
 
@@ -83,30 +94,38 @@ class HallOfFameConnector(private val database: Database) {
       it[messageId] = message.messageId
       it[guildId] = message.guildId
       it[timestamp] = message.timestamp
-      it[isSent] = message.isSent
+      it[state] = message.state.name
+      it[hofMessageId] = message.hofMessageId
+      it[thresholdCrossDetectedAt] = message.thresholdCrossDetectedAt
     }
     true
   }
 
-  fun markAsSent(messageId: String): Int = transaction(database) {
+  fun markAsPosted(messageId: String, hofMessageId: String): Int = transaction(database) {
     HallOfFameMessagesTable.update({ HallOfFameMessagesTable.messageId eq messageId }) {
-      it[isSent] = true
+      it[state] = HallOfFameState.POSTED.name
+      it[HallOfFameMessagesTable.hofMessageId] = hofMessageId
     }
   }
 
-  fun getOldestUnsentMessage(guildId: String): HallOfFameMessage? = transaction(database) {
+  fun getOldestToSendMessage(guildId: String): HallOfFameMessage? = transaction(database) {
     HallOfFameMessagesTable
       .select {
         (HallOfFameMessagesTable.guildId eq guildId) and
-            (HallOfFameMessagesTable.isSent eq false)
+            (HallOfFameMessagesTable.state eq HallOfFameState.TO_SEND.name)
       }
-      .orderBy(HallOfFameMessagesTable.timestamp)
+      .orderBy(
+        HallOfFameMessagesTable.thresholdCrossDetectedAt to SortOrder.ASC,
+        HallOfFameMessagesTable.timestamp to SortOrder.ASC
+      )
       .map {
         HallOfFameMessage(
           messageId = it[HallOfFameMessagesTable.messageId],
           guildId = it[HallOfFameMessagesTable.guildId],
           timestamp = it[HallOfFameMessagesTable.timestamp],
-          isSent = it[HallOfFameMessagesTable.isSent]
+          state = HallOfFameState.valueOf(it[HallOfFameMessagesTable.state]),
+          hofMessageId = it[HallOfFameMessagesTable.hofMessageId],
+          thresholdCrossDetectedAt = it[HallOfFameMessagesTable.thresholdCrossDetectedAt]
         )
       }
       .firstOrNull()
@@ -120,7 +139,9 @@ class HallOfFameConnector(private val database: Database) {
           messageId = it[HallOfFameMessagesTable.messageId],
           guildId = it[HallOfFameMessagesTable.guildId],
           timestamp = it[HallOfFameMessagesTable.timestamp],
-          isSent = it[HallOfFameMessagesTable.isSent]
+          state = HallOfFameState.valueOf(it[HallOfFameMessagesTable.state]),
+          hofMessageId = it[HallOfFameMessagesTable.hofMessageId],
+          thresholdCrossDetectedAt = it[HallOfFameMessagesTable.thresholdCrossDetectedAt]
         )
       }
       .singleOrNull()
@@ -133,6 +154,71 @@ class HallOfFameConnector(private val database: Database) {
         channelId = resultRow[HallOfFameInfoTable.channelId],
         threshold = resultRow[HallOfFameInfoTable.threshold],
       )
+    }
+  }
+
+  fun computeHistogram(guildId: String, threshold: Int, lookbackDays: Long): Map<Long, Int> = transaction(database) {
+    val emojiDataConnector = EmojiDataConnector(database)
+    val messageDataConnector = MessageDataConnector(database)
+
+    val messagesAboveThreshold = emojiDataConnector.getMessagesAboveThreshold(guildId, threshold)
+    val cutoffEpoch = System.currentTimeMillis() - (lookbackDays * 24 * 60 * 60 * 1000)
+
+    val messageEpochs = messagesAboveThreshold.mapNotNull { messageId ->
+      messageDataConnector.get(messageId)?.epoch
+    }.filter { it >= cutoffEpoch }
+
+    val bins = listOf(1L, 2L, 3L, 5L, 7L, 14L, 30L, 60L, 90L)
+    val nowEpoch = System.currentTimeMillis()
+
+    bins.associateWith { days ->
+      val binCutoff = nowEpoch - (days * 24 * 60 * 60 * 1000)
+      messageEpochs.count { it >= binCutoff }
+    }
+  }
+
+  fun markMessagesAsToSend(guildId: String, maxAgeDays: Long, currentTimeMillis: Long = System.currentTimeMillis()) =
+    transaction(database) {
+      val cutoffEpoch = currentTimeMillis - (maxAgeDays * 24 * 60 * 60 * 1000)
+      HallOfFameMessagesTable.update({
+        (HallOfFameMessagesTable.guildId eq guildId) and
+            (HallOfFameMessagesTable.state eq HallOfFameState.NOT_SELECTED.name) and
+            (HallOfFameMessagesTable.thresholdCrossDetectedAt greaterEq cutoffEpoch)
+      }) {
+        it[state] = HallOfFameState.TO_SEND.name
+      }
+    }
+
+  fun updateOrInsertMessage(message: HallOfFameMessage) = transaction(database) {
+    val existing = HallOfFameMessagesTable
+      .select { HallOfFameMessagesTable.messageId eq message.messageId }
+      .limit(1)
+      .any()
+
+    if (existing) {
+      HallOfFameMessagesTable.update({ HallOfFameMessagesTable.messageId eq message.messageId }) {
+        it[state] = message.state.name
+        it[hofMessageId] = message.hofMessageId
+        it[thresholdCrossDetectedAt] = message.thresholdCrossDetectedAt
+      }
+    } else {
+      HallOfFameMessagesTable.insert {
+        it[messageId] = message.messageId
+        it[guildId] = message.guildId
+        it[timestamp] = message.timestamp
+        it[state] = message.state.name
+        it[hofMessageId] = message.hofMessageId
+        it[thresholdCrossDetectedAt] = message.thresholdCrossDetectedAt
+      }
+    }
+  }
+
+  fun cancelBacklog(guildId: String) = transaction(database) {
+    HallOfFameMessagesTable.update({
+      (HallOfFameMessagesTable.guildId eq guildId) and
+          (HallOfFameMessagesTable.state eq HallOfFameState.TO_SEND.name)
+    }) {
+      it[state] = HallOfFameState.NOT_SELECTED.name
     }
   }
 }

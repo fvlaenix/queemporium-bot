@@ -221,7 +221,7 @@ class AdventCommand(
     }
 
     LOG.info("List command completed for guild $guildId: ${unrevealed.size} unrevealed entries")
-    answerService.sendReply(event.message, responseText.trim()).await()
+    answerService.sendTextOrAttachment(event.message.channel, responseText.trim(), "advent-queue.txt").await()
   }
 
   private fun runAdvent(jda: JDA) {

@@ -17,7 +17,9 @@ class HallOfFameConnectorTest : BaseKoinTest() {
       messageId = "message-id",
       guildId = "guild-id",
       timestamp = 123L,
-      isSent = false
+      state = HallOfFameState.NOT_SELECTED,
+      hofMessageId = null,
+      thresholdCrossDetectedAt = System.currentTimeMillis()
     )
 
     assertTrue(connector.addMessage(message))
