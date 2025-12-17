@@ -86,6 +86,22 @@ class TestTextChannel(
     }
   }
 
+  override fun getHistoryAround(messageId: String, limit: Int): MessageHistory.MessageRetrieveAction {
+    val messageIndex = messages.indexOfFirst { it.id == messageId }
+
+    if (messageIndex == -1) {
+      return TestMessageRetrieveAction.createWithError(jda, RuntimeException("Message not found"))
+    }
+
+    val startIndex = maxOf(0, messageIndex - limit)
+    val endIndex = minOf(messages.size, messageIndex + limit + 1)
+    val messagesAround = messages.subList(startIndex, endIndex)
+
+    val messageHistory = TestMessageHistoryFactory.create(this, messagesAround)
+
+    return TestMessageRetrieveAction.create(jda, messageHistory)
+  }
+
   override fun getIterableHistory(): MessagePaginationAction =
     TestMessagePaginationAction(jda, this)
 

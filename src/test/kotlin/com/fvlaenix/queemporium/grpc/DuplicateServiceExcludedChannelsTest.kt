@@ -11,7 +11,6 @@ import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.mock.createTestAttachment
 import com.fvlaenix.queemporium.testing.dsl.ChannelResolver
 import com.fvlaenix.queemporium.testing.dsl.GuildResolver
-import com.fvlaenix.queemporium.testing.log.expectLogs
 import com.fvlaenix.queemporium.verification.verify
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -32,10 +31,6 @@ class DuplicateServiceExcludedChannelsTest : BaseGrpcTest() {
 
   @Test
   fun `test bot ignores excluded channels`() {
-    expectLogs {
-      error("com.fvlaenix.queemporium.commands.CoroutineListenerAdapter", count = 1)
-    }
-
     // Configure the compression size response
     duplicateService.compressionSizeResponse = GetCompressionSizeResponse.newBuilder()
       .setX(800)

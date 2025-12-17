@@ -31,7 +31,6 @@ class SimpleDuplicateServiceTest : BaseGrpcTest() {
   }
 
   @Test
-  @Ignore("Failed because we can't make getHistoryAround without pain")
   fun `test bot handles duplicate detection`() {
     // Configure the compression size response
     duplicateService.compressionSizeResponse = GetCompressionSizeResponse.newBuilder()

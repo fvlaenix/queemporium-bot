@@ -7,7 +7,6 @@ import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.mock.createTestAttachment
 import com.fvlaenix.queemporium.testing.dsl.ChannelResolver
 import com.fvlaenix.queemporium.testing.dsl.GuildResolver
-import com.fvlaenix.queemporium.testing.log.expectLogs
 import com.fvlaenix.queemporium.verification.verify
 import org.junit.jupiter.api.Test
 import kotlin.test.assertTrue
@@ -23,10 +22,6 @@ class DuplicateServiceErrorResponseTest : BaseGrpcTest() {
 
   @Test
   fun `test bot handles error response from service`() {
-    expectLogs {
-      error("com.fvlaenix.queemporium.commands.CoroutineListenerAdapter", count = 1)
-    }
-
     // Configure the compression size response
     duplicateService.compressionSizeResponse = GetCompressionSizeResponse.newBuilder()
       .setX(800)
@@ -81,10 +76,6 @@ class DuplicateServiceErrorResponseTest : BaseGrpcTest() {
 
   @Test
   fun `test bot recovers after service error`() {
-    expectLogs {
-      error("com.fvlaenix.queemporium.commands.CoroutineListenerAdapter", count = 2)
-    }
-
     // Configure the compression size response
     duplicateService.compressionSizeResponse = GetCompressionSizeResponse.newBuilder()
       .setX(800)
