@@ -3,6 +3,7 @@ package com.fvlaenix.queemporium.commands.advent
 import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.testing.dsl.testBot
+import com.fvlaenix.queemporium.testing.log.expectLogs
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.time.Instant
@@ -461,6 +462,10 @@ class AdventCommandIntegrationTest : BaseKoinTest() {
   @Test
   @Timeout(value = 30, unit = TimeUnit.SECONDS)
   fun `test post-right-now with no advent configured`() = testBot {
+    expectLogs {
+      warn("com.fvlaenix.queemporium.commands.advent.AdventCommand", count = 1)
+    }
+
     val startTime = Instant.parse("2024-12-01T00:00:00Z")
     withVirtualTime(startTime)
 
@@ -551,6 +556,10 @@ class AdventCommandIntegrationTest : BaseKoinTest() {
   @Test
   @Timeout(value = 30, unit = TimeUnit.SECONDS)
   fun `test list with no advent configured`() = testBot {
+    expectLogs {
+      warn("com.fvlaenix.queemporium.commands.advent.AdventCommand", count = 1)
+    }
+
     val startTime = Instant.parse("2024-12-01T00:00:00Z")
     withVirtualTime(startTime)
 

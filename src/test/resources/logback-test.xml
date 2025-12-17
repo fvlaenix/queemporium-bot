@@ -17,10 +17,14 @@
     </encoder>
   </appender>
 
+  <appender name="TEST_LOG_CAPTURE" class="com.fvlaenix.queemporium.testing.log.TestLogCapture">
+  </appender>
+
   <!-- Set root level to DEBUG for tests to capture everything -->
   <root level="DEBUG">
     <appender-ref ref="STDOUT"/>
     <appender-ref ref="FILE"/>
+    <appender-ref ref="TEST_LOG_CAPTURE"/>
   </root>
 
   <!-- Reduce noise from external libraries -->

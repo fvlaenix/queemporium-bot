@@ -5,6 +5,7 @@ import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.testing.dsl.MessageOrder
 import com.fvlaenix.queemporium.testing.dsl.testBot
+import com.fvlaenix.queemporium.testing.log.expectLogs
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.koin.dsl.module
@@ -170,6 +171,10 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
   @Test
   @Timeout(value = 30, unit = TimeUnit.SECONDS)
   fun `multiple messages reach threshold and all are queued`() = testBot {
+    expectLogs {
+      error("com.fvlaenix.queemporium.commands.halloffame.HallOfFameCommand", count = 3)
+    }
+
     withVirtualTime(Instant.now())
 
     registerModuleBeforeFeatureLoad(module {
@@ -241,6 +246,10 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
   @Test
   @Timeout(value = 30, unit = TimeUnit.SECONDS)
   fun `different emoji types all counted toward threshold`() = testBot {
+    expectLogs {
+      error("com.fvlaenix.queemporium.commands.halloffame.HallOfFameCommand", count = 1)
+    }
+
     withVirtualTime(Instant.now())
 
     registerModuleBeforeFeatureLoad(module {
@@ -312,6 +321,10 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
   @Test
   @Timeout(value = 30, unit = TimeUnit.SECONDS)
   fun `message crossing threshold multiple times only added once`() = testBot {
+    expectLogs {
+      error("com.fvlaenix.queemporium.commands.halloffame.HallOfFameCommand", count = 2)
+    }
+
     withVirtualTime(Instant.now())
 
     registerModuleBeforeFeatureLoad(module {
@@ -468,6 +481,10 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
   @Test
   @Timeout(value = 30, unit = TimeUnit.SECONDS)
   fun `reaction count is tracked and updated when reactions increase after Hall of Fame posting`() = testBot {
+    expectLogs {
+      error("com.fvlaenix.queemporium.commands.halloffame.HallOfFameCommand", count = 1)
+    }
+
     withVirtualTime(Instant.now())
 
     registerModuleBeforeFeatureLoad(module {

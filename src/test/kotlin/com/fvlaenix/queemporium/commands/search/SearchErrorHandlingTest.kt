@@ -1,6 +1,7 @@
 package com.fvlaenix.queemporium.commands.search
 
 import com.fvlaenix.queemporium.features.FeatureKeys
+import com.fvlaenix.queemporium.testing.log.expectLogs
 import com.fvlaenix.queemporium.verification.verify
 import org.junit.jupiter.api.Test
 
@@ -21,6 +22,10 @@ class SearchErrorHandlingTest : BaseSearchCommandTest() {
 
   @Test
   fun `test search command handles network errors gracefully`() {
+    expectLogs {
+      error("com.fvlaenix.queemporium.commands.SearchCommand", count = 1)
+    }
+
     // Arrange - Configure mock to simulate a network error
     mockSearchService.simulateNetworkError(
       shouldSimulate = true,
@@ -56,6 +61,10 @@ class SearchErrorHandlingTest : BaseSearchCommandTest() {
 
   @Test
   fun `test search command handles unexpected exceptions`() {
+    expectLogs {
+      error("com.fvlaenix.queemporium.commands.SearchCommand", count = 1)
+    }
+
     // Arrange - Configure mock to throw an unexpected exception
     mockSearchService.shouldThrowException = true
     mockSearchService.exceptionToThrow = NullPointerException("Unexpected error")

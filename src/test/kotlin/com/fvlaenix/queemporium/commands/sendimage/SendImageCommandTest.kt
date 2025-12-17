@@ -5,6 +5,7 @@ import com.fvlaenix.queemporium.database.ImageMappingTable
 import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.service.S3FileData
 import com.fvlaenix.queemporium.service.S3FileResult
+import com.fvlaenix.queemporium.testing.log.expectLogs
 import com.fvlaenix.queemporium.verification.verify
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -40,6 +41,10 @@ class SendImageCommandTest : BaseSendImageCommandTest() {
 
   @Test
   fun `test key not found in database`() {
+    expectLogs {
+      warn("com.fvlaenix.queemporium.commands.SendImageCommand", count = 1)
+    }
+
     sendImageMessage(key = "missing-key")
 
     answerService.verify {
@@ -51,6 +56,10 @@ class SendImageCommandTest : BaseSendImageCommandTest() {
 
   @Test
   fun `test S3 file not found`() {
+    expectLogs {
+      warn("com.fvlaenix.queemporium.commands.SendImageCommand", count = 1)
+    }
+
     insertImageMapping("test-key", "path/to/file.png")
     mockS3FileService.setResponseForPath("path/to/file.png", S3FileResult.NotFound)
 
@@ -64,6 +73,10 @@ class SendImageCommandTest : BaseSendImageCommandTest() {
 
   @Test
   fun `test S3 file too large`() {
+    expectLogs {
+      warn("com.fvlaenix.queemporium.commands.SendImageCommand", count = 1)
+    }
+
     insertImageMapping("large-key", "path/to/large-file.png")
     mockS3FileService.setResponseForPath("path/to/large-file.png", S3FileResult.TooLarge)
 
@@ -77,6 +90,10 @@ class SendImageCommandTest : BaseSendImageCommandTest() {
 
   @Test
   fun `test S3 fetch error`() {
+    expectLogs {
+      error("com.fvlaenix.queemporium.commands.SendImageCommand", count = 1)
+    }
+
     insertImageMapping("error-key", "path/to/error-file.png")
     mockS3FileService.setResponseForPath("path/to/error-file.png", S3FileResult.Error("Connection failed"))
 

@@ -8,6 +8,7 @@ import com.fvlaenix.queemporium.coroutine.TestCoroutineProvider
 import com.fvlaenix.queemporium.features.FeatureLoader
 import com.fvlaenix.queemporium.features.FeatureRegistry
 import com.fvlaenix.queemporium.service.AnswerService
+import com.fvlaenix.queemporium.testing.log.LogLevelTestExtension
 import com.fvlaenix.queemporium.testing.trace.ScenarioTestWatcher
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.extension.ExtendWith
@@ -16,7 +17,7 @@ import org.koin.core.context.GlobalContext.startKoin
 import org.koin.core.context.GlobalContext.stopKoin
 import org.koin.dsl.module
 
-@ExtendWith(ScenarioTestWatcher::class)
+@ExtendWith(ScenarioTestWatcher::class, LogLevelTestExtension::class)
 abstract class BaseKoinTest {
   fun setupBotKoin(configBlock: BotConfigBuilder.() -> Unit): Koin {
 
