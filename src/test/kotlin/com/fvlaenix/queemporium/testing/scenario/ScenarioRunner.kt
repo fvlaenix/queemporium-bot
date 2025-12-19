@@ -27,7 +27,7 @@ class ScenarioRunner(
     // Pre-populate messagesByRef with fixture messages
     environment.jda.guilds.forEach { guild ->
       guild.channels.filterIsInstance<TestTextChannel>().forEach { channel ->
-        channel.messages.forEachIndexed { index, message ->
+        channel.messages.toList().forEachIndexed { index, message ->
           val ref = MessageRef(guild.name, channel.name, index)
           context.messagesByRef[ref] = message
           context.messagesById[message.id] = message
@@ -138,7 +138,7 @@ class ScenarioRunner(
 
     environment.jda.guilds.forEach { guild ->
       guild.channels.filterIsInstance<TestTextChannel>().forEach { channel ->
-        val message = channel.messages.find { it.id == messageId }
+        val message = channel.messages.toList().find { it.id == messageId }
         if (message != null) {
           context.messagesById[messageId] = message
           return message

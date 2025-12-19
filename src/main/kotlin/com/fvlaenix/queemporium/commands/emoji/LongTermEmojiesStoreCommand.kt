@@ -1,25 +1,26 @@
 package com.fvlaenix.queemporium.commands.emoji
 
+import com.fvlaenix.queemporium.commands.MessagesStoreCommand
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.configuration.commands.LongTermEmojiesStoreCommandConfig
 import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
+import com.fvlaenix.queemporium.utils.Logging
 import net.dv8tion.jda.api.events.session.ReadyEvent
-import java.util.logging.Level
-import java.util.logging.Logger
 import kotlin.time.Duration.Companion.days
 
-private val LOG = Logger.getLogger(LongTermEmojiesStoreCommand::class.java.name)
+private val LOG = Logging.getLogger(LongTermEmojiesStoreCommand::class.java)
 
 class LongTermEmojiesStoreCommand(
   databaseConfiguration: DatabaseConfiguration,
   private val config: LongTermEmojiesStoreCommandConfig,
-  coroutineProvider: BotCoroutineProvider
+  coroutineProvider: BotCoroutineProvider,
+  private val messagesStoreCommand: MessagesStoreCommand
 ) : AbstractEmojiesStoreCommand(databaseConfiguration, coroutineProvider) {
 
   override suspend fun onReadySuspend(event: ReadyEvent) {
     runCatching {
-      runOverOld(
-        event.jda,
+      runOverOldWithMessageStore(
+        messagesStoreCommand,
         config.distanceInDays.days,
         config.guildThreshold,
         config.channelThreshold,
@@ -28,7 +29,8 @@ class LongTermEmojiesStoreCommand(
         config.isShuffle
       )
     }.onFailure { exception ->
-      LOG.log(Level.SEVERE, "Error while running emojies collect", exception)
+      LOG.error("Error while running emojies collect with MessageStoreService", exception)
+      throw exception
     }
   }
 }

@@ -28,7 +28,7 @@ class TestMessage(
   private val testGuild: Guild?,
   private val testChannel: MessageChannelUnion,
   private val idLong: Long,
-  private val content: String,
+  private var content: String,
   private val author: User,
   private val attachments: List<Message.Attachment> = mutableListOf(),
   private val reactions: MutableList<TestMessageReaction> = mutableListOf(),
@@ -195,11 +195,13 @@ class TestMessage(
   }
 
   override fun editMessage(newContent: CharSequence): MessageEditAction {
-    TODO("Not yet implemented")
+    this.content = newContent.toString()
+    return TestMessageEditAction(this)
   }
 
   override fun editMessage(data: MessageEditData): MessageEditAction {
-    TODO("Not yet implemented")
+    this.content = data.content
+    return TestMessageEditAction(this)
   }
 
   override fun editMessageEmbeds(embeds: Collection<MessageEmbed?>): MessageEditAction {

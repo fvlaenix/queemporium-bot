@@ -156,7 +156,7 @@ object FeatureRegistry {
     ) { _ ->
       listOf(
         module {
-          single { DependentDeleterCommand(get(), get()) } bind net.dv8tion.jda.api.hooks.ListenerAdapter::class
+          single { DependentDeleterCommand(get(), get(), get()) } bind net.dv8tion.jda.api.hooks.ListenerAdapter::class
         }
       )
     },
@@ -212,6 +212,7 @@ object FeatureRegistry {
               get(),
               get(),
               get(),
+              get(),
               get()
             )
           } bind net.dv8tion.jda.api.hooks.ListenerAdapter::class
@@ -230,6 +231,7 @@ object FeatureRegistry {
         module {
           single {
             OnlinePictureCompare(
+              get(),
               get(),
               get(),
               get(),
@@ -323,6 +325,7 @@ object FeatureRegistry {
           single { config }
           single {
             LongTermEmojiesStoreCommand(
+              get(),
               get(),
               get(),
               get()

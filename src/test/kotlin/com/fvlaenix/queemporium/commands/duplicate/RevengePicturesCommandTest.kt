@@ -3,7 +3,6 @@ package com.fvlaenix.queemporium.commands.duplicate
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.verification.verify
-import kotlin.test.Ignore
 import kotlin.test.Test
 
 class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
@@ -15,7 +14,6 @@ class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
   override var autoStartEnvironment: Boolean = false
 
   @Test
-  @Ignore("FIXME: synchronization between close by time images in revenge thing")
   fun `test revenge command finds duplicates in existing messages`() {
     // Setup: create an "original" message but don't trigger events yet
     val originalMessage = sendMessageWithImage(
@@ -97,7 +95,6 @@ class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
   }
 
   @Test
-  @Ignore("FIXME: synchronization between close by time images in revenge thing")
   fun `test revenge command processes multiple images in message`() {
     // Setup: create two "original" messages
     val originalMessage1 = sendMessageWithImage(
@@ -164,7 +161,6 @@ class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
   }
 
   @Test
-  @Ignore("FIXME: synchronization between close by time images in revenge thing")
   fun `test revenge command processes different similarity levels`() {
     // Setup: create an "original" message
     val originalMessage = sendMessageWithImage(
