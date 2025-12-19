@@ -5,13 +5,13 @@ import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.testing.dsl.MessageOrder
 import com.fvlaenix.queemporium.testing.dsl.testBot
-import com.fvlaenix.queemporium.testing.log.expectLogs
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.koin.dsl.module
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 
 class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
 
@@ -70,10 +70,8 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
       addReaction("test-guild", "general", 0, "⭐", "user3")
       awaitAll()
 
-      // Advance time enough to trigger Hall of Fame job (4-9 hour window)
-      advanceTime(10.hours)
-      awaitAll()
-      advanceTime(5.hours)
+      // Advance time enough to trigger Hall of Fame job, but stay below 24h to avoid re-triggering emoji scan
+      advanceTime(9.hours)
       awaitAll()
 
       expect("should send hall of fame message") {
@@ -171,10 +169,6 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
   @Test
   @Timeout(value = 30, unit = TimeUnit.SECONDS)
   fun `multiple messages reach threshold and all are queued`() = testBot {
-    expectLogs {
-      error("com.fvlaenix.queemporium.commands.halloffame.HallOfFameCommand", count = 3)
-    }
-
     withVirtualTime(Instant.now())
 
     registerModuleBeforeFeatureLoad(module {
@@ -228,10 +222,8 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
       }
       awaitAll()
 
-      // Trigger HOF jobs
-      advanceTime(10.hours)
-      awaitAll()
-      advanceTime(5.hours)
+      // Trigger HOF jobs, but stay below 24h to avoid re-triggering emoji scan
+      advanceTime(9.hours)
       awaitAll()
 
       expect("should send multiple hall of fame messages") {
@@ -246,10 +238,6 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
   @Test
   @Timeout(value = 30, unit = TimeUnit.SECONDS)
   fun `different emoji types all counted toward threshold`() = testBot {
-    expectLogs {
-      error("com.fvlaenix.queemporium.commands.halloffame.HallOfFameCommand", count = 1)
-    }
-
     withVirtualTime(Instant.now())
 
     registerModuleBeforeFeatureLoad(module {
@@ -302,10 +290,8 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
       awaitAll()
 
       // Total: 5 reactions (different emojis)
-      // Advance time enough to trigger Hall of Fame job (4-9 hour window)
-      advanceTime(10.hours)
-      awaitAll()
-      advanceTime(5.hours)
+      // Advance time enough to trigger Hall of Fame job, but stay below 24h to avoid re-triggering emoji scan
+      advanceTime(9.hours)
       awaitAll()
 
       expect("should reach threshold with mixed emojis") {
@@ -321,10 +307,6 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
   @Test
   @Timeout(value = 30, unit = TimeUnit.SECONDS)
   fun `message crossing threshold multiple times only added once`() = testBot {
-    expectLogs {
-      error("com.fvlaenix.queemporium.commands.halloffame.HallOfFameCommand", count = 2)
-    }
-
     withVirtualTime(Instant.now())
 
     registerModuleBeforeFeatureLoad(module {
@@ -382,10 +364,8 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
       addReaction("test-guild", "general", 0, "⭐", "user5")
       awaitAll()
 
-      // Trigger HOF
-      advanceTime(10.hours)
-      awaitAll()
-      advanceTime(5.hours)
+      // Trigger HOF, but stay below 24h to avoid re-triggering emoji scan
+      advanceTime(9.hours)
       awaitAll()
 
       expect("should only send one HOF message") {
@@ -460,9 +440,7 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
       addReaction("guild2", "general", 0, "⭐", "user2")
       awaitAll()
 
-      advanceTime(10.hours)
-      awaitAll()
-      advanceTime(5.hours)
+      advanceTime(9.hours)
       awaitAll()
 
       expect("guild1 should have HOF message, guild2 should not") {
@@ -481,10 +459,6 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
   @Test
   @Timeout(value = 30, unit = TimeUnit.SECONDS)
   fun `reaction count is tracked and updated when reactions increase after Hall of Fame posting`() = testBot {
-    expectLogs {
-      error("com.fvlaenix.queemporium.commands.halloffame.HallOfFameCommand", count = 1)
-    }
-
     withVirtualTime(Instant.now())
 
     registerModuleBeforeFeatureLoad(module {
@@ -535,10 +509,8 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
       addReaction("test-guild", "general", 0, "⭐", "user3")
       awaitAll()
 
-      // Trigger Hall of Fame jobs to post the message
-      advanceTime(10.hours)
-      awaitAll()
-      advanceTime(5.hours)
+      // Trigger Hall of Fame jobs to post the message, but stay below 24h to avoid re-triggering emoji scan
+      advanceTime(9.hours)
       awaitAll()
 
       expect("should send hall of fame message with 3 reactions") {
@@ -560,8 +532,8 @@ class OnlineEmojiReactionIntegrationTest : BaseKoinTest() {
       addReaction("test-guild", "general", 0, "⭐", "user5")
       awaitAll()
 
-      // Give time for the update to be processed
-      advanceTime(1.hours)
+      // Give time for the update to be processed (total now at 21h + 30min = 21.5h, still < 24h)
+      advanceTime(30.minutes)
       awaitAll()
 
       expect("should update reaction count in database after exceeding threshold") {

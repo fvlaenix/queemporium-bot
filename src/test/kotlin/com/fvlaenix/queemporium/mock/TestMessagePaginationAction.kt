@@ -120,8 +120,9 @@ class TestMessagePaginationAction(
   }
 
   override fun iterator(): PaginationAction.PaginationIterator<Message?> {
-    val messages = channel.messages.toMutableList()
-    return PaginationAction.PaginationIterator(channel.messages.toList()) {
+    // Discord's iterableHistory returns messages newest-first
+    val messages = channel.messages.toMutableList().asReversed()
+    return PaginationAction.PaginationIterator(emptyList()) {
       val copy = messages.toList(); messages.clear(); copy
     }
   }

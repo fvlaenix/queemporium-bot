@@ -27,7 +27,7 @@ import kotlin.test.Ignore
 class SimpleDuplicateServiceTest : BaseGrpcTest() {
 
   override fun getFeaturesForTest(): Array<String> {
-    return arrayOf(FeatureKeys.ONLINE_COMPARE)
+    return arrayOf(FeatureKeys.ONLINE_COMPARE, FeatureKeys.MESSAGES_STORE)
   }
 
   @Test

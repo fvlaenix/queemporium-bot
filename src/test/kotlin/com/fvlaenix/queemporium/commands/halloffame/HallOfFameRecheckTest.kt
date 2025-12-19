@@ -4,7 +4,6 @@ import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.testing.dsl.MessageOrder
 import com.fvlaenix.queemporium.testing.dsl.testBot
-import com.fvlaenix.queemporium.testing.log.expectLogs
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.time.Instant
@@ -280,10 +279,6 @@ class HallOfFameRecheckTest : BaseKoinTest() {
   @Test
   @Timeout(value = 30, unit = TimeUnit.SECONDS)
   fun `sent hall of fame message is not reposted on recheck`() = testBot {
-    expectLogs {
-      error("com.fvlaenix.queemporium.commands.halloffame.HallOfFameCommand", count = 1)
-    }
-
     withVirtualTime(Instant.now())
 
     before {

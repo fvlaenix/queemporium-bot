@@ -16,7 +16,7 @@ import java.time.temporal.ChronoUnit
 class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
 
   override fun getFeatureKeysForTest(): Array<String> {
-    return arrayOf(FeatureKeys.LONG_TERM_EMOJI)
+    return arrayOf(FeatureKeys.MESSAGES_STORE, FeatureKeys.LONG_TERM_EMOJI)
   }
 
   override var autoStartEnvironment: Boolean = false

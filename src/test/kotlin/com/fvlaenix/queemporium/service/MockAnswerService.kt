@@ -42,7 +42,9 @@ class MockAnswerService : AnswerService() {
         imageWithFileNames = imageWithFileNames
       )
     )
-    val id = currentAnswer.incrementAndGet().toString()
+
+    val sentMessage = destination.sendMessage(text).complete()
+    val id = sentMessage?.id ?: currentAnswer.incrementAndGet().toString()
     return CompletableDeferred(id)
   }
 
