@@ -374,6 +374,8 @@ class AdventReschedulingTest : BaseKoinTest() {
 
       advent.expectMessagePosted(channel("test-guild", "advent-reveals").id, "Entry 2")
 
+      awaitAll()
+
       expect("remaining entries rescheduled with 1.5 day intervals") {
         val answers = answerService!!.answers
         val successMessage = answers.find { it.text.contains("Posted Advent entry #2") }
