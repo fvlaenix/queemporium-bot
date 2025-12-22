@@ -31,7 +31,19 @@ jobs:
 
       - name: Test and build JAR
         run: |
-          ./gradlew build check jar --console=plain --no-daemon
+          set -o pipefail
+          mkdir -p build/ci
+          ./gradlew build check jar --console=plain --no-daemon | tee build/ci/gradle.log
+      - name: Upload test reports and logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            build/ci/gradle.log
+            build/reports/tests/test/**
+            build/test-results/test/**
+          retention-days: 7
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
