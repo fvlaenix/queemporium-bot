@@ -3,6 +3,7 @@ package com.fvlaenix.queemporium.commands.advent
 import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.testing.dsl.testBot
+import com.fvlaenix.queemporium.testing.log.expectLogs
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.time.Instant
@@ -146,6 +147,10 @@ class AdventReschedulingTest : BaseKoinTest() {
   @Test
   @Timeout(value = 30, unit = TimeUnit.SECONDS)
   fun `test rescheduling when all epochs are in the past`() = testBot {
+    expectLogs {
+      warn("com.fvlaenix.queemporium.commands.advent.AdventCommand", count = 1)
+    }
+
     val startTime = Instant.parse("2024-12-10T00:00:00Z")
     withVirtualTime(startTime)
 
@@ -190,6 +195,7 @@ class AdventReschedulingTest : BaseKoinTest() {
     }
 
     scenario {
+      awaitAll()
       sendMessage("test-guild", "advent-reveals", "admin", AdventCommand.COMMAND_POST_RIGHT_NOW)
       awaitAll()
 
