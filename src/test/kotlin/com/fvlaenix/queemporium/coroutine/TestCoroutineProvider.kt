@@ -103,6 +103,9 @@ class TestCoroutineProvider(
   }
 
   suspend fun awaitRegularJobs() {
+    var consecutiveQuiescentChecks = 0
+    val requiredQuiescentChecks = 3
+
     while (true) {
       val children = mainScope.coroutineContext.job.children.toList()
       val activeChildren = children.filter { it.isActive }
@@ -112,10 +115,14 @@ class TestCoroutineProvider(
       }
 
       // If all active children are waiting in pendingDelays, we consider them "quiescent"
-      // Note: This assumes 1:1 mapping of active jobs to pending delays for infinite loops
-      // A better approach would be to track "busy" jobs, but this might suffice for now.
+      // To avoid race conditions, we require multiple consecutive quiescent checks
       if (activeChildren.size <= pendingDelays.size) {
-        break
+        consecutiveQuiescentChecks++
+        if (consecutiveQuiescentChecks >= requiredQuiescentChecks) {
+          break
+        }
+      } else {
+        consecutiveQuiescentChecks = 0
       }
 
       // Wait a bit and check again. We can't join() because it blocks until completion.
