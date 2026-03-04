@@ -90,7 +90,8 @@ class HallOfFameDsl(
     )
     val currentTime =
       setupContext.envWithTime.timeController?.getCurrentTime()?.toEpochMilli() ?: System.currentTimeMillis()
-    hallOfFameConnector.markMessagesAsToSend(guildId, maxAgeDays, currentTime)
+    val maxAgeMillis = maxAgeDays * 24 * 60 * 60 * 1000
+    hallOfFameConnector.markMessagesAsToSend(guildId, maxAgeMillis, currentTime)
   }
 
   fun seedEmojiReactions(

@@ -533,15 +533,10 @@ private fun autoPopulateMessageData(
   envWithTime: TestEnvironmentWithTime,
   messageDataConnector: MessageDataConnector
 ) {
-  var firstMsg = true
   envWithTime.environment.jda.guilds.forEach { guild ->
     guild.channels.filterIsInstance<TestTextChannel>().forEach { channel ->
       channel.messages.forEach { msg ->
-        val epochMillis = msg.timeCreated.toEpochSecond() * 1000
-        if (firstMsg) {
-          println("DEBUG autoPopulateMessageData: first message timeCreated=${msg.timeCreated}, toEpochSecond=${msg.timeCreated.toEpochSecond()}, epochMillis=$epochMillis")
-          firstMsg = false
-        }
+        val epochSeconds = msg.timeCreated.toEpochSecond()
         messageDataConnector.add(
           MessageData(
             messageId = msg.id,
@@ -550,7 +545,7 @@ private fun autoPopulateMessageData(
             text = msg.contentRaw,
             url = msg.jumpUrl,
             authorId = msg.author.id,
-            epoch = epochMillis
+            epoch = epochSeconds
           )
         )
       }

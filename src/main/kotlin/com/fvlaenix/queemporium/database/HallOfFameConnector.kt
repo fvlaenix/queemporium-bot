@@ -177,13 +177,13 @@ class HallOfFameConnector(private val database: Database) {
     }
   }
 
-  fun markMessagesAsToSend(guildId: String, maxAgeDays: Long, currentTimeMillis: Long = System.currentTimeMillis()) =
+  fun markMessagesAsToSend(guildId: String, maxAgeMillis: Long, currentTimeMillis: Long = System.currentTimeMillis()) =
     transaction(database) {
-      val cutoffEpoch = currentTimeMillis - (maxAgeDays * 24 * 60 * 60 * 1000)
+      val cutoffEpochSeconds = ((currentTimeMillis - maxAgeMillis).coerceAtLeast(0L)) / 1000
       HallOfFameMessagesTable.update({
         (HallOfFameMessagesTable.guildId eq guildId) and
             (HallOfFameMessagesTable.state eq HallOfFameState.NOT_SELECTED.name) and
-            (HallOfFameMessagesTable.thresholdCrossDetectedAt greaterEq cutoffEpoch)
+            (HallOfFameMessagesTable.timestamp greaterEq cutoffEpochSeconds)
       }) {
         it[state] = HallOfFameState.TO_SEND.name
       }

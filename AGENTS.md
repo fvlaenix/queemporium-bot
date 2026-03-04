@@ -144,6 +144,17 @@ Do not preserve outdated docs behavior if code differs.
 - Core + Database + S3:
     - `send-image`
 
+### Hall Of Fame Behavior (Current Code)
+
+- `set-hall-of-fame` only stores target channel/threshold and shows a histogram; it does not directly enqueue posts.
+- `hall-of-fame oldest <max-age>` performs two steps at command time:
+  - snapshots current messages above threshold into Hall of Fame backlog storage
+  - marks backlog entries as `TO_SEND` only if the original message timestamp is within `<max-age>`
+- `<max-age>` currently supports `d`, `w`, and `h` suffixes (examples: `7d`, `1w`, `48h`).
+- Backlog age filtering is based on the original message timestamp, not on when threshold crossing was detected.
+- Real-time Hall of Fame posting path is triggered by emoji reaction tracking (`OnlineEmojiesStoreCommand` calls
+  `HallOfFameCommand.recheckMessage`).
+
 ## Testing Deep Dive
 
 ### Core Test Bootstrap
