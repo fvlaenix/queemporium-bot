@@ -110,6 +110,7 @@ Do not preserve outdated docs behavior if code differs.
     - Defaults to `hostname=localhost`, `port=50055` if nothing found.
 - `S3Configuration.load(applicationConfig)`:
     - Uses configured path or `/s3.properties`.
+  - Requires all properties: `accessKey`, `secretKey`, `region`, `bucketName`.
     - Throws if no file or required property is missing.
 
 ## Feature Toggle System
@@ -143,6 +144,24 @@ Do not preserve outdated docs behavior if code differs.
     - `upload-pictures`, `revenge-pictures`, `online-picture-compare`
 - Core + Database + S3:
     - `send-image`
+
+### Send-Image Behavior (Current Code)
+
+- Invocation: `/shogun-sama image <key>`.
+- Guild-only command:
+  - In DMs, reply is `This only applies to servers.` and processing stops.
+- Key parsing:
+  - Command text is split by whitespace.
+  - The lookup key is the third token (`<key>`).
+  - If missing, reply is `Usage: /shogun-sama image <key>`.
+- Mapping behavior:
+  - Key is resolved via `ImageMappingConnector` (exact key match) to an S3 object path.
+  - If key is absent, reply is `No file for key \`<key>\`.`.
+- Fetch behavior:
+  - `S3FileResult.NotFound` -> `File not found in storage.`
+  - `S3FileResult.TooLarge` -> `File too large (max 10 MB).`
+  - `S3FileResult.Error` or unexpected exception in lookup/fetch -> `Failed to fetch file. Try again later.`
+  - Success sends file bytes to the source channel.
 
 ### Hall Of Fame Behavior (Current Code)
 
@@ -245,6 +264,20 @@ Use virtual time for features that rely on delays or recurring processing.
 - Scenario failure reports: `build/reports/scenarios/<TestClass>/<TestName>.report.txt`
 - Test logs: `build/logs/test-run.log`
 - Aggregated diagnostics archive: `build/diagnostics.zip` (via `collectLogs` task)
+
+### Send-Image Test Notes
+
+- Base test fixture: `commands/sendimage/BaseSendImageCommandTest`.
+  - Enables `FeatureKeys.SEND_IMAGE`.
+  - Uses in-memory DB-backed `ImageMappingConnector`.
+  - Injects a test `S3FileService` wrapper over `MockS3FileService` (allows deterministic responses and forced
+    exceptions by path).
+- Prefer helper methods:
+  - `sendImageMessage(...)` for guild command paths.
+  - `sendImageDirectMessage(...)` for DM/guild-only behavior.
+- Keep log expectations explicit with `expectLogs { ... }`:
+  - key miss / NotFound / TooLarge -> expected WARN logs.
+  - fetch errors / unexpected exceptions -> expected ERROR logs.
 
 ## Change Playbook For Agents
 

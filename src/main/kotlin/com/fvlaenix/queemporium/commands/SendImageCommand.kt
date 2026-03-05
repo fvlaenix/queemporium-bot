@@ -44,14 +44,29 @@ class SendImageCommand(
 
     LOG.info("Processing image request: key=$key")
 
-    val s3Path = imageMappingConnector.get(key)
+    val s3Path = try {
+      imageMappingConnector.get(key)
+    } catch (exception: Exception) {
+      LOG.error("Unexpected error during image key lookup: key=$key", exception)
+      answerService.sendReply(event.message, ERROR_FETCH_FAILED)
+      return
+    }
+
     if (s3Path == null) {
       LOG.warn("Key not found in database: key=$key")
       answerService.sendReply(event.message, "$ERROR_KEY_NOT_FOUND `$key`.")
       return
     }
 
-    when (val result = s3FileService.fetchFile(s3Path)) {
+    val fetchResult = try {
+      s3FileService.fetchFile(s3Path)
+    } catch (exception: Exception) {
+      LOG.error("Unexpected error during file fetch: key=$key, s3Path=$s3Path", exception)
+      answerService.sendReply(event.message, ERROR_FETCH_FAILED)
+      return
+    }
+
+    when (val result = fetchResult) {
       is S3FileResult.Success -> {
         LOG.info("Successfully fetched file for key=$key, filename=${result.data.filename}, size=${result.data.bytes.size}")
         answerService.sendFile(

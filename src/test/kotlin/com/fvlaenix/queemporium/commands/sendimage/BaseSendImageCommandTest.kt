@@ -5,6 +5,7 @@ import com.fvlaenix.queemporium.koin.BaseKoinTest
 import com.fvlaenix.queemporium.mock.MockS3FileService
 import com.fvlaenix.queemporium.mock.TestEnvironment
 import com.fvlaenix.queemporium.service.MockAnswerService
+import com.fvlaenix.queemporium.service.S3FileResult
 import com.fvlaenix.queemporium.service.S3FileService
 import com.fvlaenix.queemporium.testing.dsl.*
 import kotlinx.coroutines.test.runTest
@@ -22,6 +23,7 @@ abstract class BaseSendImageCommandTest : BaseKoinTest() {
   protected lateinit var mockImageMappingConnector: ImageMappingConnector
   protected lateinit var mockS3FileService: MockS3FileService
   protected lateinit var answerService: MockAnswerService
+  private val s3ExceptionsByPath = mutableMapOf<String, Exception>()
 
   protected val defaultGuildName = "Test Guild"
   protected val defaultGeneralChannelName = "general"
@@ -42,7 +44,17 @@ abstract class BaseSendImageCommandTest : BaseKoinTest() {
       }
 
       registerModuleBeforeFeatureLoad(module {
-        single<S3FileService> { mockS3FileService }
+        single<S3FileService> {
+          object : S3FileService {
+            override suspend fun fetchFile(s3Path: String): S3FileResult {
+              val configuredException = s3ExceptionsByPath[s3Path]
+              if (configuredException != null) {
+                throw configuredException
+              }
+              return mockS3FileService.fetchFile(s3Path)
+            }
+          }
+        }
       })
     }
 
@@ -119,5 +131,20 @@ abstract class BaseSendImageCommandTest : BaseKoinTest() {
     }
 
     return requireNotNull(result.complete(true)) { "Failed to send image message to $channelName" }
+  }
+
+  protected fun sendImageDirectMessage(key: String): Message {
+    val dmUser = env.createUser("DM User", false)
+    val result = env.sendDirectMessage(dmUser, "/shogun-sama image $key")
+
+    runWithScenario {
+      awaitAll()
+    }
+
+    return requireNotNull(result.complete(true)) { "Failed to send direct image message" }
+  }
+
+  protected fun setS3ExceptionForPath(s3Path: String, exception: Exception) {
+    s3ExceptionsByPath[s3Path] = exception
   }
 }

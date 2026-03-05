@@ -40,6 +40,16 @@ class SendImageCommandTest : BaseSendImageCommandTest() {
   }
 
   @Test
+  fun `test command in DM channel`() {
+    sendImageDirectMessage(key = "test-key")
+
+    answerService.verify {
+      messageCount(1)
+      lastMessageContains(SendImageCommand.ERROR_GUILD_ONLY)
+    }
+  }
+
+  @Test
   fun `test key not found in database`() {
     expectLogs {
       warn("com.fvlaenix.queemporium.commands.SendImageCommand", count = 1)
@@ -122,6 +132,27 @@ class SendImageCommandTest : BaseSendImageCommandTest() {
       messageCount(1)
       lastMessageContains("test-image.png")
       lastMessageContains("1024 bytes")
+    }
+  }
+
+  @Test
+  fun `test unexpected S3 exception returns fetch failed`() {
+    expectLogs {
+      error(
+        "com.fvlaenix.queemporium.commands.SendImageCommand",
+        count = 1,
+        messageContains = "Unexpected error during file fetch"
+      )
+    }
+
+    insertImageMapping("exception-key", "path/to/throws.png")
+    setS3ExceptionForPath("path/to/throws.png", IllegalStateException("S3 exploded"))
+
+    sendImageMessage(key = "exception-key")
+
+    answerService.verify {
+      messageCount(1)
+      lastMessageContains(SendImageCommand.ERROR_FETCH_FAILED)
     }
   }
 
