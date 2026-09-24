@@ -1,14 +1,18 @@
 package com.fvlaenix.queemporium.commands.emoji
 
 import com.fvlaenix.queemporium.configuration.commands.LongTermEmojiesStoreCommandConfig
+import com.fvlaenix.queemporium.database.MessageEmojiData
 import com.fvlaenix.queemporium.features.FeatureKeys
 import com.fvlaenix.queemporium.mock.TestEmoji
 import com.fvlaenix.queemporium.mock.TestMessage
 import net.dv8tion.jda.api.entities.Message
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.koin.dsl.module
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 /**
  * Tests for LongTermEmojiesStoreCommand
@@ -68,15 +72,6 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
     // Create messages with reactions at different timestamps
     val now = OffsetDateTime.now()
 
-    val recentMessages = createMultipleMessagesWithReactionsAndTimeStamps(
-      count = 3,
-      baseMessageText = "Recent message",
-      reactionConfigs = listOf(
-        ReactionConfig("👍", listOf(1, 2))
-      ),
-      timestamps = (0..2).map { hoursAgo -> now.minus(hoursAgo.toLong(), ChronoUnit.HOURS) }
-    )
-
     val oldMessages = createMultipleMessagesWithReactionsAndTimeStamps(
       count = 2,
       baseMessageText = "Old message",
@@ -84,6 +79,16 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
         ReactionConfig("❤️", listOf(3, 4))
       ),
       timestamps = (2..3).map { daysAgo -> now.minus(daysAgo.toLong(), ChronoUnit.MONTHS) }
+    )
+
+    // The test history returns messages in reverse insertion order, like Discord's newest-first history.
+    val recentMessages = createMultipleMessagesWithReactionsAndTimeStamps(
+      count = 3,
+      baseMessageText = "Recent message",
+      reactionConfigs = listOf(
+        ReactionConfig("👍", listOf(1, 2))
+      ),
+      timestamps = (0..2).map { hoursAgo -> now.minus(hoursAgo.toLong(), ChronoUnit.HOURS) }
     )
 
     // Start the environment
@@ -148,6 +153,36 @@ class LongTermEmojiesStoreCommandTest : BaseEmojiStoreCommandTest() {
         reactions.expectCount(message, 2)
       }
     }
+  }
+
+  @Test
+  @Timeout(60)
+  fun `test shuffled scan advances past full batch and stops at age cutoff`() {
+    val now = OffsetDateTime.now()
+    val oldMessage = env.sendMessage(
+      defaultGuildName, defaultGeneralChannelName, testUsers[0], "Outside scan window",
+      emptyList(), now.minusDays(31)
+    ).complete(true)!!
+    val oldestRecent = env.sendMessage(
+      defaultGuildName, defaultGeneralChannelName, testUsers[0], "Beyond first batch",
+      emptyList(), now.minusHours(1)
+    ).complete(true)!! as TestMessage
+    oldestRecent.addReaction(TestEmoji("👍"), testUsers[1])
+
+    var newest: Message? = null
+    repeat(500) { index ->
+      newest = env.sendMessage(
+        defaultGuildName, defaultGeneralChannelName, testUsers[0], "Recent message $index",
+        emptyList(), now.minusMinutes(30)
+      ).complete(true)
+    }
+    messageEmojiDataConnector.insert(MessageEmojiData(requireNotNull(newest).id, 0))
+
+    startEnvironment()
+
+    assertEquals(0, messageEmojiDataConnector.get(requireNotNull(newest).id)?.count)
+    assertEquals(1, messageEmojiDataConnector.get(oldestRecent.id)?.count)
+    assertNull(messageEmojiDataConnector.get(oldMessage.id))
   }
 
   @Test

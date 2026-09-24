@@ -94,14 +94,14 @@ class MessageStoreService(
         return emptyList()
       }
 
-      if (channelCache.historyIterator == null) {
-        channelCache.historyIterator = channel.iterableHistory.iterator()
-      }
-
       var attempts = 5
       while (attempts > 0) {
         attempts--
         try {
+          if (channelCache.historyIterator == null) {
+            channelCache.historyIterator = channel.iterableHistory.iterator()
+          }
+
           val newMessages = mutableListOf<Message>()
           val batchSize = 100
           var fetched = 0

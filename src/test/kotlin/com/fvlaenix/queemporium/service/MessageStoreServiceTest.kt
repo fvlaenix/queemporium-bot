@@ -5,9 +5,17 @@ import com.fvlaenix.queemporium.testing.fixture.setupWithFixture
 import com.fvlaenix.queemporium.testing.log.LogLevelTestExtension
 import com.fvlaenix.queemporium.testing.trace.ScenarioTestWatcher
 import com.fvlaenix.queemporium.utils.Logging
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.channel.ChannelType
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
+import net.dv8tion.jda.api.exceptions.MissingAccessException
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -23,6 +31,26 @@ class MessageStoreServiceTest {
   @AfterEach
   fun tearDownKoin() {
     stopKoin()
+  }
+
+  @Test
+  fun `test inaccessible channel is exhausted when history iterator is created`() = runBlocking {
+    val guild = mockk<Guild> { every { idLong } returns 1L }
+    val guildChannel = mockk<GuildChannel> {
+      every { getGuild() } returns guild
+      every { idLong } returns 2L
+      every { type } returns ChannelType.TEXT
+    }
+    val channel = mockk<MessageChannel> {
+      every { name } returns "inaccessible"
+      every { iterableHistory } throws MissingAccessException(guildChannel, Permission.VIEW_CHANNEL)
+    }
+    val service = MessageStoreService(mockk(), mockk())
+    val cache = ChannelCache(channelId = "2", guildId = "1")
+
+    assertTrue(service.fetchMessages(channel, cache).isEmpty())
+    assertTrue(cache.isExhausted)
+    assertTrue(service.fetchMessages(channel, cache).isEmpty())
   }
 
   @Test

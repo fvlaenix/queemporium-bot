@@ -74,32 +74,35 @@ class MessagesStoreCommand(
     var totalChannels = 0
     var totalGuilds = 0
 
-    service.guilds().collect { guild ->
-      totalGuilds++
-      LOG.info("StoreCommand: Processing guild ${totalGuilds}")
+    try {
+      service.guilds().collect { guild ->
+        totalGuilds++
+        LOG.info("StoreCommand: Processing guild ${totalGuilds}")
 
-      guild.channels().collect { channel ->
-        totalChannels++
-        LOG.info("StoreCommand: Processing channel ${totalChannels}")
+        guild.channels().collect { channel ->
+          totalChannels++
+          LOG.info("StoreCommand: Processing channel ${totalChannels}")
 
-        channel.messages().takeWhile { message ->
-          val exists = messageDataConnector.get(message.id) != null
-          if (exists) {
-            LOG.debug("StoreCommand: Skipping message ${message.id} (already exists)")
-          }
-          !exists
-        }.collect { message ->
-          LOG.debug("StoreCommand: Processing message ${message.id}")
-          computeMessage(message)
-          totalMessages++
-          if (totalMessages % 100 == 0) {
-            LOG.info("StoreCommand: Processed $totalMessages messages")
+          channel.messages().takeWhile { message ->
+            val exists = messageDataConnector.get(message.id) != null
+            if (exists) {
+              LOG.debug("StoreCommand: Skipping message ${message.id} (already exists)")
+            }
+            !exists
+          }.collect { message ->
+            LOG.debug("StoreCommand: Processing message ${message.id}")
+            computeMessage(message)
+            totalMessages++
+            if (totalMessages % 100 == 0) {
+              LOG.info("StoreCommand: Processed $totalMessages messages")
+            }
           }
         }
       }
+    } finally {
+      service.unregisterConsumer()
     }
 
-    service.unregisterConsumer()
     LOG.info("StoreCommand: Finish onReady - processed $totalMessages messages across $totalChannels channels in $totalGuilds guilds")
 
     if (!_initialScanComplete.isCompleted) {

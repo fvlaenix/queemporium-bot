@@ -161,6 +161,16 @@ abstract class AbstractEmojiesStoreCommand(
       var totalChannels = 0
       var totalMessages = 0
 
+      suspend fun processShuffledBatch(messages: List<Message>) {
+        messages.shuffled().forEach { message ->
+          computeMessage(message)
+          totalMessages++
+          if (totalMessages % 100 == 0) {
+            LOG.info("EmojiesStore: Processed $totalMessages messages")
+          }
+        }
+      }
+
       messageStoreService.guilds().collect { guild ->
         totalGuilds++
         LOG.info("EmojiesStore: Processing guild $totalGuilds")
@@ -171,19 +181,15 @@ abstract class AbstractEmojiesStoreCommand(
 
           if (isShuffle) {
             val batchSize = 500
-            var messages = channel.takeNext(batchSize)
-            while (messages.isNotEmpty()) {
-              val filteredMessages = messages.filter(timeFilter).shuffled()
-              filteredMessages.forEach { message ->
-                computeMessage(message)
-                totalMessages++
-                if (totalMessages % 100 == 0) {
-                  LOG.info("EmojiesStore: Processed $totalMessages messages")
-                }
+            val batch = mutableListOf<Message>()
+            channel.messages().takeWhile(timeFilter).collect { message ->
+              batch.add(message)
+              if (batch.size == batchSize) {
+                processShuffledBatch(batch)
+                batch.clear()
               }
-              if (messages.size < batchSize) break
-              messages = channel.takeNext(batchSize)
             }
+            if (batch.isNotEmpty()) processShuffledBatch(batch)
           } else {
             channel.messages().takeWhile(timeFilter).collect { message ->
               computeMessage(message)
