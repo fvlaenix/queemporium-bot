@@ -2,13 +2,31 @@ package com.fvlaenix.queemporium.commands.duplicate
 
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.features.FeatureKeys
+import com.fvlaenix.queemporium.testing.log.expectLogs
 import com.fvlaenix.queemporium.verification.verify
 import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
 
 class OnlinePictureCompareTest : BaseDuplicateCommandTest() {
 
   override fun getFeaturesForTest(): Array<String> {
     return arrayOf(FeatureKeys.ONLINE_COMPARE, FeatureKeys.MESSAGES_STORE)
+  }
+
+  @Test
+  fun `picture failure does not stop later messages`() {
+    expectLogs {
+      error(
+        "com.fvlaenix.queemporium.commands.duplicate.OnlinePictureCompare",
+        messageContains = "Failed to compare picture"
+      )
+    }
+
+    mockDuplicateService.nextAddImageFailure = IllegalStateException("simulated history request failure")
+    sendMessageWithImage(fileName = "failing.jpg")
+    sendMessageWithImage(fileName = "next.jpg")
+
+    assertEquals(2, mockDuplicateService.countAddImageRequests())
   }
 
   @Test

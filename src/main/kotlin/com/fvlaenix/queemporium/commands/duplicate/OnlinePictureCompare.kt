@@ -10,12 +10,15 @@ import com.fvlaenix.queemporium.database.MessageDuplicateDataConnector
 import com.fvlaenix.queemporium.exception.EXCEPTION_HANDLER
 import com.fvlaenix.queemporium.service.AnswerService
 import com.fvlaenix.queemporium.service.DuplicateImageService
+import com.fvlaenix.queemporium.utils.Logging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.session.ReadyEvent
+
+private val LOG = Logging.getLogger(OnlinePictureCompare::class.java)
 
 class OnlinePictureCompare(
   databaseConfiguration: DatabaseConfiguration,
@@ -42,7 +45,13 @@ class OnlinePictureCompare(
     receivedCollectorJob = messagesStoreCommand.received
       .onEach { receivedEvent ->
         coroutineProvider.mainScope.launch(coroutineProvider.botPool) {
-          handleMessageReceived(receivedEvent)
+          try {
+            handleMessageReceived(receivedEvent)
+          } catch (e: CancellationException) {
+            throw e
+          } catch (e: Exception) {
+            LOG.error("Failed to compare picture for message ${receivedEvent.messageId}", e)
+          }
         }
       }
       .launchIn(flowCollectorScope)
@@ -50,7 +59,13 @@ class OnlinePictureCompare(
     deletedCollectorJob = messagesStoreCommand.deleted
       .onEach { deleteEvent ->
         coroutineProvider.mainScope.launch(coroutineProvider.botPool) {
-          handleMessageDelete(deleteEvent)
+          try {
+            handleMessageDelete(deleteEvent)
+          } catch (e: CancellationException) {
+            throw e
+          } catch (e: Exception) {
+            LOG.error("Failed to process picture deletion for message ${deleteEvent.messageId}", e)
+          }
         }
       }
       .launchIn(flowCollectorScope)

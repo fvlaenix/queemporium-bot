@@ -20,6 +20,7 @@ class MockDuplicateImageService : DuplicateImageService {
 
   // For general responses, not tied to specific file name
   var nextResponse: List<DuplicateImageService.DuplicateImageData>? = null
+  var nextAddImageFailure: Exception? = null
   var defaultCompressSize: CompressSize = CompressSize(width = 500, height = null)
 
   // Flag to simulate non-working server
@@ -50,6 +51,10 @@ class MockDuplicateImageService : DuplicateImageService {
   ) {
     // Record this request
     requests.add(AddImageRequest(message.id, compressSize, withHistoryReload))
+    nextAddImageFailure?.let { failure ->
+      nextAddImageFailure = null
+      throw failure
+    }
 
     val imagesChannel = coroutineScope {
       addImagesFromMessage(
