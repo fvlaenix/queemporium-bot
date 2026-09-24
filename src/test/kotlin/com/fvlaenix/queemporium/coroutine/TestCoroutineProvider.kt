@@ -114,9 +114,10 @@ class TestCoroutineProvider(
         break
       }
 
-      // If all active children are waiting in pendingDelays, we consider them "quiescent"
-      // To avoid race conditions, we require multiple consecutive quiescent checks
-      if (activeChildren.size <= pendingDelays.size) {
+      // Only timer jobs are quiescent. Counting delays can mistake a command that is
+      // still running for a timer job when another timer is being cancelled.
+      val waitingJobs = pendingDelays.mapNotNull { it.continuation.context[Job] }.toSet()
+      if (activeChildren.all { it in waitingJobs }) {
         consecutiveQuiescentChecks++
         if (consecutiveQuiescentChecks >= requiredQuiescentChecks) {
           break
