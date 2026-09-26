@@ -7,6 +7,7 @@ import com.fvlaenix.queemporium.database.*
 import com.fvlaenix.queemporium.service.AnswerService
 import com.fvlaenix.queemporium.service.DuplicateImageService
 import com.fvlaenix.queemporium.utils.CoroutineUtils
+import com.fvlaenix.queemporium.utils.Logging
 import kotlinx.coroutines.withContext
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.Guild
@@ -20,6 +21,7 @@ abstract class ReportPictureCommand(
   protected val duplicateImageService: DuplicateImageService,
   coroutineProvider: BotCoroutineProvider
 ) : CoroutineListenerAdapter(coroutineProvider) {
+  private val reportLog = Logging.getLogger(javaClass)
   private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
   private val messageDataConnector = MessageDataConnector(databaseConfiguration.toDatabase())
   private val messageDuplicateDataConnector = MessageDuplicateDataConnector(databaseConfiguration.toDatabase())
@@ -75,8 +77,17 @@ abstract class ReportPictureCommand(
           isSpoiler = isSpoiler,
           originalData = originalData
         )
-        duplicateMessageDatas.forEach { duplicateMessageData ->
-          val dependentMessage = duplicateMessageData.await() ?: return@forEach
+        val matchedImages = originalData.joinToString(",") { (originalMessage, match) ->
+          "{messageId=${match.messageId},url=${originalMessage.url},imageIndex=${match.numberInMessage},level=${match.level}}"
+        }
+        duplicateMessageDatas.forEachIndexed { index, duplicateMessageData ->
+          val dependentMessage = duplicateMessageData.await() ?: return@forEachIndexed
+          reportLog.info(
+            "Duplicate report posted: guildId=${message.guildId} sourceChannelId=${message.channelId} " +
+                "sourceMessageId=$messageId sourceUrl=${message.jumpUrl} sourceImageIndex=${duplicateMessageInfo.numberInMessage} " +
+                "matchedImages=[$matchedImages] reportChannelId=${duplicateChannel.id} " +
+                "reportMessageId=$dependentMessage part=${index + 1}/${duplicateMessageDatas.size}"
+          )
           dependencyConnector.addDependency(
             MessageDependency(
               targetMessage = messageData.messageId,

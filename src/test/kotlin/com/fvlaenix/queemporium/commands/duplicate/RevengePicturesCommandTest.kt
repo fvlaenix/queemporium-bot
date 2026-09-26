@@ -2,8 +2,11 @@ package com.fvlaenix.queemporium.commands.duplicate
 
 import com.fvlaenix.queemporium.database.AdditionalImageInfo
 import com.fvlaenix.queemporium.features.FeatureKeys
+import com.fvlaenix.queemporium.testing.log.TestLogCapture
 import com.fvlaenix.queemporium.verification.verify
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
 
@@ -37,7 +40,7 @@ class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
     }
 
     // Send a second message that will be a duplicate
-    sendMessageWithImage(
+    val duplicateMessage = sendMessageWithImage(
       messageText = "Duplicate message with image",
       fileName = "duplicate.jpg"
     )
@@ -54,6 +57,15 @@ class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
       lastMessageContains("made repost")
       lastMessageContains(originalMessage.id)
     }
+    val reportLogs = TestLogCapture.getCapturedLogs().filter {
+      it.loggerName == RevengePicturesCommand::class.java.name && it.message.startsWith("Duplicate report posted:")
+    }
+    assertEquals(1, reportLogs.size)
+    assertTrue(reportLogs.single().message.contains("sourceMessageId=${duplicateMessage.id}"))
+    assertTrue(reportLogs.single().message.contains("messageId=${originalMessage.id}"))
+    assertTrue(reportLogs.single().message.contains("url=${originalMessage.jumpUrl}"))
+    assertTrue(reportLogs.single().message.contains("level=95"))
+    assertTrue(reportLogs.single().message.contains("reportChannelId=${duplicateChannel.id}"))
   }
 
   @Test
@@ -82,6 +94,11 @@ class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
       )
     }
 
+    val duplicateMessage = sendMessageWithImage(
+      messageText = "Duplicate message with image",
+      fileName = "duplicate.jpg"
+    )
+
     // Start the environment
     startEnvironment()
 
@@ -92,6 +109,13 @@ class RevengePicturesCommandTest : BaseDuplicateCommandTest() {
     answerService.verify {
       messageCount(0)
     }
+    duplicates.expectNoReport(originalMessage)
+    duplicates.expectNoReport(duplicateMessage)
+    assertEquals(0, duplicates.countAddImageRequests())
+    assertTrue(TestLogCapture.getCapturedLogs().any {
+      it.loggerName == RevengePicturesCommand::class.java.name &&
+          it.message.contains("Skipping excluded channel ${generalChannel.id}")
+    })
   }
 
   @Test

@@ -3,10 +3,12 @@ package com.fvlaenix.queemporium.commands.duplicate
 import com.fvlaenix.queemporium.commands.MessagesStoreCommand
 import com.fvlaenix.queemporium.configuration.DatabaseConfiguration
 import com.fvlaenix.queemporium.coroutine.BotCoroutineProvider
+import com.fvlaenix.queemporium.database.GuildInfoConnector
 import com.fvlaenix.queemporium.database.MessageDuplicateDataConnector
 import com.fvlaenix.queemporium.service.AnswerService
 import com.fvlaenix.queemporium.service.DuplicateImageService
 import com.fvlaenix.queemporium.utils.Logging
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.toList
 import net.dv8tion.jda.api.events.session.ReadyEvent
@@ -20,6 +22,7 @@ class RevengePicturesCommand(
   coroutineProvider: BotCoroutineProvider,
   private val messagesStoreCommand: MessagesStoreCommand
 ) : ReportPictureCommand(databaseConfiguration, answerService, duplicateImageService, coroutineProvider) {
+  private val guildInfoConnector = GuildInfoConnector(databaseConfiguration.toDatabase())
   private val messageDuplicateDataConnector = MessageDuplicateDataConnector(databaseConfiguration.toDatabase())
 
   override suspend fun onReadySuspend(event: ReadyEvent) {
@@ -45,7 +48,19 @@ class RevengePicturesCommand(
       totalGuilds++
       LOG.info("RevengePictures: Processing guild $totalGuilds (${guild.id})")
 
-      guild.channels().collect { channel ->
+      guild.channels().filter { channel ->
+        when {
+          guildInfoConnector.isChannelExcluded(guild.id, channel.id) -> {
+            LOG.info("RevengePictures: Skipping excluded channel ${channel.id} in guild ${guild.id}")
+            false
+          }
+          guildInfoConnector.getDuplicateInfoChannel(guild.id) == channel.id -> {
+            LOG.info("RevengePictures: Skipping duplicate report channel ${channel.id} in guild ${guild.id}")
+            false
+          }
+          else -> true
+        }
+      }.collect { channel ->
         totalChannels++
         LOG.info("RevengePictures: Processing channel $totalChannels (${channel.id})")
 
@@ -59,9 +74,13 @@ class RevengePicturesCommand(
 
         LOG.info("RevengePictures: Processing ${messagesToProcess.size} messages for channel ${channel.id} (oldest-first)")
 
-        messagesToProcess.forEach { message ->
+        messagesToProcess.forEachIndexed { index, message ->
           getMessage(compressSize, message)
           totalMessages++
+          val processedInChannel = index + 1
+          if (processedInChannel % 100 == 0 || processedInChannel == messagesToProcess.size) {
+            LOG.info("RevengePictures: Processed $processedInChannel/${messagesToProcess.size} messages for channel ${channel.id}")
+          }
         }
       }
     }
